@@ -1,0 +1,14 @@
+﻿[Event "?"]
+[Site "?"]
+[Date "2023.01.29"]
+[Round "?"]
+[White "Jobava London"]
+[Black "Rare 3rd Moves"]
+[Result "*"]
+[ECO "D00"]
+[Annotator "BortnykChess"]
+[PlyCount "15"]
+[EventDate "2023.??.??"]
+
+{[%evp 0,15,19,31,14,22,12,31,13,18,-3,-7,185,194,216,186,187,185]} 1. d4 Nf6 2. Nc3 d5 3. Bf4 {In this chapter, we briefly consider a few rare alternatives to the popular responses.} Nc6 $2 {Unfortunately for Black, this move virtually loses on the spot.} (3... Nbd7 $2 {This move loses for a similar reason.} 4. Nb5 e5 5. dxe5 a6 (5... Nh5 6. Bg5 Qxg5 7. Nxc7+ Kd8 8. Nf3 $1 $18) 6. Nc3 Nh5 7. Nxd5 c6 8. e6 $1 cxd5 9. exd7+ Bxd7 10. Be5 $16) (3... Bg4 $6 {A strange move that walks right into f3, enabling White to develop a quick and dangerous initiative on the kingside.} 4. f3 Bh5 5. g4 Bg6 6. h4 h6 7. e3 e6 8. Bd3 Bxd3 9. Qxd3 Bd6 10. Nge2 c5 (10... Bxf4 11. Nxf4 Nbd7 12. O-O-O c5 13. g5 Ng8 14. g6 Ne7 15. gxf7+ Kxf7 16. Rhg1 $18) (10... Nc6 11. O-O-O a6 12. e4 dxe4 13. Nxe4 Nxe4 14. Qxe4 Qe7 15. Bxd6 cxd6 16. d5 exd5 17. Qxd5 $14) 11. Qb5+ Nc6 12. Qxb7 $18) (3... Bd7 {This ultra-rare move isn't a huge mistake, but it is rather awkward and leads to an inferior version of the 3...e6 line.} 4. e3 e6 5. Nb5 {Securing the bishop pair, or forcing the knight to a6.} Bxb5 6. Bxb5+ c6 7. Bd3 Bd6 8. Nf3 Bxf4 9. exf4 $14 {We have a nice space advantage, control over the light squares, and a massive clamp on the e5-square.}) 4. Nb5 {[%cal Rb5c7,Rf4c7] Black has no way to defend c7 without giving up additional material. You will undoubtedly win more than a handful of games in this way!} e5 5. dxe5 ({Give to white advantage and} 5. Bxe5 Nxe5 6. dxe5 a6 7. Nc3 d4 8. exf6 dxc3 9. Qxd8+ Kxd8 10. bxc3 $16) 5... Ne4 $2 {This merely exacerbates an already critical situation.} (5... Nh5 6. e3 Nxf4 7. exf4 a6 8. Nd4 $16 {Black has absolutely no compensation for the pawn.}) 6. Qxd5 $1 {Bang!} Qxd5 7. Nxc7+ Kd8 8. Nxd5 $18 {The rest is clear without further analysis :)} *
+

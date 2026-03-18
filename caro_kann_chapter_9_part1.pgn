@@ -1,0 +1,35 @@
+[Event "Caro-Kann Chapter 9: Introduction to 3...c5"]
+[Site "Chess Trainer"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Book"]
+[Black "Hero"]
+[Result "*"]
+
+1. e4 c6 2. d4 d5 3. e5 c5!? {In the past the Advance Variation was considered to be a timid variation that allowed Black to obtain a ‘good’ version of the French Advance, a good version because the light-squared bishop was able to develop outside the pawn chain. This assessment has dramatically changed in recent years and now the Advance is one of the most popular lines against the Caro-Kann due to White’s natural space advantage.}
+4. dxc5
+    ( 4. c3 )
+    ( 4. Nf3 )
+    ( 4. c4 )
+4... e6 {The advantage of playing ...c6-c5 as early as move three is that White must take critical decisions very early on, which is not something an unprepared white player will be ready for. Accepting the offered pawn will swing the game into complications where Black has the superior pawn structure and White’s weakened e5-pawn can become a target.}
+    ( 4... Nc6!? {I would also recommend the reader investigate the complex 4...Nc6!?.} )
+5. Be3 {The major line and the most logical choice. White protects the c5-pawn and develops a piece at the same time.}
+    ( 5. b4?! {Note that 5 b4 doesn't hold on to the pawn} 5... Nc6 6. c3 Nxe5! )
+5... Nh6 {Why does Black develop a knight to the edge of the board? Well, the knight is heading to f5 from where it will exert pressure on the bishop on e3. White now has only a limited choice of good moves.}
+    ( 6. f4? {White is simply not careful enough and 6...Nd7! hits the c5-pawn} 6... Nd7!
+        ( 7. b4 a5! 8. c3 axb4 9. cxb4 b6! 10. Bb5 ( 10. Nf3 bxc5 11. bxc5 Bxc5 12. Bd3 Qa5+ 13. Nbd2 Ba6! 14. Qe2 Qc3! 15. Bb5+ Nd7 16. O-O Bxf2+!? 17. Qxf2 Bxb5 18. Rfc1 Qa5 19. Qg3 Qb6+ 20. Kh1 Bd3! 21. Qg7 Ke7 22. Rc3 {and Black has no problems.} ) ( 10. Bb5+ Bd7 11. Bxd7+ Nxd7! 12. Nf3 bxc5 13. bxc5 Qc7 14. O-O Bg7! 15. Nbd2 Nxe5 {Black has a great position.} ) 10... bxc5 11. Bc6 Rb8 12. bxc5 Nxc5 13. Bxc5 Qa5+! {Black recovers the piece with an excellent position to boot.} )
+        ( 7. Bb5 Qa5+ 8. Nc3 a6! 9. Bxd7+ Bxd7 10. Nge2 ( 10. a3 Qc7 11. b4 b6! ) 10... Nf5 11. Bf2 Bxc5 {and Black already had the upper hand in M.Nimtz-I.Khenkin, Bad Wiessee 2000.} )
+    )
+    ( 6. Bd3 Nc6 7. c4? ( 7. Bxh6 gxh6 {had to be played} ) 7... dxc4 8. Be4 Qxd1+ 9. Kxd1 Nxe5 10. Na3 f5 11. Bd4 fxe4 12. Bxe5 Ng4 13. Nxc4 Nxf2+ 14. Ke2 Nxh1 15. b4 b6 {and now in E.Kvisvik-J.Houska, Fagernes 2014, 15...b6 would have the won game in an easy manner.} )
+6. Bxh6 {Our first critical try.}
+    ( 6. c3 )
+    ( 6. Nf3 )
+6... gxh6 {Technically speaking this is the principled line, but it is hardly ever played. In compensation for the doubled h-pawns Black has the two bishops and will almost certainly recover the lost pawn. In the battle for activity the doubled h-pawns are not a weakness; in fact they help Black as he now has the half-open g-file to use.}
+7. Nd2 {Alternatively:}
+    ( 7. b4?! a5!? {Black should commence active operations to open lines and diagonals without delay} 8. c3 axb4 9. cxb4 b6! {Black begins to break up the white pawns and his two bishops can be happy:}
+        ( 10. Nf3 bxc5 11. bxc5 Bxc5 {Black intends to apply heavy pressure on the white king as quickly as possible} 12. Bd3 Qa5+ 13. Nbd2 Ba6! {now in order to castle White will have to allow some exchanges to take place, which is something that will benefit Black as the a-pawn is more of a liability than a strength} 14. Qe2 Qc3! 15. Bb5+ Nd7 16. O-O Bxf2+!? 17. Qxf2 Bxb5 18. Rfc1 Qa5 19. Qg3 Qb6+ 20. Kh1 Bd3! 21. Qg7 Ke7 22. Rc3 {and Black has no problems.} )
+        ( 10. Bb5+ Bd7 11. Bxd7+ Nxd7! {hitting the two pawns, c5 and e5} 12. Nf3 bxc5 13. bxc5 Qc7 14. O-O Bg7! {a good location for the bishop, eyeing the e5-pawn and at the same time giving some shelter to the black king for when it goes short} 15. Nbd2 Nxe5 {when Black has a great position and it is apparent that the doubled pawns hardly matter at all.} )
+    )
+    ( 7. Nf3 Nc6 {is a safe line and now if White tries to place Black under pressure with} 8. c4 ( 8. c3 Bxc5! 9. cxd5 exd5 10. Nc2 ( 10. Nc3 d4 11. Ne4 Bb4+ 12. Nfd2 O-O 13. f4 Bf5 14. Nf6+ Kh8 15. a3 Be7 16. Nde4 Bxf6 17. Nxf6 d3 {preventing White's bishop from developing} ) 10... Qa5+ 11. Nbd2?! Nb4 12. Qb3 Bf5! {Black develops his bishop to the most active square and suddenly White must figure out an adequate way of dealing with the threat of 13...Nc2+.} 13. Rc1 Qb6! {now the f2-pawn is a target} 14. Be2 Bxf2+ 15. Kf1 Rd8 {Black has the better chances.} ) )
+7... Nc6!?
+*

@@ -1,0 +1,33 @@
+[Event "Caro-Kann Chapter 9: Variation B (6. c3)"]
+[Site "Chess Trainer"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Book"]
+[Black "Hero"]
+[Result "*"]
+
+1. e4 c6 2. d4 d5 3. e5 c5 4. dxc5 e6 5. Be3 Nh6 6. c3 {Variation B}
+6... Nf5 7. Bd4 Nd7
+    ( 7... Nc6 {The Formula: ...Nfxd4 then ...b6} 8. Nf3
+        ( 8. Qd2 Nd7 9. Bb5 a6 10. Ba4 Qc7 )
+        ( 8. g4?! Nxd4! 9. cxd4 b6! 10. cxb6 Qxb6 11. Qd2 Nc6 12. Nf3 h5 13. gxh5 Rb8 14. Nc3 ( 14. b3 Bb4 15. Nc3 Rc8 ) 14... Qxb2 15. Rb1 Qxd2+ 16. Kxd2 Rxb1 17. Nxb1 Rxh5 )
+        ( 8. Bd3 Nxd4 9. cxd4 b6! 10. cxb6 Qxb6 11. Ne2 ( 11. Nf3 Nc6 ) 11... Nc6 12. Nbc3 Nxd4 13. O-O Nc6 14. Bb5 Nxe5 15. Nxd5 Qxb7 16. Bxd7+ Nxd7 17. Ndc3 Be7 18. Qd2 )
+    )
+    ( 7... Nxd4?! 8. cxd4 b6 9. Bb5+! Bd7 10. Bxd7+ Qxd7 11. cxb6 axb6 12. Ne2 Bb4+ 13. Nbc3 Qc6 14. O-O O-O 15. Qd3 )
+8. Nf3 Nc6
+    ( 8... Nxd4 9. cxd4 b6! 10. cxb6 Qxb6 11. Ne2 Nc6 12. Nbc3 Nxd4 13. O-O Nc6 14. Bb5 Nxe5 15. Nxd5 Qxb7 16. Bxd7+ Nxd7 17. Ndc3 Be7 18. Qd2 )
+9. Be2 {B1}
+    ( 9. Qd2 {B2} f6!
+        ( 9... Nfxd4 10. cxd4 a5 ( 10... b6 11. b4! ) 11. Nc3 b6 12. cxb6 Qxb6 13. Be2 Rb8 14. Rb1 )
+        10. exf6?! ( 10. b4 {B22} Nfxd4! 11. cxd4 fxe5 12. dxe5 Qc7 13. Qb2 ( 13. Nc3 Nxe5 14. Nd4 Be7 15. Ncb5 Qb8 16. f4 a6! 17. Nd6+ Bxd6 18. cxd6 Nc6 ) ( 13. Qc3 a5 14. b5 d4 15. b6 Qxb6 16. cxb6 dxc3 17. Nxc3 Bb4 18. Rc1 Rc8 ) 13... a6! 14. Be2 g6! 15. Nbd2 Bg7 16. Qb3 O-O 17. O-O Nxe5 18. Rac1 Nc6 19. a4?! Rf4 20. b5 axb5 21. axb5 Nd4 22. Nxd4 Rxd4 23. Qg5 Qxc5 24. Nf3 b6 25. Qe5 Rxb5 {Black is winning.} ) ( 10. Bd3 Nfxd4 11. cxd4 fxe5 12. Nxe5 Nxe5 13. dxe5 Bxc5 14. O-O Qh4 15. Qe2 O-O ) 10... gxf6 11. Be3 Qe7
+        ( 11... e5 12. b4 a5 13. a3 Nxe3 14. fxe3 ( 14. Qxe3 axb4 ) 14... Nh6 15. Bb5 O-O 16. O-O axb4 17. cxd4 d4! 18. Nxd4 Nxd4 19. Bxd7 Nb3 20. Qc3 Nxa1 21. Bb5 Qc7!? 22. Qxa1 Qxe3+ 23. Kh1 Qe5 24. Qa2 )
+    )
+    ( 9. Bd3 Nfxd4 10. cxd4 b6
+        ( 11. cxb6 Qxb6 12. Nc3 Nxd4 13. O-O Be7 14. Rc1 Nxf3+ 15. Qxf3 Bd8 16. Qg3 O-O )
+        ( 11. a3 bxc5 12. dxc5 Bxc5 13. O-O Nd4 )
+        ( 11. O-O bxc5 12. dxc5 Bxc5 13. Nc3! Nd4 14. Rc1 Nxf3+ 15. Qxf3 Qe7 16. Qg4 O-O 17. a3 f5 18. exf6 Rxf6 19. b4? Bb6 20. Qh5 Rh6 21. Qe5 Qf7 22. Rc2 Rf8 23. Nd1 a4 24. Rd2 Bc7 )
+    )
+    ( 9. Na3?! b6! 10. cxb6 Nfxd4 11. Nxd4 Nxe5 12. bxa7 Rxa7 )
+    ( 9. Nbd2 b6! 10. cxb6 Nfxd4 11. Nxd4 Nxd4 12. b7 Rb8 13. cxd4 Qxb6 14. Be2 Qxd4 )
+9... Nfxd4 10. cxd4 b6 11. cxb6 Qxb6 12. b3 Bb4+ 13. Kf1 O-O 14. g3 f6! 15. exf6 Rxf6 16. Kg2 Raf8 17. Rf1 Bd3 ( 17... Rxf3! 18. Bxf3 Nxd4 19. Bg4 b5 20. Nd2 Be1? 21. Rxf2 Qc2+ 22. Kg2 Qxe1+ )
+*

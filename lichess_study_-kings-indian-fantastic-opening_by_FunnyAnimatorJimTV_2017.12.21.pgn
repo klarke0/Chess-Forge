@@ -1,0 +1,658 @@
+[Event "👑 King's Indian: Fantastic Opening: Introduction"]
+[Date "2017.12.21"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E61"]
+[Opening "King's Indian Defense"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Introduction"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/zsA9ctKP"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.21"]
+[UTCTime "16:01:21"]
+
+{ Thank you all for 270 loves on the study! I'm glad you're all enjoying it. :) Can we get it to 300?! :O }
+1. d4 { Welcome to my study on the King's Indian Defense, a very popular opening against 1. d4, played by all levels; from beginners to world champions. Some advocates include Fischer, Kasparov, Grischuk, and many others. In this chapter, we'll see the moves that characterize this interesting, positional, tactical, solid, aggressive, EXCITING opening. In the next few chapters, we'll look at the KEY IDEAS and variants, and in the last few chapters I have included some very instructional master games we can learn from. :)
+If you found this study useful, please click the heart button to share the love, and Happy Checkmating! } (1. c4 { King's Indian can also be played if white plays 1. c4, 1. Nf3, and 1. f4.
+Against 1. e4, you will have to play either Alekhine Defense or Pirc Defense. }) 1... Nf6 { This is the most popular move against 1. d4. Black is only developing the knight, not yet telling the pawn structure he wants to build.
+From here white has a few good moves. c4 is the main line, but white can also play Catalan or London System, in which I'm recommend you use the East Indian Defense, which I have made another study on: https://lichess.org/study/ru9fwaJk } { [%csl Bf6][%cal Rc2c4,Gg1f3,Gc1f4,Gg2g3] } 2. c4 { At this point, black has 3 main moves, and all of them are for different style players.
+2...e6 is East Indian, which is a good middleground between positional and aggressive play for black. I have made a study on it which can be found here: https://lichess.org/study/ru9fwaJk
+2...c5 is Benoni, which is riskier and gives black a lot of tactical opportunities. I have made a study on it which can be found here: https://lichess.org/study/mFrB855l
+2...g6 is West Indian, which will be the focus of this study } { [%cal Bg7g6,Be7e6,Bc7c5] } 2... g6 3. Nc3 { This is a big moment. If black wants to be very aggressive, active and counterattack, 3...d5, Grunfeld Defense, is the right choice, but it will not be the focus of this study. We are concentrating on 3...Bg7, the King's Indian Defense, which is more positional for black. } { [%csl Rd5][%cal Bf8g7,Rd7d5] } 3... Bg7 { The idea in the King's Indian is that black will allow white to get a strong center for now, and black will attack it LATER. :) Before attacking, black will build up a strong defense and prepare a strike at the center, and afterwards black will create an attack from the build up.
+Generally, the King's Indian can be as positional or tactical, solid or aggressive as you want it to be. It's a mix of all kinds of strategies, and it's very exciting.
+The next few chapters will go over the variants. } { [%csl Re4,Rd4,Rc4][%cal Be8g8,Re2e4] } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Mainline: Classical Variation"]
+[Date "2017.12.21"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E97"]
+[Opening "King's Indian Defense: Orthodox Variation, Aronin-Taimanov Defense"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Mainline: Classical Variation"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/2JCBuS8r"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.21"]
+[UTCTime "16:29:30"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 { The main move against King's Indian. White is straight-up occupying the center and threatening to advance.
+The debate on whether a pawn center is a weakness or a target is very interesting, and both sides are playable. } { [%csl Be4,Bd4,Bc4][%cal Be4e5] } 4... d6 { [%csl Ge5][%cal Gd6e5] } 5. Nf3 O-O 6. Be2 { [%cal Ge1g1] } 6... e5 { Black's done with the buildup, now it's time to strike. The drawback of putting a pawn on e5 is that it limits the activity of black's dark squared bishop severely. However, in compensation for this, black gets a great kingside attack and targets to attack.
+White's main move is 0-0, ignoring the e5 pawn. White can also capture or advance. In both cases I have made sidelines. -->> } { [%csl Ge5,Rg7][%cal Ge7e5,Be1g1,Yd4e5,Yd4d5] } 7. O-O (7. d5 a5! { Very interesting move. Along with black's kingside plans, black can also play a5 and Nb8-a6-c5 on the queenside, putting more piece pressure on the center. The reason why we play a5 is to guard the b4 square so a white pawn can't immediately challenge our knight once we move it from a6 to c5. } { [%csl Rc5][%cal Rb8a6,Ra6c5] } 8. Bg5 h6 9. Bh4 Na6 10. Nd2 Nc5 11. O-O c6 { [%cal Rc6d5] }) (7. dxe5 dxe5 8. Nxe5 Qxd1+ 9. Bxd1 Nxe4 10. Nxe4 Bxe5 11. O-O Nc6 12. Nc3 Be6 13. Nd5 Bxd5 14. cxd5 Nb4 15. Bb3 Nd3 16. Bc4 Nxc1 17. Raxc1 Bf4) 7... Nc6 { Black threatens to win material... } 8. d5 { So white closes the position. } 8... Ne7 { Now proceed to Chapter 3 "The Kingside Attack" for a description of the middlegame in the Classical King's Indian Defense. } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: The Kingside Attack"]
+[Date "2017.12.21"]
+[White "Kortschnoj"]
+[Black "Kasparov"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E98"]
+[Opening "King's Indian Defense: Orthodox Variation, Classical System, Neo-Classical Line"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "The Kingside Attack"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/UWiejgtR"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[FEN "r1bq1rk1/ppp1npbp/3p1np1/3Pp3/2P1P3/2N2N2/PP2BPPP/R1BQ1RK1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2017.12.21"]
+[UTCTime "17:59:53"]
+
+{ This is the starting position of the very common King's Indian Defense middlegame. It's very critical to know the ideas and plans of both sides. In closed positions like this one, we can tell which side of the board we should play on by following the direction of the pawn chain.
+
+White's pawns point towards the queenside, so white should try to open the game and win material on that side of the board, working toward a c4-c5 pawn break.
+Black's plan is to create a long-term kingside attack starting with either Nd7 or Ne8 and then f7-f5, aiming to checkmate the white king in the future by pushing Freddie, Georgie and Harry up the board. :)
+
+Both sides are going to be racing to attack on opposite sides. Who will be first? :) } { [%csl Bc7,Bd6,Be5,Re4,Rd5,Rc5,Bg1,Yf7][%cal Bc7h2,Re4b7,Rc4c5,Bf7f5,Yf6e8,Yf6d7,Rb2b4,Rf3e1,Re1d3,Rc1e3,Bg6g5,Bf5f4,Ra1c1,Bh7h5,Bg5g4] }
+1. Ne1 Nd7 { An important move, allowing the f-pawn to advance. } { [%csl Gd7,Bf7][%cal Gf6d7,Bf7f4] } 2. Be3 { [%csl Ge3] } 2... f5 { [%csl Re3][%cal Rf5f4] } 3. f3 f4 4. Bf2 g5 { You can see black's kingside attack is coming very fast, and white's hasn't even started. } { [%csl Bg5,Bf4][%cal Bg7g5,Bf7f4] } 5. a4 { We're following the game Kortschnoj - Kasparov in 1991.
+The next stage in black's attack is getting g5-g4 in. This can be done by preparing with the moves Ng6, Nf6 and h5. } { [%csl Rg4][%cal Rg5g4,Rd7f6,Rh7h5,Yc8g4,Re7g6] } 5... Ng6 6. Nd3 Nf6 { [%csl Gg6,Gf6][%cal Gg6h4,Gf6g4,Gg6f4] } 7. c5 h5 8. h3 Rf7 { A very important move for black, being a rook lift in a way, and also defending the queenside. } { [%csl Gc7][%cal Gf7c7,Rf7g7,Rf7h7] } 9. c6 a5 10. cxb7 Bxb7 11. b4 Bc8 12. bxa5 Bh6 13. Nb4 g4 14. Nc6 Qf8 15. fxg4 (15. a6 g3 16. Be1 Bxh3 17. gxh3 Rg7 18. Ra2 Nh4 19. Bc4 Qc8 20. Rg2 Qxh3 21. Qd2 Nxg2 22. Qxg2 Qc8 23. Bd2 h4 24. Rb1 h3 25. Qf1 g2 26. Qf2 h2+ 27. Kxh2 Qe8 28. Qh4 Bg5 29. Qh3 Rh7 30. a7 Rxh3+ 31. Kxh3 g1=Q 32. Rxg1 Qh5+ 33. Kg2 Kf7) 15... hxg4 16. hxg4 Bg5 17. Bf3 Qh6 { More black pieces are joining the attack. } 18. Re1 Nh4 19. Bxh4 Bxh4 20. g5 Qxg5 21. Re2 (21. Kf1 Bg4) 21... Ng4 22. Rb1 Bg3 { [%cal Gf8g7,Gg7h6,Gh6g5,Gg5h4,Gh4g3] } 23. Qd3 Qh4 { White resigns. } { [%csl Bh7,Rf2,Re1][%cal Bf7h7,Bh4h2,Rg3e1] } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Queenside Knight"]
+[Date "2017.12.22"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E94"]
+[Opening "King's Indian Defense: Orthodox Variation, Ukrainian Defense"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Queenside Knight"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/OxzoSot9"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[FEN "rnbq1rk1/ppp1ppbp/3p1np1/8/2PPP3/2N2N2/PP3PPP/R1BQKB1R w KQ - 0 1"]
+[SetUp "1"]
+[UTCDate "2017.12.22"]
+[UTCTime "02:40:01"]
+
+{ It is very common in King's Indian for black to combine his operations on the kingside with the interesting moves a5 and Na6 on the queenside. The reason why we play a5 is to guard the b4 square so a white pawn can't immediately challenge our knight once we move it from a6 to c5.
+
+The move a5 can also be solely used to interrupt white's plan of expanding on the queenside with b2-b4. You can see an example in Chapter 19 where Kasparov played this idea. } { [%csl Bb4,Rc5][%cal Rb8a6,Ra6c5,Bb2b4,Ya5b4,Ra7a5] }
+1. Be2 { Of course the immediate e5 is by far the most common and principled move. But recently, some grandmasters are liking the move Na6 at this point. I'm not recommending that move as it requires additional theory. } { [%csl Be5][%cal Be7e5,Gb8a6] } 1... e5 { The a5 and Na6 setup can be used very well against white's early d4-d5. } { [%csl Rd5][%cal Ge1g1,Rd4d5] } (1... Na6 { Here black can play Na6 first and a5 later. } { [%csl Gc5,Bb4][%cal Ga6c5,Ge7e5,Ra7a5,Bb2b4,Ra5b4] } 2. O-O e5) 2. O-O { The main move is Nc6, but incorporating a5 is commonly played as well. } { [%csl Bc6][%cal Bb8c6,Ra7a5] } (2. d5 a5! { [%csl Gc5,Yf5][%cal Gb8a6,Ga6c5,Bf6e8,Bh7h6,Yf7f5] }) 2... a5! { [%csl Gc5][%cal Gb8a6,Ga6c5] } 3. d5 Na6 *
+
+
+[Event "👑 King's Indian: Fantastic Opening: The Bishop Sacrifice!"]
+[Date "2017.12.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "The Bishop Sacrifice!"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/ot7VLNNE"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[FEN "r1bq2k1/ppp2rbn/3p2n1/P1PPp2p/1P2Ppp1/2N2P2/4B1PP/2RQNRBK b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2017.12.23"]
+[UTCTime "07:27:15"]
+
+{ Here we have a typical position in the Classical King's Indian. Black is coming close to the end of the attack and will break through soon.
+
+This chapter shows why it's SO IMPORTANT for black to hang on to this light squared bishop for the attack. If black doesn't retain this bishop, black's attack often won't work. } { [%csl Gc8] }
+1... g3 { Sometimes black needs to sacrifice one or two pawns in order to be successful. } { [%csl Rg3][%cal Rg4g3] } 2. h3 { White can play this seemingly-great move, h3. It appears that white has completely blocked the kingside and black won't be able to create any pawn breaks. But wait a second! } { [%csl Rg3,Rh3,Rg2,Rf3,Rf4,Gh1,Bc8] } 2... Bxh3 { Black has to meet white's move h3 with the next move ...Bxh3. This is a key sacrifice in the King's Indian you must be familiar with. If you lose this bishop, h3 will defend white's kingside. Don't be afraid to sacrifice the bishop! You will get a tremendous attack on white's king! } { [%csl Bh3,Rh1][%cal Bc8h3] } 3. gxh3 Qh4 { [%cal Rh4h3] } 4. Kg2 { [%csl Gh3][%cal Gg2h3] } 4... Ng5 { White can't defend the h3 pawn and white will lose the game, simply because black make the bishop sacrifice. } { [%csl Bh3,Rg2][%cal Bg5h3,Bh4h3] } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Santagati - Williams (Classical)"]
+[Date "2017.12.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E98"]
+[Opening "King's Indian Defense: Orthodox Variation, Classical System"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Santagati - Williams (Classical)"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/QNzIUNRW"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.23"]
+[UTCTime "07:03:37"]
+
+{ This is a great example game of how black should play the Classical King's Indian Defense.
+
+I also recommend you watch GM Simon Williams' (the player who was black pieces in this game) video of himself annotating this game and what he was thinking and explaining the key ideas in the King's Indian Classical. The video can be found here: https://youtube.com/watch?v=BeMNHbMjntg The real game explanation starts 8 minutes into the video. }
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. Ne1 Ne8 { Black tries this interesting move Ne8 instead of Nd7, the more popular move. } { [%csl Ge8][%cal Gf6e8] } 10. Be3 f5 11. f3 f4 12. Bf2 g5 13. c5 { [%csl Rc5][%cal Rc4c5] } 13... Ng6 { Logically, black wants to rearrange the position of the pieces towards the kingside. } { [%csl Gg6][%cal Ge7g6] } 14. Rc1 Rf7 { Very important move which I'm recommending you play every time in King's Indian!! This move combines offense AND defense.
+The rook will have an easier time moving to either the h or g files, and this move defends white's main entry point on black's queenside, the c7 point. This move also frees the f8 square for the bishop so it can defend black's d6 pawn. } { [%csl Bf7,Gc7,Yf8][%cal Rf7g7,Rf7h7,Gf7c7,Gf8d6,Yg7f8] } 15. a4 h5 { Preparing for black's next pawn break, g5-g4. } { [%csl Bg4][%cal Bg5g4,Be8f6] } 16. a5 { White is threatening a bunch of stuff on the queenside. Most of the time, black's kingside attack will outpace white's queenside attack, but still black takes the time to block the punch. Very good chess; continuing with your own plans, and stopping your opponent's along the way! } { [%csl Gb5][%cal Gc5d6,Gc3b5] } 16... Bf8 17. Nd3 Nf6 { [%csl Rg4][%cal Rg5g4] } 18. cxd6 cxd6 19. b4 Bd7 { Stopping more of white's potential play. } { [%csl Gb5][%cal Gc3b5,Rd7b5] } 20. h3 { Now black can finally afford to go g4! } { [%csl Rg4][%cal Rg5g4] } 20... g4 21. fxg4 hxg4 22. hxg4 Nh7 { Another important maneuver; the knight will be very well placed on f5. } { [%csl Gg5][%cal Gf6h7,Gh7g5,Rg5f3,Rg5e4] } 23. Be1 { [%csl Gf2][%cal Gd3f2] } 23... Ng5 24. Nf2 Rh7 { [%csl Bg1][%cal Bh8h1] } 25. Qd3 f3 { Black has to flood white's position with his pieces. So black needs to give up another pawn. Don't be afraid to do this when you're going to checkmate the enemy king! } { [%csl Rf3][%cal Rf4f3] } 26. Bxf3 Nf4 27. Qd1 Qf6 { [%csl Gh6][%cal Gd8f6,Gf6h6,Bh8h1] } 28. Bd2 { Can black break through just yet? No. So we BRING IN THE INACTIVE PIECES. } 28... Be7 { [%csl Be7][%cal Bf8e7,Ga8f8] } 29. Nd3 { White is offering the trade of two piece pairs. This will be good for black, so we keep it simple. } 29... Nxd3 30. Bxg5 Qxg5 31. Qxd3 Qh4 { The point of this move is not to threaten check, but to keep the white king trapped. } { [%csl Rg1][%cal Bh4h2,Bh4f2] } 32. Nd1 Bg5 { Bring in the inactive pieces! } { [%csl Gg5][%cal Ge7g5] } 33. Rc2 Bf4 { The dark squares are very weak. } { [%csl Rg3,Rh2,Re3][%cal Rf4h2,Rf4e3] } 34. g3 Qxg3+ 35. Rg2 Qh4 36. Rc2 Ba4 37. Re2 Bh2+ 38. Kh1 Rf8 { Can black break through? No. So we bring in the inactive pieces! } { [%csl Gf8][%cal Ga8f8] } 39. Nc3 Bd7 40. Rff2 Bg3+ 41. Kg1 Bxg4 { White resigns. That was an excellent game that showed us the key ideas in the Classical King's Indian, and how to } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: The Bayonet Attack"]
+[Date "2018.01.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E97"]
+[Opening "King's Indian Defense: Orthodox Variation, Bayonet Attack, Sokolov's Line"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "The Bayonet Attack"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/wO7ScHC6"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2018.01.30"]
+[UTCTime "21:32:47"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 { The typical move is Ne1, but white also has the Bayonet Attack plan with b4. } { [%cal Bf3e1,Rb2b4] } 9. b4 { This is known as the Bayonet Attack and is a very aggressive play by white. } { [%csl Rb4,Rc4][%cal Rc4c5] } 9... Nh5 { The best response to the Bayonet. } { [%csl Gf4][%cal Gf6h5,Gh5f4] } 10. Re1 Nf4 11. Bf1 h6 { Here black plays to reinforce that knight on f4 quietly. } { [%csl Bg5,Gf4,Bh6][%cal Bh7h6,Bg6g5,Ge7g6] } 12. Qc2 g5 13. c5 { [%csl Rd6,Rc7][%cal Rc5d6] } 13... f5 14. cxd6 cxd6 { [%csl Rd6] } 15. Qb3 { [%csl Gd5][%cal Gb3d5,Gc3d5,Ge4d5] } 15... Neg6 16. Nd2 { [%csl Ge4,Gd5,Rd6][%cal Gd2e4,Gc3d5,Gc3e4,Gb3d5,Ge1e4,Rd2c4] } 16... Rf7 { [%csl Gf8,Bd6,Bc7][%cal Gf7c7,Rf7g7,Rf7h7,Gg7f8] } 17. Nc4 g4 18. Be3 Bf8 19. Red1 Rg7 20. g3 Qg5 21. exf5 Bxf5 22. Nd2 Qh5 23. Nde4 Be7 24. Rac1 Nh3+ 25. Kh1 Rf8 26. Rd2 a6 27. Bg2 Ng5 28. Nxg5 hxg5 29. Kg1 Rh7 30. Ne2 Qxh2+ 31. Kf1 Nf4 32. gxf4 gxf4 33. Ng1 f3 34. Nxf3 gxf3 35. Bxf3 e4 36. Bg2 Rg7 37. f4 exf3 38. Bxf3 Qh1+ 39. Bxh1 Bd3+ 40. Ke1 Rf1# *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Saemisch Variation"]
+[Date "2017.12.21"]
+[White "Zainea"]
+[Black "Istratescu"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E81"]
+[Opening "King's Indian Defense: Sämisch Variation, Normal Defense"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Saemisch Variation"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/qdTkLZeg"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.21"]
+[UTCTime "19:20:19"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. f3 { This is the Saemisch Variation, a very aggressive setup for white against King's Indian. White wants to play Be3, Qd2, 0-0-0, and try to launch an attack on black's kingside. So, black needs to play this type of opening a bit differently.
+I'd suggest having another opening in your back pocket, in case you're playing an opponent who you know plays Saemisch Variation against King's Indian. Maybe you can play Grunfeld or Nimzo-Indian against such opponent, that way you're not as predictable. :) } { [%csl Bg7][%cal Bc1e3,Bd1d2,Ye1c1,Rh2h5,Rg2g5] } 5... O-O 6. Be3 { Are you ready for this amazing, secret move?? :) } 6... a6!! { Brilliant!!!! This move completely stifles white's plans.
+Essentially what this a6 move does is it turns this "Saemisch King's Indian" into a "Benko Gambit with an Awkward Setup for White". That's right, we're leaving King's Indian territory! It's quite important to know the types of plans in many different openings. } { [%csl Ga6] } 7. Qd2 Nbd7 { If you're not familiar with the Benko Gambit, basically black gambits a pawn on the queenside in compensation for a compact pawn structure and clear planning of pressurizing white's queenside by using the a and b files in cooperation with the bishop on g7 and the knights. It's one of very few fundamentally correct gambits.
+Because of this queenside pressure, it would be a bit foolish for white to castle queenside! White can't storm the kingside attack he wishes to because black will be able to put too much pressure on the queenside. I put an example sideline game where white castled queenside and lost. } { [%csl Gg7,Gf6,Gd7,Ba6,Bb5,Gb8,Ga8,Ga5][%cal Gg1h3,Re1c1,Yg7b2,Gf8b8,Yb8b1,Ya8a1,Yf6e4,Yf6d7,Yd7c5,Yd7b6,Yb6c4,Bb7b5,Gd8a5] } 8. Nh3 (8. O-O-O b5 { Gambiting the pawn for the attack on white's king. } { [%csl Rb5][%cal Rb7b5] } 9. cxb5 Nb6 10. Bh6 axb5 11. Bxg7 Kxg7 12. Bxb5 Ba6 13. Qd3 Bxb5 14. Qxb5 Qb8 15. Nge2 c6 16. Qd3 (16. Qxc6 Rc8 17. Qb5 Qc7 18. Qb3 Rab8 19. Qc2 Nc4 20. b3 Ne3) 16... Qb7 17. Rd2 Rfb8 18. Rc2 Nbd7 19. g4 Qb4 20. h4 h5 21. g5 Ne8 22. f4 Nb6 23. b3 Nc7 24. f5 Qa3+ 25. Kd2 c5 26. d5 Qb4 27. fxg6 fxg6 28. Rf1 Rf8 29. Rxf8 Rxf8 30. Ke3 Nd7 31. Kd2 Ne5 32. Qg3 Nb5 33. Nf4 Rxf4 34. Qxf4 Qd4+ 35. Ke2 Qd3+ { Kaszowski, Dariusz - Urban, Klaudiusz, 0-1, Poznan masters, 2017, https://lichess.org/YrHl2TqJ }) 8... c5 { Here's the pawn structure in the Benko.
+Most likely white will play d5 and not dxc5. dxc5 would be illogical for white to open the center and give up on the idea of a wing attack. } { [%csl Bc5,Bd6,Be7,Bf7,Bg6,Bh7][%cal Bc7c5,Rd4d5,Gd4c5] } 9. d5 (9. dxc5 Nxc5 10. Nf4) 9... b5 10. cxb5 Qa5 { I have two example games; Nf2 and bxa6. Both are instructional. } { [%cal Gh3f2,Rb5a6] } 11. Nf2 (11. bxa6 Nb6 12. Nf2 Bxa6 13. Bxa6 Qxa6 14. b3 Rfb8 15. Bh6 Bh8 16. Rc1 Nfd7 17. h4 c4 18. h5 cxb3 19. hxg6 fxg6 20. axb3 Nc5 21. Rb1 Rb7 22. Nfd1 Nbd7 23. Qe2 Qxe2+ 24. Kxe2 Rxb3 25. Rxb3 Nxb3 26. Be3 Ra1 27. Kd3 Ndc5+ 28. Kc2 Nd4+ 29. Bxd4 Bxd4 30. Rh3 Be5 31. g4 Kg7 32. Nf2 Bxc3 33. Kxc3 Ra2 34. Rh2 Ra3+ 35. Kd4 Rxf3 36. Rg2 h6 37. Rh2 Nd7 38. Nd3 Rg3 39. Nf2 { Hochgraefe, Markus - Kempinski, Robert, 0-1, Hamburg-ch int, 1998, https://lichess.org/0MPZxLSY }) 11... Nb6 12. Be2 Nfd7 13. Nfd1 Ne5 14. b3 axb5 15. Bxb5 Ba6 16. Be2 Bxe2 { In the Benko, the light bishop doesn't take much part in the queenside pressurizing, so it's exchanged most of the time. } { [%csl Be2][%cal Ba6e2] } 17. Qxe2 Nec4 { [%csl Gc4,Rc3][%cal Ra5c3,Rg7c3] } 18. bxc4 Bxc3+ 19. Nxc3 Qxc3+ 20. Kf2 Nxc4 { Black got the pawn back and has the superior position. } { [%csl Gc4][%cal Gb6c4] } 21. Rhc1 Qxe3+ 22. Qxe3 Nxe3 23. Kxe3 Ra3+ 24. Kd2 Rfa8 { [%csl Ra2][%cal Ra8a2] } 25. Rc2 { In the endgame, it's very critical to involve your king. Black already has a clear path to the center. } { [%csl Ge5][%cal Gg8g7,Gg7f6,Gf6e5] } 25... Kg7 26. Ke2 Kf6 27. Kf2 Ke5 28. Rd2 g5 29. Kg3 h5 { In the endgame you also must try to extend your position, by moving a few pawns forward to control flight squares from your opponent. } { [%csl Bg5,Bh5][%cal Bg7g5,Bh7h5] } 30. Rb1 Rxa2 31. Rxa2 Rxa2 32. Rb7 Kf6 33. Rc7 Rc2 34. Rc6 h4+ 35. Kh3 Re2 36. Rc7 Rd2 37. g3 hxg3 38. hxg3 e6 39. Rd7 Ke5 40. Re7 c4 41. Kg4 c3 42. Rc7 c2 43. dxe6 fxe6 44. Kxg5 d5 45. exd5 exd5 46. f4+ Kd6 47. Rc8 d4 48. f5 d3 49. f6 Rf2 50. Rc3 Ke5 51. Rc5+ Kd4 52. Rc7 { White Resigns.
+Summary: Against Saemisch King's Indian, you play 6...a6 followed by Nbd7, c5 and b5, turning the King's Indian into a Benko. It's a very good system that simplifies the game for black! The ideas: Sacrifice a pawn with b5, open the a+b files, play Qa5 and pressurize the queenside. Don't be afraid to exchange the queens with Benko! It's sound enough for black to exchange queens. } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Averbakh Variation"]
+[Date "2017.12.25"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E73"]
+[Opening "King's Indian Defense: Averbakh Variation, Spanish Defense"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Averbakh Variation"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/H3Z2COmJ"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.25"]
+[UTCTime "00:15:43"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Be2 O-O 6. Bg5 { The Averbakh Variation, a bit similar to the Saemisch Variation } { [%csl Rg5][%cal Rc1g5] } 6... a6 { I'm recommending a similar setup for black to what I recommended in the Saemisch Varation. You can see that chapter for more details. With a6, black is preparing the move b5 and turning this King's Indian into a Benko Gambit. } 7. Qd2 c5 8. d5 b5 9. cxb5 Qa5 10. bxa6 Bxa6 11. Bxa6 Nxa6 12. Nge2 Rfb8 { Here I have two example games.
+The game with f3 shows great play by black in the center, and
+the game with Rb1 shows great play by black on the queenside. } { [%cal Rf2f3,Ra1b1] } 13. Rb1 (13. f3 Nc7 14. O-O Nb5 15. f4 Nd4 16. Nxd4 cxd4 17. Qxd4 Rxb2 18. e5 Nd7 19. Ne4 Rb4 20. Qd3 dxe5 21. f5 Rd4 22. Qe3 Qxd5 23. Nc3 Qc4 24. fxg6 hxg6 25. Rac1 Rd3 26. Qe1 Qd4+ 27. Kh1 Nf6 28. Rc2 Rd8 { [%csl Bd8,Bd4,Bd3][%cal Bd8d1] } 29. Bxf6 exf6 30. h3 f5 31. Ne2 Qd5 32. Qh4 Qd6 33. Ng1 e4 34. Ne2 Be5 35. Rcc1 Rd2 36. Nc3 Qd3 { Bakutin, Aleksey - Brikov, Illarion, 0-1, Donskoj STEK, 2017, https://lichess.org/LjZJDSFd }) 13... Nb4 14. O-O Nxa2 15. Ra1 Qb4 16. e5 (16. Nxa2 Qxd2 17. Bxd2 Rxb2 { [%csl Rd2,Ra2][%cal Rb2a2,Rb2d2,Ra8a2] } 18. Nac3 Rxa1 19. Rxa1 Rxd2 20. Ra8+ Bf8 21. Kf1 Rc2 22. Ke1 Nd7 23. Rd8 Ne5 24. Rb8 Nc4 25. Kd1 Rd2+ 26. Ke1 Rb2 27. Rxb2 Nxb2 { [%csl Gc5] }) 16... dxe5 17. d6 Nxc3 18. bxc3 Qb7 19. Rxa8 Rxa8 20. Bxf6 Bxf6 21. d7 Rd8 22. Rd1 e4 23. Ng3 Be5 24. Qg5 Qb3 25. Rf1 f6 26. Qe3 Qxc3 27. Qxe4 Qd4 28. Qc6 Qd6 29. Qb5 Bxg3 30. hxg3 Rxd7 31. Rc1 Rc7 32. Ra1 Rd7 33. Rc1 Rc7 34. Ra1 Rc8 35. Qc4+ Kg7 36. Ra7 Rd8 37. g4 Qe5 38. g3 Rd1+ 39. Kg2 Qe1 40. Kf3 Qh1+ 41. Ke3 Re1+ 42. Kd2 Re5 43. Kc2 Qe1 44. Qf4 c4 { Galinsky, Timofey - Pavlov, Sergey1, 0-1, Kiev Independence Cup-A 4th, 2004, https://lichess.org/Bdt0eP2w } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Smyslov Variation"]
+[Date "2017.12.21"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E61"]
+[Opening "King's Indian Defense"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Smyslov Variation"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/eP8FDHgy"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.21"]
+[UTCTime "19:20:25"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. Nf3 O-O 5. Bg5 { Smyslov System, where white plays Bg5 and e2-e3. This has become a very popular method in recent years. } { [%csl Ge3][%cal Ge2e3] } 5... d6 6. e3 h6 (6... a6 { This a6 move has the same strategy I recommend in other variations: Black is playing Nbd7, c5 and b5, gambiting a pawn on the queenside to get activity } 7. Be2 Nbd7 8. O-O c5 9. d5 b5 10. cxb5 Qa5 11. bxa6 Bxa6 12. Bxa6 Qxa6) 7. Bh4 c5 { The best move is d5, but Be2 is more popular. } { [%cal Rf1e2,Gd4d5] } 8. d5 (8. Be2?! Bf5 9. O-O Ne4 10. Nxe4 Bxe4 11. Nd2 Bf5 12. g4 Bd7 13. d5 Na6 14. Rb1 Rb8 15. f4 b5 16. f5 Nc7) 8... g5 (8... Bf5 9. Bd3 Bxd3 10. Qxd3 g5 11. Bg3 Nh5) 9. Bg3 Nh5 10. Bd3 Nxg3 11. hxg3 e6 12. Qc2 exd5 13. cxd5 Re8 { Here we have a Benoni-like position. When you play King's Indian, it's very important for you to know the styles of play that happens in the Benoni. First of all, black will play a6, trying to play b7-b5 and gain space on the queenside. However, white will almost always play a4 to stop that. This is a very tactical position, as typical in the Benoni. Black has a very powerful bishop on g7. Just develop pieces sensibly, and try to trade some pieces to relieve the cramp. } { [%csl Gf8,Rb5][%cal Gg8f8,Gd3h7,Ra7a6,Rb7b5,Ba2a4] } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Fianchetto Variation"]
+[Date "2017.12.24"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E62"]
+[Opening "King's Indian Defense: Fianchetto Variation, Simagin Variation"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Fianchetto Variation"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/TYlzV2nS"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.24"]
+[UTCTime "00:53:03"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 (3. Nf3 Bg7 4. g3 O-O 5. Bg2 d6 6. O-O Nc6) 3... Bg7 4. Nf3 (4. e4 d6 5. Nf3 O-O 6. g3 Nbd7 7. Bg2 e5 8. O-O c6 9. h3) 4... O-O 5. g3 d6 6. Bg2 Bg4 { A simple move, but very effective
+Any time you lay Bg4 in King's Indian, there is one and only one purpose: to eliminate the knight on f3 and pressurize the d4 pawn. } { [%csl Bg4][%cal Gb8c6,Gc6d4,Gg7d4,Bg4f3] } (6... a6 7. O-O Nbd7 8. e4 c5 9. d5 (9. h3 Rb8 { [%csl Gb8][%cal Rg2a8,Ga8b8] } 10. Be3 b5 11. cxb5 axb5) 9... b5 { In Benko Gambit style! } { [%csl Rb5] }) 7. O-O Nc6 8. h3 Bxf3 9. Bxf3 Nd7 { [%csl Rd4][%cal Rc6d4,Ge7e5,Rg7d4] } 10. e3 { [%csl Gd4][%cal Ge3d4] } (10. d5 Nce5 { [%csl Ge5] }) 10... e5 11. d5 (11. dxe5 Ndxe5 { [%cal Ge5c4,Ge5f3] }) 11... Ne7 { [%cal Gf7f5] } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Four Pawns Variation"]
+[Date "2017.12.21"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "A69"]
+[Opening "Benoni Defense: Four Pawns Attack, Main Line"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Four Pawns Variation"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/rDMpTyng"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.21"]
+[UTCTime "19:02:07"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. f4 { The intimidating Four Pawns Attack. White is trying to blow black off the board. Black does need to play a little carefully, but with precise play, black can become slightly better. } { [%csl Rf4,Re4,Rd4,Rc4][%cal Rf4f5,Re4e5,Rd4d5,Rc4c5] } 5... O-O 6. Nf3 { If you want to play aggressively, you can play Na6 followed by e5 pawn sacrifice. However, the more solid approach is c5. } { [%cal Gc7c5,Rb8a6,Re7e5] } (6. e5 dxe5 7. fxe5 Nfd7) 6... c5 { [%cal Rc5d4] } (6... Na6!? 7. Be2 e5 8. fxe5 dxe5 9. d5 Nc5 { [%csl Re4][%cal Rf6e4,Rc5e4] } 10. Bg5 h6 11. Bxf6 Qxf6 12. b4 Na6) 7. d5 e6 { In the style of the Modern Benoni. } { [%cal Re6d5] } (7... a6 8. a4 { The best move, stopping b5 gambit by black } { [%csl Rb5][%cal Ra4b5,Rc4b5] }) 8. Be2 exd5 9. cxd5 Re8 10. e5 dxe5 11. fxe5 Ng4 { [%csl Re5,Rd5][%cal Rg4e5,Rg7e5,Re8e5,Rd8d5] } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Sokolov Variation"]
+[Date "2017.12.29"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E73"]
+[Opening "King's Indian Defense: Semi-Averbakh System"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Sokolov Variation"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/WItrCsLg"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.29"]
+[UTCTime "16:27:18"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Be2 { This Be2 move could also signal the Averbakh Variation. } { [%csl Ge2][%cal Gf1e2] } 5... O-O 6. Be3 { This is the Semi-Averbakh } { [%csl Be3] } 6... a6 { We are going to play our same a6 move with queenside play against the white setups } { [%csl Ba6][%cal Ba7a6] } 7. g4 { The Sokolov Variation, quite aggressive for white. } { [%csl Rg4] } 7... Nbd7 { [%cal Bc7c5,Bb7b5] } 8. g5 Ne8 9. h4 c5 10. d5 b5 11. cxb5 axb5 12. Bxb5 Qa5 13. a4 Nc7 14. Rb1 Nxb5 15. axb5 Ne5 16. Kf1 Bg4 17. f3 Bh5 18. Kg2 f5 19. Rh3 fxe4 20. Nxe4 Qxb5 21. Qc2 Rab8 22. Nd2 Qa6 23. Kg3 Rb4 24. Rh2 Qc8 { Van den Berg, B. - Ten Hertog, H., 0-1, 21st HZ Open 2017, https://lichess.org/MCzskgC6 } 25. Rf1 Rg4+ 26. fxg4 Qxg4# { [%cal Gf8f2] } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Black Playing Early 4...0-0"]
+[Date "2017.12.21"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E70"]
+[Opening "King's Indian Defense: Normal Variation"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Black Playing Early 4...0-0"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/5vbseACe"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.21"]
+[UTCTime "22:07:52"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 { Of course, we know black's main move is d6, preventing e4-e5 by white. } { [%cal Gd7d6] } 4... O-O { Black also has this interesting move, 4...0-0, allowing white to play e5. If you feel like playing something interesting, then try this out. :) e5 is the only new line we need to check. } { [%csl Re5][%cal Re4e5] } 5. e5 Ne8 { Although the knight isn't the best on e8, black intends to attack white's center very well. } { [%csl Be8][%cal Rd7d6,Rc7c5] } 6. f4 d6 7. Be2 { Volkov - Wojtkiewicz, 2004 } 7... c5 8. dxc5 Nc6 9. cxd6 exd6 10. Nf3 Bg4 11. exd6 Nxd6 12. c5 Nf5 13. Qxd8 Raxd8 14. O-O Rfe8 15. Bb5 Bxf3 16. Rxf3 Bd4+ 17. Kh1 Bxc5 18. Rf1 Nfd4 19. Ba4 a6 20. f5 Nxf5 21. Bg5 Be7 22. Bf4 b5 23. Bb3 Ncd4 24. Bd1 Bd6 25. Bg5 Be7 26. Bf4 Bf6 27. Bg4 h5 28. Bh3 Be5 29. Bg5 f6 30. Bf4 Bxf4 31. Rxf4 Kg7 32. Rf2 Ne3 33. g3 f5 34. Re1 Ng4 35. Rff1 Nf2+ 36. Kg2 Nd3 37. Rxe8 Rxe8 38. Rd1 Re3 39. Nd5 Re2+ 40. Kf1 Rf2+ 41. Kg1 Nf3+ 42. Kh1 Rxh2# { Volkov, Sergey - Wojtkiewicz, Aleksander, 0-1, Internet op, 2004, https://lichess.org/SlXxMWeV } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Black's c5 Instead of e5"]
+[Date "2017.12.24"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Black's c5 Instead of e5"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/ePz9L7Dn"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[FEN "rnbq1rk1/ppp1ppbp/3p1np1/8/2PPP3/2N2N2/PP2BPPP/R1BQK2R b KQ - 0 1"]
+[SetUp "1"]
+[UTCDate "2017.12.24"]
+[UTCTime "00:19:02"]
+
+{ Black's main way of attacking white's center is with 6...e5. However, sometimes black can play 6...c5. It's a less common, interesting idea similar to the Benoni Defense structure. I'm not recommending black play this because black has nothing left to do but sit with a space disadvantage; no kingside attack. } { [%csl Bc5][%cal Re7e5,Bc7c5] }
+1... c5 2. d5 { Black can turn this position into a less-favorable version of Modern Benoni with e6, or he can just proceed with development... } { [%csl Re6][%cal Re7e6] } 2... e6 (2... Nbd7 3. O-O a6 4. h3 { This is a game I played as white pieces and I show a good example of how to play as white on the queenside. } { [%csl Gh3,Gg2,Gf3,Gf2,Gg1,Gf1,Ge2,Gd1,Ge4,Gd5,Gc4,Gc3,Gb2,Ga2,Ga1,Gc1] } 4... Rb8 5. Be3 Qb6 6. Qc2 Qb4 7. a3 Qa5 8. Rfb1 b5 9. b4 cxb4 10. axb4 Qc7 11. Ra2 { [%csl Gc2,Ra1][%cal Ga2c2,Rg7a1] } 11... bxc4 12. Nd2 Ne5 13. f4 Nd3 14. Bxd3 cxd3 15. Qxd3 Nd7 16. Rc2 Qd8 17. Nc4 Nf6 18. Na5 Qd7 19. Nc6 Ra8 20. Na4 Bb7 21. Nb6 { [%csl Gc6,Gb6][%cal Gc6d8,Gb6c8,Gc6b8,Gb6a8,Gb6d7,Gc6a7] } 21... Qc7 22. Nxa8 Bxa8 23. b5 Rc8 24. Nxe7+ { Black resigns. } { [%csl Rc7,Rc8,Ra8][%cal Re7g8,Re7c8,Rc2c8] }) 3. O-O exd5 4. exd5 { Positionally, black is worse. Tactically, black is better. } { [%csl Rd6] } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: White Playing exf5"]
+[Date "2017.12.21"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "White Playing exf5"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/AJDGKuyJ"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[FEN "r1bqnrk1/1pp3bp/3p2p1/p1nPpp2/2P1P3/1PN1B3/P1QNBPPP/2R2RK1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2017.12.21"]
+[UTCTime "16:45:17"]
+
+1. exf5 { If white ever captures your f5 pawn. } 1... gxf5! { You retake with the g-pawn, gxf5. This gives you the open g-file and pawn mobility/space on the kingside. } { [%csl Bh8,Rf5,Re5,Yg7][%cal Bg8h8,Gf8g8,Gg8g2,Rf5f4,Re5e4,Ye8f6] } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Bonafont - Gavriel (Bayonet Attack)"]
+[Date "2017.12.24"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E97"]
+[Opening "King's Indian Defense: Orthodox Variation, Bayonet Attack, Sokolov's Line"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Bonafont - Gavriel (Bayonet Attack)"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/T6nNCtTY"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.24"]
+[UTCTime "03:26:55"]
+
+{ A very good example of how to perform an exchange sacrifice and SLOWLY improve your position in the late middlegame. }
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. b4 { Bayonet Attack. } { [%csl Bb4][%cal Bb2b4] } 9... Nh5 10. Re1 Nf4 11. Bf1 h6 { [%csl Gf5,Gg5][%cal Gg6g5,Gf7f5,Be7g6] } 12. Bxf4 exf4 { [%cal Rh8a1] } 13. Rc1 g5 14. e5 Ng6 15. exd6 cxd6 16. Qd3 a5 { Trying to gain space and break up the queenside. } { [%cal Ra5b4] } (16... g4 17. Nd2 Ne5 18. Qe4 Qg5 { [%cal Rc8f5] }) 17. b5 a4 { [%csl Ga5][%cal Gd8a5] } 18. Qc2 g4 19. Nd2 g3 20. Nf3 Qb6 21. Nd1 { [%csl Rb6][%cal Rc4c5] } 21... Qc5 { [%csl Gc4] } 22. Bd3 Ne5 23. Nxe5 Bxe5 24. Kh1 { [%csl Rh5][%cal Rc2e2,Re2h5] } 24... Bg4 { [%csl Ge2][%cal Gg4e2] } 25. f3 Bc8 26. Qd2 gxh2 27. Qf2 Qxf2 28. Nxf2 { [%csl Ge5][%cal Ge5f4,Ge5a1,Ge5h8,Ge5d6] } 28... b6 { Because black made the moves a5 and b6, white can't break through on the queenside. It's very useful to play moves like black did! } { [%csl Rc4][%cal Rb7b6,Ra7a4] } 29. Kxh2 a3 30. Rb1 f5 { Black's king is marching to f6 and the rooks will go to the g-file. } { [%csl Gf6,Rf8,Ra8][%cal Gg8g7,Gg7f6,Ya8g8,Rg8g2] } 31. Rb3 Kg7 32. Nd1 Kf6 33. Nc3 Rf7 34. Nb1 { [%cal Rb1a3,Rb3a3] } 34... Rfa7 35. Rd1 Bb2 36. Nc3 Re7 { [%csl Ge3][%cal Ge7e3] } 37. Ne2 Re3 38. Kg1 Kg5 39. Kf2 Re8 40. Ng1 Bd4+ 41. Kf1 Be3 { The bishop on e3 is very dangerous for white. } { [%csl Ge3][%cal Ge3g1,Ge3c1] } 42. Ne2 Ra7 { Now black sets on with the g-file plan. } { [%csl Gg7,Gg8][%cal Ga7g7,Ge8g8] } 43. Bc2 Kf6 44. Bd3 Rg7 45. Bc2 Reg8 46. g3 Rxg3!! { Exchange sacrifice!! Let's find out the compensation. } { [%csl Rg3] } 47. Nxg3 Rxg3 { Okay- black has very good compensation. The reason being that white has no way to break through to black's position! Black has an extremely active rook restricting white's king, a passed h-pawn and a very aggressive king. Not to mention that black's bishops are very good; the light squared bishop will come to h5.
+Let's see how the game plays out. } { [%csl Gh6,Rf6,Be3,Bc8][%cal Gh6h1,Rf6g5,Bc8d7,Bd7e8,Be8h5,Rg5h4,Yh2a2] } 48. Ke2 Bc5 49. Rh1 Kg5 { [%csl Rg5] } 50. Kd1 h5 { [%cal Gh6h5,Gh5h4] } 51. Rd3 Be3 52. Bb3 Bc5 53. Kd2 h4 54. Bd1 Bd7 { [%cal Bc8d7,Bd7e8,Be8h5] } 55. Ke2 h3 56. Kf1 Be8 57. Be2 Bh5 { [%cal Rh5f3,Rg3f3] } 58. Rb3 Kh4 { [%csl Rh4,Rh5,Rg3,Rh3][%cal Rc5g1] } 59. Rd3 Rg2 60. Rd2 Kg3 { The pressure from the exchange sacrifice is enormous. } { [%csl Rg3,Rg2,Rh3] } 61. Ke1 h2 { White resigns. That was a very good example of how to SLOWLY improve your position with your rooks, bishops and even your king! } { [%csl Rg1,Rh2][%cal Rg2g1,Rc5g1] } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Ftacnik - Lubomir"]
+[Date "2017.12.21"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E97"]
+[Opening "King's Indian Defense: Orthodox Variation, Modern System"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Ftacnik - Lubomir"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/fu6jBoQM"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.21"]
+[UTCTime "21:59:03"]
+
+1. d4 Nf6 2. Nf3 g6 3. c4 Bg7 4. Nc3 O-O 5. e4 d6 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. Nd2 Ne8 10. b4 f5 11. c5 { [%cal Gd2c4] } 11... Nf6 12. f3 f4 13. Nc4 g5 14. a4 Ng6 15. Ba3 Rf7 16. b5 dxc5 17. Bxc5 h5 18. a5 g4 19. b6 g3 20. Kh1 (20. h3 Bxh3 21. gxh3 Qc8 22. Kg2 Nh4+ 23. Kg1 Qxh3 { [%csl Rh2,Rg2][%cal Rh3h2,Rh3g2] } 24. Rf2 g2 25. Rf1) 20... Nh7 21. d6 Qh4 22. Bg1 Bh3 23. bxc7 (23. gxh3 Qxh3 24. bxc7 (24. Rf2 gxf2 25. Bxf2) 24... g2#) 23... Bxg2+ 24. Kxg2 Qh3+ 25. Kxh3 Ng5+ 26. Kg2 Nh4+ { Ftacnik, Lubomir - Cvitan, Ognjen, 0-1, Bundesliga 9798, 1997, https://lichess.org/udFeqtNl } 27. Kh1 g2# *
+
+
+[Event "👑 King's Indian: Fantastic Opening: ??? - ??? (Classical)"]
+[Date "2017.12.24"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E98"]
+[Opening "King's Indian Defense: Orthodox Variation, Classical System"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "??? - ??? (Classical)"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/wmAYGAwg"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.24"]
+[UTCTime "04:06:28"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. Ne1 Nd7 10. Nd3 f5 11. f3 f4 12. Bd2 Nf6 13. b4 g5 { We will see that all of black's moves are incredibly natural - something that's great about the King's Indian! } 14. c5 h5 15. Nf2 Ng6 16. Rc1 Rf7 { The vital move, combining attack and defense. } { [%csl Gc7][%cal Gf7c7,Rf7g7,Rf7h7] } 17. cxd6 cxd6 18. a4 Bf8 19. a5 Rg7 20. h3 Nh8 { [%csl Gh6][%cal Gg6h8,Gh8f7,Gf7h6] } 21. Nb5 g4 22. fxg4 hxg4 23. hxg4 a6 24. Na3 Bd7 25. Nc4 Rc8 26. Nb6 Rxc1 27. Bxc1 Nf7 28. Ba3 Be8 { These 3 black pieces are ready to pounce!! } { [%csl Gd8,Ge8,Gf8][%cal Gf8h6,Ge8h5,Gd8h4] } 29. Qc2 Nh6 30. g5 Rxg5 31. Rc1 Rg3 32. Bb2 Nfg4 33. Nxg4 Nxg4 34. Bxg4 Rxg4 35. Qf2 Bg6 { [%cal Rg6e4] } 36. Rc4 Qe7 { [%csl Gh7,Gh4][%cal Ge7h7,Gg4h4] } 37. Bc3 Qh7 38. Qe2 Rh4 39. Kf2 { [%csl Rf2] } 39... f3 40. Qe3 Rf4 41. gxf3 Qh2+ 42. Ke1 Qh1+ 43. Ke2 Bh5 { [%csl Rf3][%cal Rh5f3,Rf4f3] } 44. Kd2 Rxf3 45. Qg5+ Bg7 46. Kc2 Rf2+ 47. Bd2 Qd1+ 48. Kc3 Qa1+ { White resigns. } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Ljubojevic - Kasparov"]
+[Date "2017.12.24"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E97"]
+[Opening "King's Indian Defense: Orthodox Variation, Modern System"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Ljubojevic - Kasparov"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/sIHGHi1A"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.24"]
+[UTCTime "03:54:59"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. Nd2 { [%csl Gc5][%cal Gb2b4,Gd2b3,Gc4c5] } 9... a5 { Interesting move, interrupting white's plan of queenside expansion. } { [%csl Rb4][%cal Ra5b4] } 10. Rb1 Nd7 11. a3 { [%csl Gb4][%cal Gb2b4] } 11... f5 12. b4 Kh8 { Very mysterious move by Kasparov. } { [%cal Gf8g8] } 13. f3 f4 14. Nb3 axb4 15. axb4 g5 { We know what's going on. :) } { [%csl Rg4][%cal Rh7h5,Rg5g4,Be7g6,Bd7f6] } 16. Bd2 Ng6 17. Ra1 Rxa1 18. Qxa1 Nf6 19. Qa7 g4 20. fxg4 Nxg4 21. h3 Nh6 22. Be1 Rg8 { [%cal Rg8g1] } 23. Nd2 Bf6 { Trying to get the usually inactive bishop outside the pawn chain. You will see this a lot in Kasparov (and many other masters)'s games; where they take several moves with the dark squared bishop to involve it in the attack. } { [%cal Gf6h4] } 24. Kh1 Bh4 25. Nf3 Bxe1 26. Nxe1 Nh4 27. Rf2 Qg5 28. Nf3 Nxf3 29. Bxf3 Bxh3 { Ljubojevic, Ljubomir - Kasparov, Garry, 0-1, Linares 11th, 2017, https://lichess.org/38Qig0tL } { [%csl Bg1,Rh1][%cal Bg8g1] } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Kelley - Raptis"]
+[Date "2017.12.21"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E98"]
+[Opening "King's Indian Defense: Orthodox Variation, Classical System, Kozul Gambit"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Kelley - Raptis"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/7xiCociX"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.21"]
+[UTCTime "17:31:14"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. Ne1 Nd7 10. Be3 f5 11. f3 f4 12. Bf2 g5 13. Rc1 Ng6 14. c5 Nxc5 15. b4 Na6 16. Nd3 h5 17. Nb5 Bd7 18. a4 Rf7 19. Nxa7 Bf8 20. Nb5 Rg7 21. Kh1 Nh4 22. Be1 g4 23. fxg4 hxg4 24. g3 fxg3 25. Bxg3 Nf3 26. Nf2 Nxb4 27. Nxg4 Bxg4 28. Bxf3 Bh3 29. Bg2 Bxg2+ 30. Kxg2 Na6 31. Kh1 Qg5 32. Qb3 b6 33. Rc6 Nc5 34. Qf3 Qd8 35. a5 bxa5 36. Rxc5 dxc5 37. Bxe5 Qe7 38. Bf6 Qd7 39. e5 { [%csl Rb5][%cal Rd7b5] } 39... Rg6 (39... Qxb5 40. Bxg7 Bxg7 41. Qf7+ Kh8 42. Rg1 { [%csl Rg7] }) 40. Nxc7 Qxc7 41. d6 Qa7 42. Qd5+ Kh7 43. d7 Bg7 44. Rf3 Rf8 45. Rh3+ Bh6 46. d8=Q Rxd8 47. Bxd8 Qg7 48. Qd3 Qb7+ 49. Rf3 Be3 { White resigns. } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Kortschnoj - Williams"]
+[Date "2017.12.21"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E90"]
+[Opening "King's Indian Defense: Normal Variation, Rare Defenses"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Kortschnoj - Williams"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/EBbvcXV5"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.21"]
+[UTCTime "23:01:29"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. h3 e5 7. d5 a5 8. Bg5 h6 9. Be3 Na6 10. Bd3 c6 11. Qd2 Kh7 12. O-O cxd5 13. cxd5 Nd7 14. Nh2 Ndc5 15. Bc2 f5 16. f4 exf4 17. Rxf4 fxe4 18. Raf1 Rxf4 19. Rxf4 Nb4 20. Bxe4 Nxe4 21. Nxe4 Bf5 22. Nc3 Qe7 23. Rf3 Re8 24. Ng4 h5 25. Nf2 Nc2 26. Bf4 Bd4 27. Kh2 Qe1 28. g4 Qf1 29. gxf5 Ne1 { Kortschnoj, Viktor - Williams, Simon Kim, 0-1, SUI-ch, 2009, https://lichess.org/aLGJ8t2F } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Anand - Nakamura"]
+[Date "2017.12.24"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E97"]
+[Opening "King's Indian Defense: Orthodox Variation, Bayonet Attack"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Anand - Nakamura"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/1AKo3uaG"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.24"]
+[UTCTime "04:32:53"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. b4 Ne8 10. c5 f5 11. Nd2 Nf6 12. a4 g5!? 13. Nc4 h6!? 14. f3 f4 15. Ba3 Ng6 16. b5 dxc5 17. Bxc5 Rf7 18. a5 h5 19. b6 { [%cal Rg5g4,Rf5f4,Rf6g4,Rg6h4,Rc8h3,Rd8h4] } 19... g4 20. Nb5 cxb6 21. axb6 g3 22. Kh1 { [%csl Gg1][%cal Gc5g1] } 22... Bf8 23. d6 a6 24. Nc7 Rb8 25. Na5 Kh8 26. Bc4 Rg7 27. Ne6 Bxe6 28. Bxe6 gxh2 29. Nc4 Qe8 30. Bd5 h4 31. Rf2 h3 32. gxh3 Rc8 33. Ra5 Nh4 34. Kxh2 Nd7 35. Bb4 Rg3 36. Qf1 Qh5 37. Ra3 a5 38. Be1 Rxc4 39. Bxc4 Bxd6 40. Rxa5 Bc5 41. Be2 Bxb6 42. Rb5 Bd4 43. Bd1 Bxf2 44. Bxf2 Nxf3+ 45. Bxf3 Qxf3 46. Rb1 Rg6 47. Rxb7 Nf6 48. Rb8+ Kh7 49. Rb7+ Kh6 { Anand, Viswanathan - Nakamura, Hikaru, 0-1, London Classic 3rd, 2011, https://lichess.org/o0njTZQg } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Kramnik - Kasparov"]
+[Date "2017.12.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E92"]
+[Opening "King's Indian Defense: Petrosian Variation, Stein Defense"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Kramnik - Kasparov"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/4Stdqs5y"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.23"]
+[UTCTime "06:32:41"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5 7. d5 a5 8. Bg5 h6 9. Bh4 Na6 10. O-O Bd7 (10... Qe8 11. Nd2 Nh7 12. a3 h5 13. f3 Bd7 14. b3 f5 15. Rb1 Nc5 16. Nb5 Bxb5 17. cxb5 Bh6 18. exf5 gxf5 19. b6 cxb6 20. Nc4 Qg6 21. Be7 Rf7 22. Bxd6 Rg7 23. Rf2 e4 24. Bxc5 bxc5 25. fxe4 fxe4 26. d6 Nf6 27. Qf1 Nd7 28. Rd1 b5 29. Rd5 bxc4 30. Bxh5 Qe6 31. bxc4 Be3 { Kramnik, Vladimir - Kasparov, Garry, 0-1, PCA/Intel-GP, 1995, https://lichess.org/G8HPayYZ }) 11. Nd2 Nc5 12. b3 Nfxe4 13. Bxd8 Nxc3 14. Qe1 Rfxd8 15. Rc1 Nxa2 16. Ra1 Nb4 17. Bd1 e4 18. Rb1 Re8 19. Qe3 f5 20. h4 Rf8 21. g3 Rae8 22. Kg2 Nbd3 23. Rg1 f4 24. gxf4 Rxf4 25. h5 g5 26. Rf1 Rh4 27. Rh1 Rf4 28. Rf1 Ref8 29. f3 Rh4 30. fxe4 Nf4+ 31. Kg1 Ncd3 32. e5 Nxe5 33. Rc1 Rh3 34. Nf3 g4 35. Nxe5 Rxe3 36. Nxd7 Nh3+ 37. Kg2 Rxf1 38. Kxf1 g3 39. Kg2 Nf4+ { Kramnik, Vladimir - Kasparov, Garry, 0-1, Munich Intel Express blitz '5, 2016, https://lichess.org/vCWbaKm4 } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Jussupow - Kasparov"]
+[Date "2017.12.24"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E68"]
+[Opening "King's Indian Defense: Fianchetto Variation, Classical Variation"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Jussupow - Kasparov"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/gVDYot6I"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.24"]
+[UTCTime "04:22:25"]
+
+1. d4 Nf6 2. c4 g6 3. g3 Bg7 4. Bg2 O-O 5. Nf3 d6 6. O-O Nbd7 7. Nc3 e5 8. e4 c6 { [%csl Rc6][%cal Gd8b6,Gd8a5,Rb7b5,Ra7a6] } 9. Be3 Ng4 10. Bg5 Qb6 11. h3 exd4 12. Na4 Qa6 13. hxg4 b5 14. Be7 Re8 15. Bxd6 bxa4 16. e5 c5 17. b4 cxb4 18. Qxd4 Bb7 19. Rae1 Rac8 20. c5 Qb5 21. Qf4 Bxf3 22. Bxf3 Nxc5 23. Be2 Qb6 24. Rc1 Ne6 25. Qxb4 Nd4 26. Bc4 Bxe5 27. Qxb6 axb6 28. Bxe5 Nf3+ 29. Kg2 Nxe5 30. Bb5 Rxc1 31. Rxc1 Rd8 32. Bxa4 Rd2 33. g5 Rxa2 34. Rc8+ Kg7 35. Bb3 Rb2 36. Rc3 b5 37. Re3 Ng4 38. Rf3 f5 39. gxf6+ Nxf6 40. Rd3 Ne4 41. Rd7+ Kh6 42. Bg8 Rxf2+ 43. Kg1 Rb2 44. Rxh7+ Kg5 45. Rb7 Kg4 46. Kf1 g5 47. Bh7 Nc3 48. Rc7 b4 49. Rc5 Rd2 50. Ke1 Re2+ 51. Kf1 Rd2 52. Ke1 Rd5 53. Rxd5 Nxd5 54. Kd2 Kxg3 55. Be4 Nb6 56. Kd3 g4 57. Bc6 Kf2 58. Kc2 Nc4 59. Bd7 g3 { Jussupow, Artur - Kasparov, Garry, 0-1, Linares 10th, 2016, https://lichess.org/RW5O87mG } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Beliavsky - Nakamura"]
+[Date "2017.12.24"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E97"]
+[Opening "King's Indian Defense: Orthodox Variation, Modern System"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Beliavsky - Nakamura"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/1q21bKIf"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.24"]
+[UTCTime "04:41:59"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. Nd2 Ne8 10. b4 f5 11. c5 Nf6 12. f3 f4 13. Nc4 g5 14. a4 Ng6 15. Ba3 Rf7 16. a5 h5 17. b5 dxc5 18. b6 g4 19. bxc7 Rxc7 20. Nb5 g3 21. Nxc7 Nxe4 22. Ne6 Bxe6 23. dxe6 gxh2+ 24. Kxh2 Qh4+ 25. Kg1 Ng3 26. Bxc5 e4 27. Ra4 Rc8 28. Bxa7 b5 29. Rb4 bxc4 30. Bxc4 Qh1+ 31. Kf2 e3+ 32. Bxe3 fxe3+ 33. Kxe3 Nxf1+ 34. Bxf1 Qg1+ { Beliavsky, Alexander G - Nakamura, Hikaru, 0-1, Amsterdam NH Hotels 4th, 2009, https://lichess.org/mn2AqpTg } *
+
+
+[Event "👑 King's Indian: Fantastic Opening: Fulton - Gavriel"]
+[Date "2017.12.24"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E97"]
+[Opening "King's Indian Defense: Orthodox Variation, Bayonet Attack"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Fulton - Gavriel"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/EgHjsmbF"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.24"]
+[UTCTime "04:47:46"]
+
+1. Nf3 Nf6 2. c4 g6 3. d4 Bg7 4. Nc3 O-O 5. e4 d6 6. Be2 e5 (6... c5 7. d5) 7. O-O Nc6 8. d5 Ne7 9. b4 Nh5 10. Ba3 Nf4 11. Re1 h6 12. Rc1 g5 13. c5 f5 14. Bc4!? { [%csl Rc7][%cal Rc1c4] } 14... Neg6 15. b5 b6 16. cxd6 cxd6 17. Nd2 Rf7 18. Bf1 g4 19. Nc4 { [%csl Rd6][%cal Rc4d6,Ra3d6] } 19... Bf8 20. exf5 Bxf5 21. Ne4 Bxe4 22. Rxe4 Qf6 23. Ne3 h5 24. Rc2 Nh4 25. Rec4 Re8 26. Rc7?? Ree7 { Black missed Nh3+, winning. } (26... Nh3+ 27. Kh1 (27. gxh3 Nf3+ 28. Kh1 (28. Kg2 gxh3+ 29. Kh1 Qf4 { [%csl Rh2][%cal Rf4h2] }) 28... Qf4 { [%csl Rh2][%cal Rf4h2,Rf3h2] }) 27... Nxf2+ 28. Rxf2 Qxf2 29. Rxf7 Kxf7) 27. Rxe7 Rxe7 28. Rc6 Rf7 29. Qc2 Qg5 30. g3 Nf3+ 31. Kh1 Nd4 32. Qe4 Nxc6 33. bxc6 Nh3 34. Bxh3 gxh3 35. Qc2?? { Can you spot the winning move on your own? :) } 35... Qxe3! { [%csl Rf1][%cal Rf7f1,Gf2e3] } 36. Qg6+ Kh8 { [%csl Re1,Rh1][%cal Re3e1] } 37. Qxh5+ Bh6 { White resigns. } *
+
+
+[Event "Casual Rapid game"]
+[Site "https://lichess.org/wvFWwgJq"]
+[Date "2017.12.29"]
+[Round "-"]
+[White "Nazar1005"]
+[Black "FunnyAnimatorJimTV"]
+[Result "0-1"]
+[WhiteElo "1833"]
+[BlackElo "1725"]
+[TimeControl "1200+1"]
+[Termination "Normal"]
+[Variant "Standard"]
+[ECO "E81"]
+[Opening "King's Indian Defense: Sämisch Variation, Normal Defense"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Nazar1005 - FAJTV"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/m2FWnE1q"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+
+{ This was a game I recently played against the Saemisch Variation. }
+1. d4 { [%clk 0:20:00] } 1... Nf6 { [%clk 0:20:00] } 2. c4 { [%clk 0:19:53] } 2... g6 { [%clk 0:20:00] } 3. Nc3 { [%clk 0:19:52] } 3... Bg7 { [%clk 0:19:57] } 4. e4 { [%clk 0:19:52] } 4... d6 { [%clk 0:19:57] } 5. f3 { [%csl Rf3] [%clk 0:19:20] } 5... O-O { [%clk 0:19:56] } 6. Be3 { [%clk 0:19:18] } 6... a6 { Our amazing move!! } { [%csl Ba6] [%clk 0:19:55] } 7. Nge2 { [%clk 0:19:17] } 7... Nbd7 { [%csl Gc5][%cal Gc7c5] [%clk 0:19:51] } 8. Qd2 { [%clk 0:19:16] } 8... c5 { [%clk 0:19:49] } 9. d5 { [%clk 0:19:09] } 9... b5 { Benko Gambit style! } { [%csl Bb5] [%clk 0:19:49] } 10. b3 { A move that my opponent was trying to throw me off with. Until now I have never seen this type of move, but now I know how to play against it. :) } { [%csl Rb3,Ga1][%cal Rb2b3,Gg7a1] [%clk 0:19:05] } 10... Qa5 { [%clk 0:19:40] } (10... b4 11. Na4 (11. Rc1 bxc3 12. Nxc3 a5 { [%csl Ga4][%cal Gd7b6,Ga5a4] }) 11... Nxe4 { [%csl Ra1,Re4][%cal Rg7a1] }) 11. Rc1 { [%clk 0:18:57] } 11... Nb6 { [%clk 0:19:34] } 12. Nf4 { [%clk 0:18:53] } 12... Nfd7 { [%csl Ge5][%cal Gg7b2,Gd7e5] [%clk 0:19:20] } 13. h4 { [%clk 0:18:51] } 13... bxc4 { [%clk 0:19:00] } 14. bxc4 { [%clk 0:18:49] } 14... Ne5 { 0-1 White resigns. } { [%csl Rc4,Gb6,Ge5,Gg7,Gc8,Ga5][%cal Ge5c4,Gb6c4,Gg7a1,Gc8h3] [%clk 0:18:52] } 0-1
+
+
+[Event "Casual Rapid game"]
+[Site "https://lichess.org/VylucvGe"]
+[Date "2017.12.29"]
+[Round "-"]
+[White "Nazar1005"]
+[Black "FunnyAnimatorJimTV"]
+[Result "1/2-1/2"]
+[WhiteElo "1833"]
+[BlackElo "1725"]
+[TimeControl "1200+1"]
+[Termination "Normal"]
+[Variant "Standard"]
+[ECO "E60"]
+[Opening "Indian Defense: Anti-Grünfeld, Alekhine Variation"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Nazar1005 - FAJTV"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/yEoAbSFd"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+
+1. d4 { [%clk 0:20:00] } 1... Nf6 { [%clk 0:20:00] } 2. c4 { [%clk 0:19:58] } 2... g6 { [%clk 0:19:59] } 3. f3 { [%clk 0:19:57] } 3... Bg7 { [%clk 0:19:57] } 4. e4 { [%clk 0:19:57] } 4... d6 { [%clk 0:19:57] } 5. Ne2 { [%clk 0:19:53] } 5... Nbd7 { [%clk 0:19:55] } 6. Be3 { [%clk 0:19:53] } 6... O-O { [%clk 0:19:53] } 7. Nd2 { [%clk 0:19:53] } 7... a6 { Our brilliant move!! } { [%csl Ba6][%cal Ba7a6] [%clk 0:19:50] } 8. Nc3 { [%clk 0:19:52] } 8... c5 { [%clk 0:19:48] } 9. d5 { [%clk 0:19:51] } 9... b5 { Benko Gambit Style :) } { [%clk 0:19:44] } 10. cxb5 { [%clk 0:19:51] } 10... Qa5!? { [%clk 0:19:43] } 11. Nc4 { [%clk 0:19:47] } 11... Qc7 { [%clk 0:19:36] } 12. h4 { [%clk 0:19:32] } 12... Nb6 { [%clk 0:19:34] } 13. Na5 { [%clk 0:19:19] } 13... Bb7 { [%clk 0:19:25] } 14. bxa6 { [%clk 0:19:11] } (14. Nxb7 Qxb7 15. bxa6 Qd7) 14... Bxa6 { [%clk 0:19:24] } 15. Bxa6 { [%clk 0:19:05] } 15... Rxa6 { [%clk 0:19:24] } 16. Nc6 { [%clk 0:19:05] } 16... Nc4 { [%csl Rc6][%cal Rc4a5] [%clk 0:19:17] } 17. Bc1 { [%clk 0:19:04] } 17... Na5 { [%clk 0:19:13] } 18. Nxa5 { [%clk 0:19:01] } 18... Rxa5 { [%clk 0:19:08] } 19. O-O { [%clk 0:18:57] } 19... Rb8 { The a and b-files in the Benko Gambit are key. } { [%csl Gb8,Ga5][%cal Gb8b2,Ga5a2] [%clk 0:18:41] } 20. Qc2 { [%clk 0:18:45] } 20... Nd7 { The knight is going to the center } { [%csl Ge5][%cal Gd7e5] [%clk 0:18:38] } 21. Rd1 { [%clk 0:18:33] } 21... Ne5 { [%clk 0:18:14] } 22. b3 { [%clk 0:18:30] } 22... Qa7 { [%csl Rc4][%cal Rc5c4,Ra7g1,Rc4b3] [%clk 0:17:42] } (22... c4 23. bxc4 Nxc4 24. Rb1 Rc8 25. Ne2 Bf6 26. a3) 23. Kh1 { [%clk 0:18:25] } 23... Nd7 { [%clk 0:16:42] } 24. Bb2 { [%clk 0:18:21] } 24... Ra8 { [%csl Ra2][%cal Ra8a2] [%clk 0:16:35] } 25. Na4 { [%clk 0:18:15] } 25... Bxb2 { [%clk 0:16:29] } 26. Qxb2 { [%clk 0:18:15] } 26... Nb6 { [%clk 0:16:30] } 27. Nc3 { [%clk 0:18:11] } 27... Nd7 { 1/2-1/2 The game is a draw. } { [%clk 0:16:14] } 1/2-1/2
+
+
+[Event "Casual Rapid game"]
+[Site "https://lichess.org/Lwax9w1D"]
+[Date "2017.12.31"]
+[Round "-"]
+[White "ijnelson137"]
+[Black "FunnyAnimatorJimTV"]
+[Result "0-1"]
+[WhiteElo "1706"]
+[BlackElo "1725"]
+[TimeControl "600+0"]
+[Termination "Normal"]
+[Variant "Standard"]
+[ECO "E90"]
+[Opening "King's Indian Defense: Normal Variation, Rare Defenses"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "ijnelson137 - FAJTV"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/aT30nYpw"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+
+{ Another game played by me }
+1. d4 { [%clk 0:10:00] } 1... Nf6 { [%clk 0:10:00] } 2. c4 { [%clk 0:09:59] } 2... g6 { [%clk 0:09:58] } 3. Nc3 { [%clk 0:09:59] } 3... Bg7 { [%clk 0:09:58] } 4. e4 { [%clk 0:09:58] } 4... d6 { [%clk 0:09:57] } 5. Nf3 { [%clk 0:09:57] } 5... O-O { [%clk 0:09:56] } 6. Bd3!? { The bishop is not well placed on d3. He is better on e2 because on d3 he has less scope. } { [%csl Rd3,Ge2][%cal Rd3g6] [%clk 0:09:54] } 6... e5 { [%clk 0:09:55] } 7. d5 { [%clk 0:09:52] } 7... a5 { [%csl Gc5][%cal Gb8a6,Ga6c5] [%clk 0:09:53] } 8. a4!? { [%clk 0:09:50] } 8... Na6 { [%clk 0:09:51] } 9. O-O { [%clk 0:09:48] } 9... Nc5 { [%clk 0:09:48] } 10. Re1 { [%clk 0:09:44] } 10... Nfd7 { [%csl Gd7,Bf7][%cal Bf7f4] [%clk 0:09:44] } 11. Rb1 { [%clk 0:09:36] } 11... f5 { [%clk 0:09:41] } 12. Bg5 { [%clk 0:09:28] } 12... Bf6 { Offering to trade white's best piece for my worst piece. } { [%csl Gg5,Rf6] [%clk 0:09:38] } 13. Bh6 { [%clk 0:09:23] } 13... Bg7 { [%clk 0:09:36] } 14. Bg5 { [%clk 0:09:22] } 14... Bf6 { [%clk 0:09:35] } 15. Bh6 { [%clk 0:09:21] } 15... Rf7 { [%csl Bf7,Gc7][%cal Bf8f7,Rf7g7,Rg7h7,Gf7c7] [%clk 0:09:34] } 16. Qc2 { [%clk 0:09:13] } 16... f4 { [%clk 0:09:32] } 17. h4 { [%clk 0:09:08] } 17... Bg7 { [%clk 0:09:16] } 18. Bg5 { [%clk 0:08:53] } 18... Bf6 { [%clk 0:08:57] } 19. Bf1 { [%clk 0:08:39] } 19... Bxg5 { [%clk 0:08:53] } 20. Nxg5 { [%clk 0:08:39] } 20... Rg7 { [%clk 0:08:37] } 21. g3 { [%clk 0:08:00] } 21... h6 { [%clk 0:08:16] } 22. Nf3 { [%clk 0:07:47] } 22... g5 { [%clk 0:08:01] } 23. h5 { [%clk 0:07:28] } 23... Nf6 { [%clk 0:07:47] } 24. Nh2 { [%clk 0:05:51] } 24... Nxh5 { [%clk 0:07:28] } 25. g4 { [%clk 0:05:44] } 25... Nf6 { [%clk 0:07:27] } 26. f3 { [%clk 0:05:43] } 26... h5 { [%clk 0:07:26] } 27. Bh3 { [%clk 0:05:40] } 27... hxg4 { [%clk 0:07:20] } 28. Nxg4 { [%clk 0:05:39] } 28... Rh7 { [%clk 0:07:11] } 29. Nxf6+ { [%clk 0:05:17] } 29... Qxf6 { [%clk 0:07:09] } 30. Bg2 { After the trade of many pieces, my king is a bit exposed and is interfering with my remaining pieces. I do a kingwalk. } { [%csl Rg8,Ge7][%cal Ba8h8,Gg8f7,Gf7e7] [%clk 0:04:59] } 30... Kf7 { [%clk 0:07:02] } 31. Kf2 { [%clk 0:04:54] } 31... g4 { [%clk 0:06:58] } 32. Rh1 { [%clk 0:04:43] } 32... Qg6 { [%clk 0:06:38] } 33. Rxh7+ { [%clk 0:04:38] } 33... Qxh7 { [%clk 0:06:37] } 34. Rh1 { [%clk 0:04:35] } 34... Qg6 { [%clk 0:06:36] } 35. Nb5 { [%clk 0:04:24] } 35... gxf3 { [%clk 0:06:23] } 36. Bxf3 { [%clk 0:04:19] } 36... Qg3+ { [%clk 0:06:11] } 37. Ke2 { [%clk 0:04:15] } 37... Bg4 { [%clk 0:06:02] } 38. Bxg4 { [%clk 0:03:32] } 38... Qxg4+ { [%clk 0:06:02] } 39. Kf1 { [%clk 0:03:30] } 39... Qf3+ { [%clk 0:05:58] } 40. Qf2 { [%clk 0:02:13] } 40... Qxh1+ { [%clk 0:05:50] } 41. Ke2 { [%clk 0:01:56] } 41... Qxe4+ { [%clk 0:05:48] } 42. Kf1 { [%clk 0:01:52] } 42... Qb1+ { [%clk 0:05:39] } 43. Qe1 { [%clk 0:01:41] } 43... Qxe1+ { [%clk 0:05:30] } 44. Kxe1 { It's an endgame- I don't really play optimal moves from here onwards. } { [%clk 0:01:41] } 44... c6 { [%clk 0:05:29] } 45. Nxd6+ { [%clk 0:01:38] } 45... Ke7 { [%clk 0:05:26] } 46. Nf5+ { [%clk 0:01:35] } 46... Kf6 { [%clk 0:05:24] } 47. Nd6 { [%clk 0:01:31] } 47... cxd5 { [%clk 0:05:22] } 48. cxd5 { [%clk 0:01:30] } 48... Nd3+ { [%clk 0:05:22] } 49. Kd2 { [%clk 0:01:28] } 49... Nxb2 { [%clk 0:05:21] } 50. Nxb7 { [%clk 0:01:28] } 50... Nxa4 { [%clk 0:05:20] } 51. d6 { [%clk 0:01:26] } 51... Ke6 { [%clk 0:05:14] } 52. Kd3 { [%clk 0:01:22] } 52... Nc5+ { [%clk 0:05:10] } 53. Nxc5+ { [%clk 0:01:06] } 53... Kxd6 { [%clk 0:05:09] } 54. Ne4+ { [%clk 0:01:05] } 54... Kd5 { [%clk 0:05:03] } 55. Nf6+ { [%clk 0:01:00] } 55... Ke6 { [%clk 0:04:57] } 56. Ne4 { [%clk 0:00:57] } 56... a4 { [%clk 0:04:56] } 57. Nc5+ { [%clk 0:00:57] } 57... Kd5 { [%clk 0:04:54] } 58. Nd7 { [%clk 0:00:54] } 58... Ra6 { [%clk 0:04:47] } 59. Nb8 { [%clk 0:00:48] } 59... Ra7 { [%clk 0:04:38] } 60. Kc3 { [%clk 0:00:45] } 60... a3 { [%clk 0:04:36] } 61. Nd7 { [%clk 0:00:34] } 61... a2 { [%clk 0:04:34] } 62. Nb6+ { [%clk 0:00:27] } 62... Kc6 { [%clk 0:04:32] } 63. Nc4 { [%clk 0:00:26] } 63... a1=Q+ { [%clk 0:04:30] } 64. Kd3 { [%clk 0:00:24] } 64... Rd7+ { [%clk 0:04:28] } 65. Ke4 { [%clk 0:00:23] } 65... Qd4+ { [%clk 0:04:27] } 66. Kf5 { [%clk 0:00:20] } 66... Rf7+ { [%clk 0:04:21] } 67. Kg6 { [%clk 0:00:24] } 67... Qxc4 { [%clk 0:04:12] } 68. Kg5 { [%clk 0:00:18] } 68... f3 { [%clk 0:04:07] } 69. Kg6 { [%clk 0:00:08] } 69... Qf4 { [%clk 0:04:02] } 70. Kh5 { [%clk 0:00:07] } 70... Rh7+ { [%clk 0:04:01] } 71. Kg6 { [%clk 0:00:05] } 71... Qf7+ { [%clk 0:04:00] } 72. Kg5 { [%clk 0:00:04] } 72... Rg7+ { [%clk 0:03:59] } 73. Kh6 { [%clk 0:00:02] } 73... Qg6# { 0-1 Black wins by checkmate. } { [%clk 0:03:57] } 0-1
+
+
+[Event "Casual Rapid game"]
+[Site "https://lichess.org/xjadO10T"]
+[Date "2018.01.02"]
+[Round "-"]
+[White "Tapachuli"]
+[Black "FunnyAnimatorJimTV"]
+[Result "0-1"]
+[WhiteElo "1696"]
+[BlackElo "1725"]
+[TimeControl "600+0"]
+[Termination "Normal"]
+[Variant "Standard"]
+[ECO "E92"]
+[Opening "King's Indian Defense: Petrosian Variation, Stein Defense"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Tapachuli - FAJTV"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/BHH6pBQy"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+
+1. d4 { [%clk 0:10:00] } 1... Nf6 { [%clk 0:10:00] } 2. c4 { [%clk 0:09:55] } 2... g6 { [%clk 0:09:54] } 3. Nc3 { [%clk 0:09:51] } 3... Bg7 { [%clk 0:09:52] } 4. e4 { [%clk 0:09:46] } 4... d6 { [%clk 0:09:50] } 5. Be2 { [%clk 0:09:42] } 5... O-O { [%clk 0:09:45] } 6. Nf3 { [%clk 0:09:32] } 6... e5 { [%clk 0:09:42] } 7. d5 { [%clk 0:09:29] } 7... a5 { [%clk 0:09:41] } 8. h3 { [%clk 0:09:19] } 8... Na6 { [%csl Gc5][%cal Ga6c5] [%clk 0:09:32] } 9. Be3 { [%clk 0:09:11] } 9... Nd7 { [%csl Bf7,Gc5][%cal Bf7f4,Gd7c5,Ga6c5] [%clk 0:09:08] } 10. h4 { [%clk 0:09:03] } 10... f5 { [%clk 0:09:02] } 11. h5 { [%clk 0:08:49] } 11... f4 { [%clk 0:08:58] } 12. Bd2 { [%clk 0:08:43] } 12... g5 { [%clk 0:08:55] } 13. h6 { [%clk 0:08:38] } 13... Bh8 { [%clk 0:08:35] } 14. Rh5 { An interesting infiltration idea by my opponent. } { [%csl Rh5][%cal Rh1h5] [%clk 0:08:21] } 14... g4 { [%clk 0:08:22] } 15. Rg5+ { [%clk 0:08:17] } 15... Kf7 { [%clk 0:08:15] } 16. Rf5+ { [%clk 0:08:13] } 16... Ke8 { [%clk 0:08:03] } 17. Nh2 { [%clk 0:07:52] } 17... Rxf5 { [%clk 0:07:47] } 18. exf5 { [%clk 0:07:50] } 18... Nf6 { [%clk 0:07:31] } (18... Qh4 19. Nxg4) 19. Nxg4 { [%clk 0:07:42] } 19... Bxf5 { [%clk 0:07:25] } 20. Qa4+ { [%clk 0:07:08] } 20... Qd7 { [%clk 0:07:11] } 21. Nxf6+ { [%clk 0:07:04] } 21... Bxf6 { [%clk 0:07:10] } 22. Bh5+ { [%clk 0:06:57] } 22... Ke7 { [%clk 0:06:57] } 23. Qxa5 { The one undeveloped piece of mine... } { [%csl Ra8] [%clk 0:06:11] } 23... Rg8 { Gets developed! My army has been developed, now it's time to get my pieces truly active. } { [%csl Bg8,Bf6,Bf5,Bd7,Ba6][%cal Ba8g8,Yg8g2] [%clk 0:06:51] } 24. Bf3 { [%clk 0:05:30] } 24... Bg5 { [%csl Rh6][%cal Rg5h6] [%clk 0:06:07] } 25. O-O-O { A strange idea from my opponent; I suppose he was planning to use his other rook on the kingside. } { [%csl Rc1] [%clk 0:04:47] } 25... Nc5 { [%csl Gc5] [%clk 0:05:17] } 26. Be2 { [%clk 0:04:10] } 26... b6 { [%clk 0:04:44] } 27. Qa3 { [%clk 0:03:21] } 27... Bd3 { [%clk 0:04:06] } 28. Rh1 { [%clk 0:02:43] } 28... Qf5 { [%clk 0:03:57] } 29. Bf3 { [%clk 0:02:28] } 29... Bxc4 { [%clk 0:03:38] } 30. b4 { [%clk 0:01:51] } 30... Nd3+ { I have all sorts of discovered check possibilities. My pieces are flooding into his position. } { [%csl Rd3][%cal Rf5b1,Rc4f1] [%clk 0:03:31] } 31. Kd1 { [%clk 0:01:44] } 31... Nxf2+ { [%clk 0:03:26] } 32. Ke1 { [%clk 0:01:41] } 32... Nxh1 { [%clk 0:03:16] } 33. Ne4 { [%clk 0:01:28] } 33... Bh4+ { Activating my other bishop, and opening my last file. } { [%csl Bh4][%cal Rg8g2,Bh4e1,Bc4f1] [%clk 0:03:14] } 34. Kd1 { [%clk 0:01:23] } 34... Nf2+ { [%clk 0:03:06] } 35. Kc1 { [%clk 0:01:18] } 35... Nxe4 { [%clk 0:02:59] } 36. Bxe4 { [%clk 0:00:58] } 36... Qxe4 { [%clk 0:02:59] } 37. Qh3 { A good move, forking my bishop and the e6 square. } { [%csl Re6,Rh4][%cal Rh3e6,Rh3h4] [%clk 0:00:56] } 37... Bxd5 { My dark squared bishop isn't very involved in the attack anyway, so I can give him up. } { [%csl Ge6][%cal Gd5e6] [%clk 0:02:26] } 38. Qxh4+ { [%clk 0:00:53] } 38... Kd7 { [%cal Gd7c6] [%clk 0:02:24] } 39. Qf6 { [%clk 0:00:48] } 39... Rxg2 { 0-1 White resigns. } { If you can't break through yet, bring in reinforcements! Bring in the pieces that aren't doing anything. I use my final piece for the attack. } { [%csl Be4,Bd5,Bg2,Rc1][%cal Be4e1,Be4b1,Bg2a2,Bd5a2] [%clk 0:02:05] } 40. Qg7+ Rxg7 41. hxg7 Bxa2 42. g8=Q Qb1# 0-1
+
+
+[Event "Casual Rapid game"]
+[Site "https://lichess.org/rJNhVaCf"]
+[Date "2018.01.04"]
+[Round "-"]
+[White "Luciano_the_best"]
+[Black "FunnyAnimatorJimTV"]
+[Result "1/2-1/2"]
+[WhiteElo "1391"]
+[BlackElo "1725"]
+[TimeControl "900+5"]
+[Termination "Normal"]
+[Variant "Standard"]
+[ECO "E67"]
+[Opening "King's Indian Defense: Fianchetto Variation, Debrecen Defense"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Luciano_the_best - FAJTV"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/PVHoKTXO"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+
+1. c4 { [%clk 0:15:00] } 1... Nf6 { [%clk 0:15:00] } 2. Nc3 { [%clk 0:15:02] } 2... g6 { [%clk 0:15:03] } 3. d4 { [%clk 0:15:05] } 3... Bg7 { [%clk 0:15:07] } 4. Nf3 { [%clk 0:14:57] } 4... O-O { [%clk 0:15:10] } 5. g3 { [%clk 0:14:50] } 5... d6 { [%clk 0:15:08] } 6. Bg2 { [%clk 0:14:51] } 6... Nbd7 { [%clk 0:15:10] } 7. O-O { [%clk 0:14:53] } 7... c5 { Again we see a similar idea of turning this King's Indian into a Benko Gambit. } { [%csl Bc5,Rb5][%cal Bc7c5,Rb7b5,Ra7a6] [%clk 0:15:14] } 8. Bg5 { [%clk 0:14:43] } 8... a6 { [%clk 0:15:07] } 9. Qd2 { [%clk 0:14:38] } 9... b5 { [%clk 0:14:57] } 10. cxb5 { [%clk 0:14:35] } 10... Qc7 { [%clk 0:14:57] } 11. bxa6 { [%clk 0:14:28] } 11... Rb8 { [%csl Ra8,Gb8][%cal Rg2a8,Ga8b8] [%clk 0:14:57] } 12. Rab1 { [%clk 0:14:19] } 12... Bxa6 { [%clk 0:14:59] } 13. Rfe1 { [%clk 0:14:13] } 13... Rfe8 { [%csl Ge7][%cal Ge8e7,Yg5e7] [%clk 0:14:39] } 14. Bh6 { [%clk 0:14:12] } 14... Bh8 { [%clk 0:14:42] } 15. Ng5 { [%clk 0:13:48] } 15... Ng4 { [%csl Rh6][%cal Rg4h6] [%clk 0:14:35] } 16. Nf3 { [%clk 0:13:34] } 16... Nxh6 { [%clk 0:14:38] } 17. Qxh6 { [%clk 0:13:36] } 17... Bg7 { [%clk 0:14:27] } 18. Qh3 { I was afraid to grab the pawn. } { [%cal Rc5d4] [%clk 0:13:35] } 18... Nb6 { [%clk 0:14:07] } 19. Ng5 { [%clk 0:13:27] } 19... h6 { [%clk 0:13:54] } 20. Nf3 { [%clk 0:13:25] } 20... Nc4 { Now I try to round up one of these pawns. } { [%cal Rg7b2,Rc4b2,Rb8b2] [%clk 0:13:17] } 21. dxc5 { [%clk 0:12:38] } 21... Qxc5 { [%clk 0:12:58] } 22. Ne4 { [%clk 0:12:24] } 22... Qa5 { [%clk 0:12:36] } 23. b3 { [%clk 0:12:21] } 23... Na3 { [%clk 0:12:35] } 24. Rbd1 { [%clk 0:12:13] } 24... Nc2 { [%csl Ge2,Re1][%cal Ga6e2,Yc2e1,Re1e2] [%clk 0:12:29] } 25. Rf1 { [%clk 0:12:08] } 25... Bxe2 { [%cal Re2f1,Re2d1] [%clk 0:12:28] } 26. Rd2 { [%clk 0:11:59] } 26... Bxf1 { [%clk 0:12:23] } 27. Bxf1 { [%clk 0:11:55] } 27... Nb4 { [%clk 0:12:09] } 28. Bc4 { [%clk 0:11:47] } 28... Nxa2 { [%clk 0:11:51] } 29. b4 { [%csl Ra5,Ra2][%cal Rb4a5,Rd2a2] [%clk 0:11:22] } 29... Nxb4 { 1/2-1/2 The game is a draw. } { My opponent is an acquaintance of mine, so I offered him a draw. :) But you can clearly see that black is winning. } { [%csl Ge7,Gd6] [%clk 0:11:48] } 1/2-1/2
+
+
+[Event "Casual Blitz game"]
+[Site "https://lichess.org/XQn2k5fi"]
+[Date "2018.01.05"]
+[Round "-"]
+[White "Buraya-Raketa"]
+[Black "FunnyAnimatorJimTV"]
+[Result "0-1"]
+[WhiteElo "1746"]
+[BlackElo "1744"]
+[TimeControl "180+2"]
+[Termination "Normal"]
+[Variant "Standard"]
+[ECO "E81"]
+[Opening "King's Indian Defense: Sämisch Variation, Normal Defense"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "Buraya-Raketa - FAJTV"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/hY8Qc7Xr"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+
+{ A Benko Gambit-Style game against the Saemisch Varation }
+1. d4 { [%clk 0:03:00] } 1... Nf6 { [%clk 0:03:00] } 2. c4 { [%clk 0:03:00] } 2... g6 { [%clk 0:03:01] } 3. Nc3 { [%clk 0:03:01] } 3... Bg7 { [%clk 0:03:02] } 4. e4 { [%clk 0:03:02] } 4... d6 { [%clk 0:03:04] } 5. f3 { [%csl Rf3] [%clk 0:03:03] } 5... O-O { [%clk 0:03:04] } 6. Be3 { [%clk 0:03:05] } 6... a6 { [%clk 0:03:06] } 7. Qd2 { [%clk 0:03:06] } 7... Nbd7 { [%clk 0:03:07] } 8. h4 { [%clk 0:03:05] } 8... c5 { [%clk 0:03:07] } 9. d5 { [%clk 0:03:05] } 9... b5 { [%clk 0:03:08] } 10. cxb5 { [%clk 0:03:04] } 10... Qa5 { [%clk 0:03:10] } 11. Nh3 { [%clk 0:02:58] } 11... Nb6 { [%clk 0:03:07] } 12. Nf2 { [%clk 0:02:56] } 12... axb5 { [%clk 0:03:07] } 13. Bxb5 { [%clk 0:02:56] } 13... Ba6 { [%clk 0:03:09] } 14. Bxa6 { [%clk 0:02:49] } 14... Qxa6 { [%clk 0:03:11] } 15. g4 { [%clk 0:02:49] } 15... Nc4 { 0-1 White resigns. } { [%clk 0:03:07] } 16. Qc1 Rfb8 { [%csl Ra8,Rb8,Ra6,Rg7][%cal Rb8b2,Ra8a2,Rg7b2,Gf6d7] } 0-1
+
+
+[Event "Casual Blitz game"]
+[Site "https://lichess.org/Iwc2iSoI"]
+[Date "2018.01.05"]
+[Round "-"]
+[White "ROCKER666"]
+[Black "FunnyAnimatorJimTV"]
+[Result "0-1"]
+[WhiteElo "1739"]
+[BlackElo "1744"]
+[TimeControl "240+0"]
+[Termination "Normal"]
+[Variant "Standard"]
+[ECO "E60"]
+[Opening "King's Indian Defense: Normal Variation, King's Knight Variation"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "ROCKER666 - FAJTV"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/TYALlolT"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+
+1. d4 { [%clk 0:04:00] } 1... Nf6 { [%clk 0:04:00] } 2. c4 { [%clk 0:03:59] } 2... g6 { [%clk 0:03:58] } 3. Nf3 { [%clk 0:03:57] } 3... Bg7 { [%clk 0:03:58] } 4. e3 { [%clk 0:03:56] } 4... O-O { [%clk 0:03:56] } 5. Be2 { [%clk 0:03:56] } 5... d6 { [%clk 0:03:56] } 6. O-O { [%clk 0:03:55] } 6... Nbd7 { [%clk 0:03:54] } 7. Nbd2 { [%clk 0:03:53] } 7... a6 { [%clk 0:03:53] } 8. b3 { [%clk 0:03:52] } 8... c5 { [%clk 0:03:52] } 9. dxc5 { [%clk 0:03:47] } 9... Nxc5 { [%clk 0:03:50] } 10. Bb2 { [%clk 0:03:45] } 10... b5 { [%clk 0:03:43] } 11. cxb5 { [%clk 0:03:42] } 11... Qa5 { [%clk 0:03:39] } 12. bxa6 { [%clk 0:03:26] } 12... Bxa6 { [%clk 0:03:39] } 13. Bxa6 { [%clk 0:03:19] } 13... Qxa6 { [%clk 0:03:39] } 14. Nc4 { [%clk 0:03:13] } 14... Rfb8 { [%clk 0:03:33] } 15. Nd4 { [%clk 0:03:07] } 15... Nd5 { [%clk 0:03:25] } 16. Qb1 { [%clk 0:02:42] } 16... Nb4 { [%clk 0:03:04] } 17. a3 { [%clk 0:02:27] } 17... Nbd3 { [%clk 0:02:57] } 18. b4 { [%clk 0:02:18] } 18... Nxb2 { [%clk 0:02:55] } 19. Nxb2 { [%clk 0:02:13] } 19... Bxd4 20. exd4 Nb3 21. Ra2 Nd2 0-1
+
+
+[Event "👑 King's Indian: Fantastic Opening: How to Play Against KID?"]
+[Date "2017.12.29"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E73"]
+[Opening "King's Indian Defense: Semi-Averbakh System"]
+[StudyName "👑 King's Indian: Fantastic Opening"]
+[ChapterName "How to Play Against KID?"]
+[ChapterURL "https://lichess.org/study/9XAhbaE7/yBjoQWJV"]
+[Annotator "https://lichess.org/@/FunnyAnimatorJimTV"]
+[UTCDate "2017.12.29"]
+[UTCTime "16:11:26"]
+
+1. d4 { If you play 1. d4 as white, you should certainly have a good option against the King's Indian. I'm recommending the Sokolov Variation. It's quite aggressive, doesn't involve too much theory, and the black pieces player will often not know exactly what to play against this. } 1... Nf6 2. c4 g6 3. Nc3 Bg7 { [%csl Bg7] } 4. e4 { Playing e4 completely eliminates black playing the Grunfeld Defense afterwards. } { [%csl Ge4,Gd4,Gc4] } 4... d6 5. Be2 { STAGE 1: Develop the bishops first. } { [%csl Be2][%cal Bc1e3] } 5... O-O 6. Be3 { This can also be called the Semi-Averbakh variation. However, there is a twist coming up! } { [%csl Be3][%cal Bc1e3] } 6... e5 7. d5 { STAGE 2: Meet e5 with d5. } { [%csl Bd5,Re5][%cal Bd4d5] } 7... Na6 8. g4 { STAGE 3: Push Garry as far as he can go. } { [%csl Bg5][%cal Bg2g4,Bg4g5] } 8... c6 9. g5 Ne8 10. h4 { STAGE 4: Push Harry up the board! } { [%csl Bh4][%cal Bh2h4] } 10... f5 11. gxf6 { Also, always meet f5 with en passant gxf6. } { [%csl Bf6][%cal Bg5f6,Rf7f5] } 11... Nxf6 12. h5 { We want to open up the g and h-files against black's king. } { [%csl Bh5,Rg8][%cal Rg1g8,Rh1h8] } 12... Qa5 13. hxg6 Nxe4 14. gxh7+ Kh8 15. Nf3! { [%csl Rh8,Bg6][%cal Bf3h4,Bh4g6] } 15... Nxc3 16. bxc3 cxd5 17. Kf1 { In the Sokolov Variation, you either castle queenside or put your king on f1. Most of the time you play Kf1. } { [%csl Gf1][%cal Ge1f1] } 17... Bf5 18. Nh4 { This bishop HAS to guard the g6 square. } { [%csl Rf5,Gg6][%cal Gf5g6] } 18... dxc4 19. Bxc4 Rac8 20. Be6 { Deflecting the bishop! } { [%csl Re6][%cal Re6f5] } 20... Be4 (20... Bxe6 { [%csl Gg6][%cal Rf5e6,Gf5g6] } 21. Ng6# { [%csl Rg6][%cal Gh4g6] }) 21. Qg4 Bd3+ 22. Kg1 Rce8 23. Bf5 Bxf5 24. Qxf5!! { [%csl Rf5,Gg6][%cal Rf8f5,Gh4g6] } 24... Rf6 { [%csl Gg6][%cal Gh4g6,Rf6g6] } (24... Rxf5 25. Ng6#) 25. Bg5 { [%csl Rf6][%cal Rg5f6] } 25... Rfe6 26. Ng6+ Rxg6 27. Qxg6 Rf8 { [%cal Ga8h8] } 28. Be7 Rxf2 { Sokolov, Ivan - Van Foreest, Jorden, 1-0, Van Foreest-Sokolov m, 2016, https://lichess.org/rZ7Izg1l } (28... Rc8 29. Rh3 Qc7 30. Bxd6 Qd8 31. Qxg7+ Kxg7 32. h8=Q+ Qxh8 33. Bxe5+ Kf7 34. Bxh8) 29. Qxg7+ Kxg7 30. h8=Q+ *
+
+

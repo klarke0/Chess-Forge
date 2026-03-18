@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <defs>
+    <linearGradient id="forge-flame" x1="12" y1="21.5" x2="12" y2="1.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#dc2626" />
+      <stop offset="55%" stop-color="#f97316" />
+      <stop offset="100%" stop-color="#fcd34d" stop-opacity="0.85" />
+    </linearGradient>
+  </defs>
+  <path d="M12 1.5C12 1.5 4.5 7.5 4.5 14C4.5 18.142 7.858 21.5 12 21.5C16.142 21.5 19.5 18.142 19.5 14C19.5 7.5 12 1.5 12 1.5Z" fill="url(#forge-flame)"/>
+  <circle cx="12" cy="7.25" r="2" fill="white" />
+  <rect x="9.5" y="9.5" width="5" height="1.25" rx="0.5" fill="white" />
+  <path d="M10.5 10.75h3c0 0 .5 3.5 2.25 5v1H8.25v-1c1.75-1.5 2.25-5 2.25-5z" fill="white" />
+  <rect x="7.5" y="17" width="9" height="1.75" rx="0.5" fill="white" />
+</svg>

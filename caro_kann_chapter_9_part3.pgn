@@ -1,0 +1,52 @@
+[Event "Caro-Kann Chapter 9: Variation B3 (9. a3)"]
+[Site "Chess Trainer"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Book"]
+[Black "Hero"]
+[Result "*"]
+
+1. e4 c6 2. d4 d5 3. e5 c5 4. dxc5 e6 5. Be3 Nh6 6. c3 Nf5 7. Bd4 Nd7 8. Nf3 Nc6 9. a3 {Variation B3}
+9... a5! {Preventing b4.}
+    ( 9... f6!? 10. exf6 gxf6 11. Ng5! )
+10. Be2
+    ( 10. a4?! cxd4 11. cxd4 b6 12. cxb6 Qxb6 13. Bb5 Bd7 )
+    ( 10. Bd3 Nfxd4 11. cxd4 b6 12. cxb6 ( 12. Qc2 ) ( 12. g4 ) ( 12. Qd3 ) 12... Qxb6 13. O-O Be7 )
+    ( 10. exf6?! {Impossible after a5} )
+10... Be7 11. O-O O-O 12. Qd3
+    ( 12. Bd3 )
+12... a4! 13. Nbd2 b6!
+    ( 13... Na5 )
+    ( 13... Qa5 )
+14. cxb6 Ba6 15. c4
+    ( 15. Qe3 )
+15... dxc4 16. Qe4 Qd5 17. Rac1
+    ( 17. Rfc1 )
+17... c3! 18. Rxc3 Bxe2 19. Qxe2 Ncxd4 20. Nxd4 Nxd4 21. Bxd4 Qxd4 *
+
+[Event "Caro-Kann Chapter 9: Variation C (6. Nf3)"]
+[Site "Chess Trainer"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Book"]
+[Black "Hero"]
+[Result "*"]
+
+1. e4 c6 2. d4 d5 3. e5 c5 4. dxc5 e6 5. Be3 Nh6 6. Nf3 {Variation C}
+6... Nf5 7. Bg5! Qc7!?
+    ( 7... Qa5+ )
+    ( 7... Be7 {Standard development} )
+8. c3
+    ( 8. Bd3 Bxc5! 9. Bxf5 exf5 )
+    ( 8. g4?! Be7 9. b4 ( 9. c4 Qg6 10. cxd5 Nxe5 11. Bf4 Nd3+ 12. Qxd3 Nxf4 13. Nbd2 exd5 14. Qxd5 Nc6 15. O-O-O Be6 16. Rhe1 Be7 ) 9... Bd7! 10. Bb5 a5! )
+    ( 8. b4?! a5! 9. c3 axb4 10. cxb4 b6! )
+8... Bxc5 9. Bd3 h6! 10. Bc1
+    ( 10. Bf4 g5! 11. Bg3 Nc6 12. O-O Nxg3 13. hxg3 g4 14. Nh4 Nxe5 )
+10... Nc6 11. Bxf5
+    ( 11. Qe2 Nfe7 ( 11... O-O ) 12. O-O f6! )
+    ( 11. O-O Nxe5 12. Bxf5 Nxf3+ 13. Qxf3 exf5 14. Bf4 Qc6 15. Re1+ Be6 16. Nd2 O-O 17. Qg3 Kh7 )
+11... exf5 12. O-O
+    ( 12. Qxd5 b6 13. O-O O-O 14. Re1 Rd8 15. Qb3 Be6 16. Qc2 b5 17. a4 b4 )
+12... Be6! 13. Re1 O-O 14. Be3
+    ( 14. Nbd2 Qb6 15. Re2 d4 16. Nb3 dxc3 17. Nxc5 Qxc5 )
+14... Bxe3 15. Rxe3 Rfd8 16. Na3 f4 17. Re1 Qb6 18. Qd2?! d4 19. cxd4 Nxd4 20. Qxf4 Nxf3+ 21. Qxf3 Qxb2 *

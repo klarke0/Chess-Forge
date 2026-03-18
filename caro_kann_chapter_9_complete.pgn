@@ -1,0 +1,120 @@
+[Event "Caro-Kann Chapter 9: Introduction to 3...c5"]
+[Site "Chess Trainer"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Book"]
+[Black "Hero"]
+[Result "*"]
+
+1. e4 c6 2. d4 d5 3. e5 c5!? {In the past the Advance Variation was considered to be a timid variation that allowed Black to obtain a ‘good’ version of the French Advance, a good version because the light-squared bishop was able to develop outside the pawn chain. This assessment has dramatically changed in recent years and now the Advance is one of the most popular lines against the Caro-Kann due to White’s natural space advantage.}
+4. dxc5
+    ( 4. c3 )
+    ( 4. Nf3 )
+    ( 4. c4 )
+4... e6 {The advantage of playing ...c6-c5 as early as move three is that White must take critical decisions very early on, which is not something an unprepared white player will be ready for. Accepting the offered pawn will swing the game into complications where Black has the superior pawn structure and White’s weakened e5-pawn can become a target.}
+    ( 4... Nc6!? {I would also recommend the reader investigate the complex 4...Nc6!?.} )
+5. Be3 {The major line and the most logical choice. White protects the c5-pawn and develops a piece at the same time.}
+    ( 5. b4?! {Note that 5 b4 doesn't hold on to the pawn} 5... Nc6 6. c3 Nxe5! )
+5... Nh6 {Why does Black develop a knight to the edge of the board? Well, the knight is heading to f5 from where it will exert pressure on the bishop on e3. White now has only a limited choice of good moves.}
+    ( 6. f4? {White is simply not careful enough and 6...Nd7! hits the c5-pawn} 6... Nd7!
+        ( 7. b4 a5! 8. c3 axb4 9. cxb4 b6! 10. Bb5 ( 10. Nf3 bxc5 11. bxc5 Bxc5 12. Bd3 Qa5+ 13. Nbd2 Ba6! 14. Qe2 Qc3! 15. Bb5+ Nd7 16. O-O Bxf2+!? 17. Qxf2 Bxb5 18. Rfc1 Qa5 19. Qg3 Qb6+ 20. Kh1 Bd3! 21. Qg7 Ke7 22. Rc3 {and Black has no problems.} ) ( 10. Bb5+ Bd7 11. Bxd7+ Nxd7! 12. Nf3 bxc5 13. bxc5 Qc7 14. O-O Bg7! 15. Nbd2 Nxe5 {Black has a great position.} ) 10... bxc5 11. Bc6 Rb8 12. bxc5 Nxc5 13. Bxc5 Qa5+! {Black recovers the piece with an excellent position to boot.} )
+        ( 7. Bb5 Qa5+ 8. Nc3 a6! 9. Bxd7+ Bxd7 10. Nge2 ( 10. a3 Qc7 11. b4 b6! ) 10... Nf5 11. Bf2 Bxc5 {and Black already had the upper hand in M.Nimtz-I.Khenkin, Bad Wiessee 2000.} )
+    )
+    ( 6. Bd3 Nc6 7. c4? ( 7. Bxh6 gxh6 {had to be played} ) 7... dxc4 8. Be4 Qxd1+ 9. Kxd1 Nxe5 10. Na3 f5 11. Bd4 fxe4 12. Bxe5 Ng4 13. Nxc4 Nxf2+ 14. Ke2 Nxh1 15. b4 b6 {and now in E.Kvisvik-J.Houska, Fagernes 2014, 15...b6 would have the won game in an easy manner.} )
+6. Bxh6 {Our first critical try.}
+    ( 6. c3 )
+    ( 6. Nf3 )
+6... gxh6 {Technically speaking this is the principled line, but it is hardly ever played. In compensation for the doubled h-pawns Black has the two bishops and will almost certainly recover the lost pawn. In the battle for activity the doubled h-pawns are not a weakness; in fact they help Black as he now has the half-open g-file to use.}
+7. Nd2 {Alternatively:}
+    ( 7. b4?! a5!? {Black should commence active operations to open lines and diagonals without delay} 8. c3 axb4 9. cxb4 b6! {Black begins to break up the white pawns and his two bishops can be happy:}
+        ( 10. Nf3 bxc5 11. bxc5 Bxc5 {Black intends to apply heavy pressure on the white king as quickly as possible} 12. Bd3 Qa5+ 13. Nbd2 Ba6! {now in order to castle White will have to allow some exchanges to take place, which is something that will benefit Black as the a-pawn is more of a liability than a strength} 14. Qe2 Qc3! 15. Bb5+ Nd7 16. O-O Bxf2+!? 17. Qxf2 Bxb5 18. Rfc1 Qa5 19. Qg3 Qb6+ 20. Kh1 Bd3! 21. Qg7 Ke7 22. Rc3 {and Black has no problems.} )
+        ( 10. Bb5+ Bd7 11. Bxd7+ Nxd7! {hitting the two pawns, c5 and e5} 12. Nf3 bxc5 13. bxc5 Qc7 14. O-O Bg7! {a good location for the bishop, eyeing the e5-pawn and at the same time giving some shelter to the black king for when it goes short} 15. Nbd2 Nxe5 {when Black has a great position and it is apparent that the doubled pawns hardly matter at all.} )
+    )
+    ( 7. Nf3 Nc6 {is a safe line and now if White tries to place Black under pressure with} 8. c4 ( 8. c3 Bxc5! 9. cxd5 exd5 10. Nc2 ( 10. Nc3 d4 11. Ne4 Bb4+ 12. Nfd2 O-O 13. f4 Bf5 14. Nf6+ Kh8 15. a3 Be7 16. Nde4 Bxf6 17. Nxf6 d3 {preventing White's bishop from developing} ) 10... Qa5+ 11. Nbd2?! Nb4 12. Qb3 Bf5! {Black develops his bishop to the most active square and suddenly White must figure out an adequate way of dealing with the threat of 13...Nc2+.} 13. Rc1 Qb6! {now the f2-pawn is a target} 14. Be2 Bxf2+ 15. Kf1 Rd8 {Black has the better chances.} ) )
+7... Nc6!?
+*
+[Event "Caro-Kann Chapter 9: Variation B3 (9. a3)"]
+[Site "Chess Trainer"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Book"]
+[Black "Hero"]
+[Result "*"]
+
+1. e4 c6 2. d4 d5 3. e5 c5 4. dxc5 e6 5. Be3 Nh6 6. c3 Nf5 7. Bd4 Nd7 8. Nf3 Nc6 9. a3 {Variation B3}
+9... a5! {Preventing b4.}
+    ( 9... f6!? 10. exf6 gxf6 11. Ng5! )
+10. Be2
+    ( 10. a4?! cxd4 11. cxd4 b6 12. cxb6 Qxb6 13. Bb5 Bd7 )
+    ( 10. Bd3 Nfxd4 11. cxd4 b6 12. cxb6 ( 12. Qc2 ) ( 12. g4 ) ( 12. Qd3 ) 12... Qxb6 13. O-O Be7 )
+    ( 10. exf6?! {Impossible after a5} )
+10... Be7 11. O-O O-O 12. Qd3
+    ( 12. Bd3 )
+12... a4! 13. Nbd2 b6!
+    ( 13... Na5 )
+    ( 13... Qa5 )
+14. cxb6 Ba6 15. c4
+    ( 15. Qe3 )
+15... dxc4 16. Qe4 Qd5 17. Rac1
+    ( 17. Rfc1 )
+17... c3! 18. Rxc3 Bxe2 19. Qxe2 Ncxd4 20. Nxd4 Nxd4 21. Bxd4 Qxd4 *
+
+[Event "Caro-Kann Chapter 9: Variation C (6. Nf3)"]
+[Site "Chess Trainer"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Book"]
+[Black "Hero"]
+[Result "*"]
+
+1. e4 c6 2. d4 d5 3. e5 c5 4. dxc5 e6 5. Be3 Nh6 6. Nf3 {Variation C}
+6... Nf5 7. Bg5! Qc7!?
+    ( 7... Qa5+ )
+    ( 7... Be7 {Standard development} )
+8. c3
+    ( 8. Bd3 Bxc5! 9. Bxf5 exf5 )
+    ( 8. g4?! Be7 9. b4 ( 9. c4 Qg6 10. cxd5 Nxe5 11. Bf4 Nd3+ 12. Qxd3 Nxf4 13. Nbd2 exd5 14. Qxd5 Nc6 15. O-O-O Be6 16. Rhe1 Be7 ) 9... Bd7! 10. Bb5 a5! )
+    ( 8. b4?! a5! 9. c3 axb4 10. cxb4 b6! )
+8... Bxc5 9. Bd3 h6! 10. Bc1
+    ( 10. Bf4 g5! 11. Bg3 Nc6 12. O-O Nxg3 13. hxg3 g4 14. Nh4 Nxe5 )
+10... Nc6 11. Bxf5
+    ( 11. Qe2 Nfe7 ( 11... O-O ) 12. O-O f6! )
+    ( 11. O-O Nxe5 12. Bxf5 Nxf3+ 13. Qxf3 exf5 14. Bf4 Qc6 15. Re1+ Be6 16. Nd2 O-O 17. Qg3 Kh7 )
+11... exf5 12. O-O
+    ( 12. Qxd5 b6 13. O-O O-O 14. Re1 Rd8 15. Qb3 Be6 16. Qc2 b5 17. a4 b4 )
+12... Be6! 13. Re1 O-O 14. Be3
+    ( 14. Nbd2 Qb6 15. Re2 d4 16. Nb3 dxc3 17. Nxc5 Qxc5 )
+14... Bxe3 15. Rxe3 Rfd8 16. Na3 f4 17. Re1 Qb6 18. Qd2?! d4 19. cxd4 Nxd4 20. Qxf4 Nxf3+ 21. Qxf3 Qxb2 *
+[Event "Caro-Kann Chapter 9: Variation B (6. c3)"]
+[Site "Chess Trainer"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Book"]
+[Black "Hero"]
+[Result "*"]
+
+1. e4 c6 2. d4 d5 3. e5 c5 4. dxc5 e6 5. Be3 Nh6 6. c3 {Variation B}
+6... Nf5 7. Bd4 Nd7
+    ( 7... Nc6 {The Formula: ...Nfxd4 then ...b6} 8. Nf3
+        ( 8. Qd2 Nd7 9. Bb5 a6 10. Ba4 Qc7 )
+        ( 8. g4?! Nxd4! 9. cxd4 b6! 10. cxb6 Qxb6 11. Qd2 Nc6 12. Nf3 h5 13. gxh5 Rb8 14. Nc3 ( 14. b3 Bb4 15. Nc3 Rc8 ) 14... Qxb2 15. Rb1 Qxd2+ 16. Kxd2 Rxb1 17. Nxb1 Rxh5 )
+        ( 8. Bd3 Nxd4 9. cxd4 b6! 10. cxb6 Qxb6 11. Ne2 ( 11. Nf3 Nc6 ) 11... Nc6 12. Nbc3 Nxd4 13. O-O Nc6 14. Bb5 Nxe5 15. Nxd5 Qxb7 16. Bxd7+ Nxd7 17. Ndc3 Be7 18. Qd2 )
+    )
+    ( 7... Nxd4?! 8. cxd4 b6 9. Bb5+! Bd7 10. Bxd7+ Qxd7 11. cxb6 axb6 12. Ne2 Bb4+ 13. Nbc3 Qc6 14. O-O O-O 15. Qd3 )
+8. Nf3 Nc6
+    ( 8... Nxd4 9. cxd4 b6! 10. cxb6 Qxb6 11. Ne2 Nc6 12. Nbc3 Nxd4 13. O-O Nc6 14. Bb5 Nxe5 15. Nxd5 Qxb7 16. Bxd7+ Nxd7 17. Ndc3 Be7 18. Qd2 )
+9. Be2 {B1}
+    ( 9. Qd2 {B2} f6!
+        ( 9... Nfxd4 10. cxd4 a5 ( 10... b6 11. b4! ) 11. Nc3 b6 12. cxb6 Qxb6 13. Be2 Rb8 14. Rb1 )
+        10. exf6?! ( 10. b4 {B22} Nfxd4! 11. cxd4 fxe5 12. dxe5 Qc7 13. Qb2 ( 13. Nc3 Nxe5 14. Nd4 Be7 15. Ncb5 Qb8 16. f4 a6! 17. Nd6+ Bxd6 18. cxd6 Nc6 ) ( 13. Qc3 a5 14. b5 d4 15. b6 Qxb6 16. cxb6 dxc3 17. Nxc3 Bb4 18. Rc1 Rc8 ) 13... a6! 14. Be2 g6! 15. Nbd2 Bg7 16. Qb3 O-O 17. O-O Nxe5 18. Rac1 Nc6 19. a4?! Rf4 20. b5 axb5 21. axb5 Nd4 22. Nxd4 Rxd4 23. Qg5 Qxc5 24. Nf3 b6 25. Qe5 Rxb5 {Black is winning.} ) ( 10. Bd3 Nfxd4 11. cxd4 fxe5 12. Nxe5 Nxe5 13. dxe5 Bxc5 14. O-O Qh4 15. Qe2 O-O ) 10... gxf6 11. Be3 Qe7
+        ( 11... e5 12. b4 a5 13. a3 Nxe3 14. fxe3 ( 14. Qxe3 axb4 ) 14... Nh6 15. Bb5 O-O 16. O-O axb4 17. cxd4 d4! 18. Nxd4 Nxd4 19. Bxd7 Nb3 20. Qc3 Nxa1 21. Bb5 Qc7!? 22. Qxa1 Qxe3+ 23. Kh1 Qe5 24. Qa2 )
+    )
+    ( 9. Bd3 Nfxd4 10. cxd4 b6
+        ( 11. cxb6 Qxb6 12. Nc3 Nxd4 13. O-O Be7 14. Rc1 Nxf3+ 15. Qxf3 Bd8 16. Qg3 O-O )
+        ( 11. a3 bxc5 12. dxc5 Bxc5 13. O-O Nd4 )
+        ( 11. O-O bxc5 12. dxc5 Bxc5 13. Nc3! Nd4 14. Rc1 Nxf3+ 15. Qxf3 Qe7 16. Qg4 O-O 17. a3 f5 18. exf6 Rxf6 19. b4? Bb6 20. Qh5 Rh6 21. Qe5 Qf7 22. Rc2 Rf8 23. Nd1 a4 24. Rd2 Bc7 )
+    )
+    ( 9. Na3?! b6! 10. cxb6 Nfxd4 11. Nxd4 Nxe5 12. bxa7 Rxa7 )
+    ( 9. Nbd2 b6! 10. cxb6 Nfxd4 11. Nxd4 Nxd4 12. b7 Rb8 13. cxd4 Qxb6 14. Be2 Qxd4 )
+9... Nfxd4 10. cxd4 b6 11. cxb6 Qxb6 12. b3 Bb4+ 13. Kf1 O-O 14. g3 f6! 15. exf6 Rxf6 16. Kg2 Raf8 17. Rf1 Bd3 ( 17... Rxf3! 18. Bxf3 Nxd4 19. Bg4 b5 20. Nd2 Be1? 21. Rxf2 Qc2+ 22. Kg2 Qxe1+ )
+*
