@@ -93,7 +93,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
           <p>
             {cpLoss !== null && (
               <span className="text-rose-400 font-semibold">
-                {cpLoss > 0 ? `-${(cpLoss / 100).toFixed(1)}` : `+${(Math.abs(cpLoss) / 100).toFixed(1)}`} pawns.{' '}
+                -{Math.abs(cpLoss).toFixed(1)} pawns.{' '}
               </span>
             )}
             Engine recommends <span className="text-emerald-400 font-mono font-bold">{correctMove}</span>
@@ -101,14 +101,14 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
         </div>
       )}
 
-      {/* CP Loss indicator */}
-      {cpLoss !== null && !loading && (
+      {/* CP Loss indicator — cpLoss is in pawn units (e.g. 1.5 = one and a half pawns) */}
+      {cpLoss !== null && cpLoss > 0 && !loading && (
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <div className={cn(
             'h-1.5 rounded-full',
-            cpLoss > 200 ? 'bg-rose-500' : cpLoss > 100 ? 'bg-amber-500' : 'bg-slate-600',
-          )} style={{ width: `${Math.min(100, Math.abs(cpLoss) / 3)}%` }} />
-          <span>{(Math.abs(cpLoss) / 100).toFixed(1)} pawns</span>
+            cpLoss > 2 ? 'bg-rose-500' : cpLoss > 1 ? 'bg-amber-500' : 'bg-slate-600',
+          )} style={{ width: `${Math.min(100, Math.abs(cpLoss) * 20)}%` }} />
+          <span>-{Math.abs(cpLoss).toFixed(1)} pawns</span>
         </div>
       )}
 

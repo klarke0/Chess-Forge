@@ -276,7 +276,7 @@ ${openingName ? `Opening: ${openingName}` : ""}
 
 The student played: ${wrongMove}
 The correct move was: ${correctMove}
-Centipawn loss: ${cpLoss.toFixed(1)}
+Pawn loss: ${cpLoss.toFixed(2)}
 ${stockfishLine ? `Engine continuation after correct move: ${stockfishLine}` : ""}
 
 Your task:

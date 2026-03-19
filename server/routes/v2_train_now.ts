@@ -74,6 +74,14 @@ function normalizeFen(fen: string): string {
   return fen.split(" ").slice(0, 4).join(" ");
 }
 
+/** Ensure FEN is valid for chess.js (needs 6 fields). Pads with dummy clock/move counters if needed. */
+function ensureFullFen(fen: string): string {
+  const parts = fen.split(" ");
+  if (parts.length >= 6) return fen;
+  if (parts.length === 4) return fen + " 0 1";
+  return fen;
+}
+
 const SHORT_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 function formatShortDate(dateStr: string | null): string {
@@ -126,6 +134,7 @@ export function trainNow(req: Request): Response {
       moveNumber?: number;
       date: string | null;
       context?: string;
+      fullFen?: string; // original 6-part FEN for chess.js compatibility
     }
   >();
 
@@ -228,6 +237,7 @@ export function trainNow(req: Request): Response {
           moveNumber: moveNum,
           date: game.date,
           context: buildContext(game.id, moveNum),
+          fullFen: fenBefore, // preserve original 6-part FEN
         });
       }
     }
@@ -341,7 +351,7 @@ export function trainNow(req: Request): Response {
     );
 
     scored.push({
-      fen,
+      fen: ensureFullFen(cand.fullFen ?? fen),
       san: cand.san,
       correctSan: cand.correctSan,
       cpLoss: cand.cpLoss,

@@ -79,8 +79,11 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({ onBack }) => {
 
   function startDrilling() {
     if (positions.length === 0) return;
-    setCurrentIdx(0);
-    setupPosition(positions[0]);
+    // Find first drillable position
+    const first = positions.findIndex(p => p.correctSan && p.correctSan.trim());
+    if (first === -1) { setState('complete'); return; }
+    setCurrentIdx(first);
+    setupPosition(positions[first]);
     setState('drilling');
   }
 
@@ -92,7 +95,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({ onBack }) => {
     setRevealed(false);
   }
 
-  const onDrop = useCallback((source: string, target: string) => {
+const onDrop = useCallback((source: string, target: string) => {
     if (state !== 'drilling' || !currentPosition) return false;
 
     const chess = new Chess(fen);
@@ -104,8 +107,18 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({ onBack }) => {
     }
     if (!move) return false;
 
-    const playedSan = move.san;
-    const isCorrect = looseSan(playedSan) === looseSan(currentPosition.correctSan);
+    // Compare by from/to squares — avoids notation mismatches (+, #, x, disambiguation)
+    let isCorrect = false;
+    try {
+      const refChess = new Chess(currentPosition.fen);
+      const refMove = refChess.move(currentPosition.correctSan);
+      if (refMove) {
+        isCorrect = move.from === refMove.from && move.to === refMove.to;
+      }
+    } catch {
+      // Fallback: loose SAN comparison
+      isCorrect = looseSan(move.san) === looseSan(currentPosition.correctSan);
+    }
 
     if (isCorrect) {
       setFen(chess.fen());
@@ -119,7 +132,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({ onBack }) => {
     }
 
     // Wrong move
-    setWrongMove(playedSan);
+    setWrongMove(move.san);
     const newMistakes = mistakes + 1;
     setMistakes(newMistakes);
 
@@ -147,7 +160,11 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({ onBack }) => {
   }
 
   function handleNext() {
-    const nextIdx = currentIdx + 1;
+    // Find next drillable position (skip any with missing correctSan)
+    let nextIdx = currentIdx + 1;
+    while (nextIdx < positions.length && (!positions[nextIdx].correctSan || !positions[nextIdx].correctSan.trim())) {
+      nextIdx++;
+    }
     if (nextIdx >= positions.length) {
       setState('complete');
       return;
@@ -160,6 +177,12 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({ onBack }) => {
   function handleReveal() {
     if (currentPosition) {
       recordAttempt(currentPosition.fen, false, 1);
+      // Play the correct move so the board shows where the piece goes
+      try {
+        const chess = new Chess(currentPosition.fen);
+        const move = chess.move(currentPosition.correctSan);
+        if (move) setFen(chess.fen());
+      } catch { /* ignore parse errors */ }
     }
     setRevealed(true);
     setStats(s => ({ ...s, revealed: s.revealed + 1 }));
