@@ -157,18 +157,18 @@ export const UniversalBoard: React.FC<UniversalBoardProps> = ({
 
   return (
     <div className="flex flex-col items-center justify-center w-full max-h-full">
-      <div className="flex flex-col lg:flex-row items-center justify-center relative w-full px-1 lg:px-4 py-1 lg:py-2 gap-2 lg:gap-0">
-        <div className="flex items-center justify-center relative w-full lg:w-auto max-w-full">
+      <div className="flex flex-col items-center justify-center relative w-full px-1 py-1 gap-2">
+        <div className="flex items-center justify-center relative w-full max-w-full">
           {showEvalBar && (
-            <div className="w-2.5 lg:w-3 mr-2 lg:mr-4 shrink-0 relative overflow-hidden flex flex-col-reverse rounded-full bg-slate-800 border border-black/50"
+            <div className="w-2.5 mr-2 shrink-0 relative overflow-hidden flex flex-col-reverse rounded-full bg-slate-800 border border-black/50"
                  style={{ height: '100%' }}>
               <EvalBar />
             </div>
           )}
 
           <div className={cn(
-            "relative lg:w-[min(60vw,70vh)] lg:h-[min(60vw,70vh)] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] rounded-xl lg:rounded-2xl overflow-hidden border-[4px] lg:border-[10px] border-[#161b22] bg-[#161b22] shrink-0",
-            "w-full aspect-square lg:aspect-auto",
+            "relative shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] rounded-xl overflow-hidden border-[4px] border-[#161b22] bg-[#161b22] shrink-0",
+            "w-full aspect-square",
           )}>
             <Chessboard
               position={fen}
@@ -192,7 +192,7 @@ export const UniversalBoard: React.FC<UniversalBoardProps> = ({
             )}
 
             {(status === 'demo' || status === 'simulating') && (
-              <div className="absolute top-2 left-2 lg:top-3 lg:left-3 z-30 bg-indigo-600 text-white px-2 py-1 lg:px-2.5 rounded-lg text-[8px] lg:text-[9px] font-black uppercase tracking-widest shadow-xl flex items-center gap-1.5 animate-pulse border border-indigo-400/30">
+              <div className="absolute top-2 left-2 z-30 bg-indigo-600 text-white px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest shadow-xl flex items-center gap-1.5 animate-pulse border border-indigo-400/30">
                 <Eye size={10} /> {status === 'simulating' ? 'Simulating Line' : 'Coach Demo'}
               </div>
             )}
@@ -201,7 +201,7 @@ export const UniversalBoard: React.FC<UniversalBoardProps> = ({
               <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-50 flex items-center justify-center animate-in fade-in duration-300">
                 <button
                   onClick={onProceed}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 lg:px-8 lg:py-4 rounded-xl lg:rounded-2xl font-black uppercase tracking-[0.2em] shadow-2xl shadow-indigo-600/50 flex items-center gap-2 lg:gap-3 active:scale-95 transition-all border border-indigo-400/20 cursor-pointer pointer-events-auto text-xs lg:text-sm"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-black uppercase tracking-[0.2em] shadow-2xl shadow-indigo-600/50 flex items-center gap-2 active:scale-95 transition-all border border-indigo-400/20 cursor-pointer pointer-events-auto text-xs"
                 >
                   {buttonText} <ChevronRight size={18} />
                 </button>
@@ -210,7 +210,7 @@ export const UniversalBoard: React.FC<UniversalBoardProps> = ({
           </div>
         </div>
 
-        <div className={cn("lg:ml-4 flex flex-row lg:flex-col gap-1.5 shrink-0 justify-center flex-wrap", mobileControls && "hidden lg:flex")}>
+        <div className={cn("flex flex-row gap-1.5 shrink-0 justify-center flex-wrap", mobileControls && "hidden")}>
           {onReset && (
             <button
               onClick={onReset}
@@ -327,7 +327,7 @@ export const UniversalBoard: React.FC<UniversalBoardProps> = ({
       {mode === 'study' && (
         <div className={cn(
           "flex items-center gap-4 mb-6 bg-[#0d1117] px-6 py-3 rounded-2xl border border-white/10 shadow-2xl animate-in slide-in-from-bottom-4 duration-500 shrink-0",
-          mobileControls && "hidden md:flex"
+          mobileControls && "hidden"
         )}>
            <button 
              onClick={onBack}
@@ -362,7 +362,7 @@ export const UniversalBoard: React.FC<UniversalBoardProps> = ({
       )}
 
       {showLines && topLines.length > 0 && mode !== 'explore' && (
-        <div className={cn("mb-6 px-4 w-full max-w-2xl shrink-0", mobileControls && "hidden lg:block")}>
+        <div className={cn("mb-6 px-4 w-full max-w-2xl shrink-0", mobileControls && "hidden")}>
           <div className="bg-[#0d1117]/60 backdrop-blur-sm border border-white/5 rounded-xl p-3 flex flex-col gap-1.5">
             {topLines.slice(0, 3).map((line, i) => {
               const scoreStr = line.mate !== null

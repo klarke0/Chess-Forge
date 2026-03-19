@@ -59,7 +59,7 @@ export const MoveTickerStrip: React.FC<MoveTickerStripProps> = ({
   }, [currentIdx]);
 
   return (
-    <div className="lg:hidden shrink-0 flex items-center h-10 bg-[#0a0d14] border-t border-white/5 px-1 gap-1">
+    <div className="shrink-0 flex items-center h-10 bg-[#0a0d14] border-t border-white/5 px-1 gap-1">
       {/* Prev arrow */}
       <button
         onClick={onPrev}

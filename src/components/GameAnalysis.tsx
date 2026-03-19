@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  ChevronRight, ChevronLeft, FastForward, Rewind,
+  ChevronRight, ChevronLeft,
   Brain, Zap, List, X, Target,
   Layout as LayoutIcon, RotateCcw, Search, PlayCircle, StopCircle, Cpu, Eye, ShieldAlert,
   ChevronDown, ChevronUp, RotateCw, Layers, BarChart2, Wand2, CheckCircle2, Activity
@@ -65,12 +65,6 @@ const GRADE_COLORS: Record<string, { label: string; text: string; bg: string; bo
   best:       { label: '✓',  text: 'text-green-400',   bg: 'bg-green-500/10',   border: 'border-green-500/20' },
 };
 
-const PlayerBadge: React.FC<{ name: string; color: 'white' | 'black' }> = ({ name, color }) => (
-  <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.03] border border-white/5 rounded-lg">
-    <div className={cn("w-2 h-2 rounded-full", color === 'white' ? "bg-slate-200" : "bg-slate-800 border border-white/20")} />
-    <span className="font-bold text-slate-300 text-[11px] truncate max-w-[120px]">{name}</span>
-  </div>
-);
 
 const formatClock = (seconds: number): string => {
   const m = Math.floor(seconds / 60);
@@ -200,12 +194,6 @@ export const GameAnalysis: React.FC<GameAnalysisProps> = ({
     fetchExplorer();
     return () => { active = false; };
   }, [currentFen]);
-
-  const summary = useMemo(() => ({
-    blunders: reviewedMoves.filter(m => m.grade === 'blunder').length,
-    mistakes:  reviewedMoves.filter(m => m.grade === 'mistake').length,
-    inaccuracies: reviewedMoves.filter(m => m.grade === 'inaccuracy').length,
-  }), [reviewedMoves]);
 
   const playerDeviationFens = useMemo(
     () => new Set(game.deviations.filter(d => d.side === 'player').map(d => d.fen)),
@@ -470,47 +458,15 @@ export const GameAnalysis: React.FC<GameAnalysisProps> = ({
   return (
     <div className="absolute inset-0 z-50 bg-[#050507] text-slate-200 font-outfit flex flex-col animate-in fade-in duration-300">
       {/* Top Bar */}
-      <div className="h-10 lg:h-14 border-b border-white/5 flex items-center justify-between px-3 lg:px-6 bg-[#0a0d14] shrink-0">
+      <div className="h-10 border-b border-white/5 flex items-center justify-between px-3 bg-[#0a0d14] shrink-0">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
             <LayoutIcon size={18} className="text-indigo-500" />
             <span className="font-black uppercase tracking-widest text-[10px] text-slate-400">Analysis Studio</span>
           </div>
           
-          <div className="hidden md:flex items-center gap-3">
-            <PlayerBadge name={game.white} color="white" />
-            <span className="text-[10px] font-black text-slate-600">VS</span>
-            <PlayerBadge name={game.black} color="black" />
-          </div>
-          
-          <div className="hidden lg:flex items-center gap-2">
-            <div className={cn('px-2 py-0.5 rounded-full border', result === 'win' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : result === 'loss' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20' )}>
-              <span className="text-[9px] font-black uppercase">{result}</span>
-            </div>
-            {game.game_shape && (() => {
-              const SHAPE_COLORS: Record<string, string> = {
-                Smooth:   'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-                Balanced: 'bg-slate-500/15 text-slate-400 border-slate-500/30',
-                Sharp:    'bg-amber-500/15 text-amber-400 border-amber-500/30',
-                Wild:     'bg-rose-500/15 text-rose-400 border-rose-500/30',
-                Sudden:   'bg-orange-500/15 text-orange-400 border-orange-500/30',
-                Giveaway: 'bg-red-500/15 text-red-400 border-red-500/30',
-                Intense:  'bg-indigo-500/15 text-indigo-400 border-indigo-500/30',
-              };
-              const color = SHAPE_COLORS[game.game_shape] ?? SHAPE_COLORS.Balanced;
-              return (
-                <span className={cn('text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border', color)}>
-                  {game.game_shape}
-                </span>
-              );
-            })()}
-          </div>
-
-          {/* Summary Stats */}
-          <div className="hidden lg:flex items-center gap-2 ml-4">
-            {summary.blunders > 0 && <span className="px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 rounded text-[9px] font-black text-rose-400 uppercase">{summary.blunders} Blunders</span>}
-            {summary.mistakes > 0 && <span className="px-2 py-0.5 bg-orange-500/10 border border-orange-500/20 rounded text-[9px] font-black text-orange-400 uppercase">{summary.mistakes} Mistakes</span>}
-            {summary.inaccuracies > 0 && <span className="px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded text-[9px] font-black text-amber-200 uppercase">{summary.inaccuracies} Inacc.</span>}
+          <div className={cn('px-2 py-0.5 rounded-full border', result === 'win' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : result === 'loss' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20' )}>
+            <span className="text-[9px] font-black uppercase">{result}</span>
           </div>
         </div>
 
@@ -529,11 +485,11 @@ export const GameAnalysis: React.FC<GameAnalysisProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden flex-col lg:flex-row">
+      <div className="flex-1 flex overflow-hidden flex-col">
         
         {/* LEFT: Board Area */}
         <div className="flex-[1.5] flex flex-col bg-[#0d1117]/20 relative overflow-hidden min-w-0 min-h-0">
-          <div className="flex-1 relative p-2 lg:p-4 min-h-0 flex items-center justify-center overflow-hidden">
+          <div className="flex-1 relative p-2 min-h-0 flex items-center justify-center overflow-hidden">
             <div className="w-full h-full max-h-full max-w-full flex items-center justify-center relative">
               <UniversalBoard
                 fen={currentFen}
@@ -573,22 +529,14 @@ export const GameAnalysis: React.FC<GameAnalysisProps> = ({
           </div>
 
           {/* Bottom Area: Nav + Chart */}
-          <div className="px-4 lg:px-6 pb-4 pt-1 flex flex-col gap-3 items-center shrink-0 z-10 relative">
-            {/* Nav Controls - Hidden on mobile, replaced by mobile toolbar */}
-            <div className="hidden lg:flex items-center gap-1 bg-[#0d1117] border border-white/10 p-1.5 rounded-xl shadow-xl">
-               <button onClick={() => _handleNav('start')} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-all"><Rewind size={18} /></button>
-               <button onClick={() => _handleNav(-1)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-all"><ChevronLeft size={20} /></button>
-               <div className="h-6 w-[1px] bg-white/10 mx-2" />
-               <button onClick={() => _handleNav(1)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-all"><ChevronRight size={20} /></button>
-               <button onClick={() => _handleNav('end')} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-all"><FastForward size={18} /></button>
-            </div>
+          <div className="px-4 pb-4 pt-1 flex flex-col gap-3 items-center shrink-0 z-10 relative">
 
             {/* Eval Chart — tap chevron to expand on mobile */}
             {reviewedMoves.length > 0 && (
               <div
                 className={cn(
                   'w-full max-w-2xl relative rounded-lg overflow-hidden border border-white/5 bg-black/40 shrink-0 select-none transition-[height] duration-300',
-                  evalExpanded ? 'h-24' : 'h-8 lg:h-[36px]',
+                  evalExpanded ? 'h-24' : 'h-8',
                 )}
               >
                 <svg viewBox="0 0 1000 100" preserveAspectRatio="none" className="w-full h-full">
@@ -623,7 +571,7 @@ export const GameAnalysis: React.FC<GameAnalysisProps> = ({
                 </svg>
                 {/* Seek overlay — whole strip except the chevron button */}
                 <div
-                  className="absolute top-0 left-0 bottom-0 right-7 lg:right-0 cursor-pointer"
+                  className="absolute top-0 left-0 bottom-0 right-7 cursor-pointer"
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const pct = (e.clientX - rect.left) / rect.width;
@@ -632,7 +580,7 @@ export const GameAnalysis: React.FC<GameAnalysisProps> = ({
                 />
                 {/* Expand/collapse chevron — mobile only */}
                 <button
-                  className="lg:hidden absolute top-0 right-0 bottom-0 w-7 flex items-center justify-center text-slate-500 hover:text-white transition-colors"
+                  className="absolute top-0 right-0 bottom-0 w-7 flex items-center justify-center text-slate-500 hover:text-white transition-colors"
                   onClick={() => setEvalExpanded(e => !e)}
                   aria-label={evalExpanded ? 'Collapse eval chart' : 'Expand eval chart'}
                 >
@@ -644,7 +592,7 @@ export const GameAnalysis: React.FC<GameAnalysisProps> = ({
         </div>
 
         {/* ── MOBILE ONLY: Toolbar Row ───────────────────────────────────────── */}
-        <div className="lg:hidden flex items-center gap-1 px-3 py-2 bg-[#0a0d14] border-t border-white/5 shrink-0">
+        <div className="flex items-center gap-1 px-3 py-2 bg-[#0a0d14] border-t border-white/5 shrink-0">
           <button
             onClick={() => _handleNav(-1)}
             disabled={currentMoveIdx <= -1}
@@ -755,7 +703,7 @@ export const GameAnalysis: React.FC<GameAnalysisProps> = ({
         </div>
 
         {/* ── MOBILE ONLY: Analysis Coach Widget ────────────────────────────── */}
-        <div className="lg:hidden shrink-0">
+        <div className="shrink-0">
           <AnalysisCoachWidget
             coachActive={coachActive}
             onCoachActiveChange={setCoachActive}
@@ -767,7 +715,7 @@ export const GameAnalysis: React.FC<GameAnalysisProps> = ({
         </div>
 
         {/* RIGHT SIDEBARS: 2xl+ shows both, <2xl shows one with tabs */}
-        <div className="w-full 2xl:w-[840px] lg:w-[420px] bg-[#0a0d14] lg:border-l border-white/5 hidden lg:flex shrink-0">
+        <div className="hidden">
           
           {/* Notation Panel - Always visible on 2xl+, or visible on <2xl if activeTab is notation (mapped to 'coach' for simplicity) */}
           <div className="flex-[1.2] flex flex-col min-h-0 border-b border-white/5">

@@ -267,12 +267,12 @@ export const GamesTab: React.FC<GamesTabProps> = ({
       {/* Header — hidden on mobile when viewing analysis (GameAnalysis is fullscreen overlay) */}
       <div className={cn(
         "flex flex-col gap-2 px-4 py-3 border-b border-white/5 shrink-0",
-        view === 'analysis' && "hidden lg:flex"
+        view === 'analysis' && "hidden"
       )}>
         {/* Top row: view switcher + action buttons */}
         <div className="flex items-center gap-3 flex-wrap">
           {/* Segmented Control — hidden on mobile (nav handled by clicking a game / close button) */}
-          <div className="hidden lg:flex bg-[#0a0d14] rounded-xl p-1 gap-1">
+          <div className="hidden bg-[#0a0d14] rounded-xl p-1 gap-1">
             <button
               onClick={() => setView('database')}
               className={cn(
