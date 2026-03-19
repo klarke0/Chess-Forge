@@ -229,7 +229,15 @@ export function trainNow(req: Request): Response {
         .query("SELECT san FROM positions WHERE repertoire_id = ? AND fen = ? LIMIT 1")
         .get(repertoireId, nFen) as { san: string } | null;
 
-      const correctSan = repMove?.san ?? uciToSan(fenBefore, m.bestMove) ?? "";
+      let correctSan = repMove?.san ?? uciToSan(fenBefore, m.bestMove) ?? "";
+
+      // Sanity check: verify the correct move is actually legal from fenBefore
+      if (correctSan) {
+        try {
+          const verify = new Chess(fenBefore);
+          if (!verify.move(correctSan)) correctSan = "";
+        } catch { correctSan = ""; }
+      }
 
       const existing = candidates.get(nFen);
       const cpLoss = cpLossPawns;
@@ -268,10 +276,19 @@ export function trainNow(req: Request): Response {
     const existing = candidates.get(nFen);
     const cpLoss = dev.eval_diff ?? 0;
 
+    // Sanity check: verify expected_san is legal from the deviation FEN
+    let devCorrectSan: string = dev.expected_san ?? "";
+    if (devCorrectSan) {
+      try {
+        const verify = new Chess(ensureFullFen(dev.fen));
+        if (!verify.move(devCorrectSan)) devCorrectSan = "";
+      } catch { devCorrectSan = ""; }
+    }
+
     if (!existing || (existing.source !== "blunder" && cpLoss >= (existing.cpLoss ?? 0))) {
       candidates.set(nFen, {
         san: dev.played_san,
-        correctSan: dev.expected_san,
+        correctSan: devCorrectSan,
         cpLoss,
         source: "deviation",
         gameId: dev.game_id,
