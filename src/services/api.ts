@@ -356,3 +356,14 @@ export async function runPatternAnalysis(): Promise<PatternAnalysis> {
   if (!res.ok) throw new Error('Failed to run pattern analysis');
   return res.json();
 }
+
+export interface TrainNowCounts {
+  blunders: number;
+  deviations: number;
+  review: number;
+  total: number;
+}
+
+export function getTrainNowCounts(repertoireId: number): Promise<TrainNowCounts> {
+  return request<TrainNowCounts>(`/v2/train-now?repertoireId=${repertoireId}&countOnly=true`);
+}

@@ -241,3 +241,93 @@ export async function generateRepertoireComment(req: Request): Promise<Response>
     return Response.json({ error: "Failed to generate comment" }, { status: 500 });
   }
 }
+
+/**
+ * v2: Explain a specific blunder in Grandmaster coaching style.
+ * POST /api/analyze/blunder
+ */
+export async function explainBlunder(req: Request): Promise<Response> {
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  if (!GEMINI_API_KEY) {
+    return Response.json({
+      text: "Coach unavailable — set GEMINI_API_KEY in the server environment.",
+      concept: "",
+      isError: true,
+    });
+  }
+
+  const body = await req.json() as {
+    fen: string;
+    wrongMove: string;
+    correctMove: string;
+    cpLoss: number;
+    stockfishLine?: string;
+    phase?: string;
+    openingName?: string;
+  };
+
+  const { fen, wrongMove, correctMove, cpLoss, stockfishLine, phase, openingName } = body;
+
+  const prompt = `You are a Grandmaster chess coach explaining a student's specific mistake.
+
+Position (FEN): ${fen}
+${phase ? `Game phase: ${phase}` : ""}
+${openingName ? `Opening: ${openingName}` : ""}
+
+The student played: ${wrongMove}
+The correct move was: ${correctMove}
+Centipawn loss: ${cpLoss.toFixed(1)}
+${stockfishLine ? `Engine continuation after correct move: ${stockfishLine}` : ""}
+
+Your task:
+1. Explain concretely why ${wrongMove} is problematic — reference specific pieces, squares, and threats.
+2. Explain the specific idea behind ${correctMove} — what it achieves tactically or strategically.
+3. Give a memorable principle the student can carry forward.
+
+OUTPUT FORMAT (use exactly):
+ANALYSIS: [2-3 concrete sentences referencing actual pieces and squares on this board]
+CONCEPT: [short theme tag, e.g. "Discovered attack", "Overloaded piece", "King safety"]`;
+
+  try {
+    const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 300, temperature: 0.5 },
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      console.error("Gemini API error (blunder):", err);
+      return Response.json({ text: "Coach unavailable — Gemini API error.", concept: "", isError: true });
+    }
+
+    const data = await res.json() as any;
+    const fullText: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+
+    let analysisText = "";
+    let concept = "";
+
+    if (fullText.includes("ANALYSIS:")) {
+      analysisText = fullText.split(/CONCEPT:/i)[0].replace(/ANALYSIS:/i, "").trim();
+    } else {
+      analysisText = fullText.split(/CONCEPT:/i)[0].trim();
+    }
+
+    const conceptMatch = fullText.match(/CONCEPT:\s*(.+)/i);
+    if (conceptMatch) {
+      concept = conceptMatch[1].trim().replace(/^["'\[]|["'\]]$/g, "");
+    }
+
+    return Response.json({
+      text: analysisText || "The coach could not analyze this position.",
+      concept,
+      isError: false,
+    });
+  } catch (error) {
+    console.error("Gemini proxy error (blunder):", error);
+    return Response.json({ text: "Coach unavailable — check your connection.", concept: "", isError: true });
+  }
+}

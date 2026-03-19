@@ -3,8 +3,9 @@ import { listRepertoires, getPositions, getChapters, importPgn, updateChapterLea
 import { getProgress, recordAttempt, getWeakPositions, getDuePositions, getProgressStats } from "./routes/progress";
 import { createSession, endSession, listSessions } from "./routes/sessions";
 import { syncGames, getGameStats, getLabStats, uploadGames, listGames, getGame, saveAnalysis, getBlunders } from "./routes/games";
-import { analyzePosition, generateRepertoireComment } from "./routes/analyze";
+import { analyzePosition, generateRepertoireComment, explainBlunder } from "./routes/analyze";
 import { getPatternReport, runPatternAnalysis } from "./routes/patterns";
+import { trainNow } from "./routes/v2_train_now";
 
 const PORT = 3001;
 const DIST_PATH = join(import.meta.dir, "../dist");
@@ -281,6 +282,16 @@ async function route(method: string, path: string, url: URL, req: Request): Prom
       if (method === "POST" && segments[1] === "analyze" && segments.length === 2) {
         return analyzePosition(req);
       }
+  // GET /api/v2/train-now
+  if (method === "GET" && segments[1] === "v2" && segments[2] === "train-now" && segments.length === 3) {
+    return trainNow(req);
+  }
+
+  // POST /api/analyze/blunder
+  if (method === "POST" && segments[1] === "analyze" && segments[2] === "blunder" && segments.length === 3) {
+    return explainBlunder(req);
+  }
+
   // POST /api/analyze/repertoire-comment
   if (method === "POST" && segments[1] === "analyze" && segments[2] === "repertoire-comment" && segments.length === 3) {
     return generateRepertoireComment(req);

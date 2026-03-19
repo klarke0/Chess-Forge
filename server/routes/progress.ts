@@ -1,4 +1,5 @@
 import db from "../db";
+import { computeSM2 } from "../utils/sm2";
 
 /** Strip halfmove clock + fullmove number so transpositions map to the same key. */
 function normalizeFen(fen: string): string {
@@ -39,10 +40,26 @@ export async function recordAttempt(req: Request): Promise<Response> {
   ).get(body.repertoireId, fen) as any;
 
   if (!existing) {
-    db.prepare(
-      `INSERT INTO progress (repertoire_id, fen, total_attempts, correct_attempts, streak, last_reviewed)
-       VALUES (?, ?, 1, ?, ?, ?)`
-    ).run(body.repertoireId, fen, body.correct ? 1 : 0, body.correct ? 1 : 0, now);
+    // v2: if grade is provided, compute SM-2 for the initial row
+    if (body.grade !== undefined) {
+      const sm2 = computeSM2(
+        { easeFactor: 2.5, intervalDays: 0, repetitions: 0 },
+        body.grade,
+      );
+      db.prepare(
+        `INSERT INTO progress (repertoire_id, fen, total_attempts, correct_attempts, streak,
+          ease_factor, interval_days, next_review, last_reviewed)
+         VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?)`
+      ).run(
+        body.repertoireId, fen, body.correct ? 1 : 0, body.correct ? 1 : 0,
+        sm2.nextEaseFactor, sm2.nextIntervalDays, sm2.nextReviewDate, now,
+      );
+    } else {
+      db.prepare(
+        `INSERT INTO progress (repertoire_id, fen, total_attempts, correct_attempts, streak, last_reviewed)
+         VALUES (?, ?, 1, ?, ?, ?)`
+      ).run(body.repertoireId, fen, body.correct ? 1 : 0, body.correct ? 1 : 0, now);
+    }
   } else {
     const newStreak = body.correct ? existing.streak + 1 : 0;
     const newCorrect = existing.correct_attempts + (body.correct ? 1 : 0);
@@ -54,6 +71,17 @@ export async function recordAttempt(req: Request): Promise<Response> {
           streak=?, ease_factor=?, interval_days=?, next_review=?, last_reviewed=?
           WHERE repertoire_id=? AND fen=?`
       ).run(newCorrect, newStreak, body.easeFactor, body.intervalDays ?? 0, body.nextReview, now, body.repertoireId, fen);
+    } else if (body.grade !== undefined) {
+      // v2: grade-only path — server computes SM-2 from grade + existing progress
+      const sm2 = computeSM2(
+        { easeFactor: existing.ease_factor, intervalDays: existing.interval_days, repetitions: existing.streak },
+        body.grade,
+      );
+      db.prepare(
+        `UPDATE progress SET total_attempts=total_attempts+1, correct_attempts=?,
+          streak=?, ease_factor=?, interval_days=?, next_review=?, last_reviewed=?
+          WHERE repertoire_id=? AND fen=?`
+      ).run(newCorrect, newStreak, sm2.nextEaseFactor, sm2.nextIntervalDays, sm2.nextReviewDate, now, body.repertoireId, fen);
     } else {
       // Legacy server-side scheduling
       let easeFactor = existing.ease_factor;

@@ -1,6 +1,7 @@
 import db from "../db";
 import { Chess } from "chess.js";
 import { classifyGameShape } from "../utils/gameShape";
+import { computeAndPersistDeviations } from "../utils/deviations";
 
 function deriveTimeClass(timeControl: string): string {
   const base = parseInt(timeControl?.split('+')[0] || '0', 10);
@@ -422,6 +423,13 @@ export async function saveAnalysis(req: Request): Promise<Response> {
     ).run(JSON.stringify(analysis), gameShape, termination, id);
 
     if (res.changes === 0) return Response.json({ error: "Game not found" }, { status: 404 });
+
+    // v2: Compute and persist deviations against all repertoires
+    try {
+      computeAndPersistDeviations(Number(id), analysis);
+    } catch (devErr) {
+      console.warn(`[saveAnalysis] Deviation computation failed for game ${id}:`, devErr);
+    }
 
     console.log(`[POST /api/games/:id/analysis] Saved analysis for game ID: ${id}, shape: ${gameShape}`);
     return Response.json({ ok: true, shape: gameShape });

@@ -41,6 +41,15 @@ Novelty detection: if a wrong move has Stockfish eval > +0.50, it's flagged as a
 - **`services/engine.ts`** — `StockfishEngine` class fetches Stockfish 10 from CDN, creates a Web Worker (via Blob URL for CORS), runs MultiPV 3. The `useStockfish()` hook manages lifecycle and parses UCI output into `EngineLine[]`.
 - **`services/ai_coach.ts`** — Calls Gemini 2.0 Flash with the current FEN + last move. Parses structured `ANALYSIS:` / `LINE:` output. API key from `VITE_GEMINI_API_KEY` in `.env.local`.
 
+### v2 Data Layer
+
+- **`GET /api/v2/train-now?repertoireId=X`** — Returns top 8 mistake-pool positions scored by:
+  `score = cpLossWeight * recencyWeight * repetitionWeight / familiarityDecay`
+  Sources: progress table (accuracy < 0.7 or due), recent blunders (90 days, CP loss > 0.5), deviations table (90 days).
+- **`POST /api/analyze/blunder`** — Gemini-powered blunder explanation (GM coaching style). Returns `{ text, concept }`.
+- **Deviation persistence** — `server/utils/deviations.ts` runs after `saveAnalysis`, computing repertoire deviations and writing to the `deviations` table.
+- **`server/routes/v2_train_now.ts`** — Mistake pool builder and scoring logic.
+
 ### Current State
 
 Everything lives in a single `App.tsx` (~510 lines) with all state as `useState` hooks. The `src/utils/` directory exists but is empty. Weak positions are tracked in localStorage (`jobava_weak_points`) as a `Record<FEN, count>` but not yet surfaced in the UI.
