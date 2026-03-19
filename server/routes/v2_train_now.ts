@@ -222,14 +222,22 @@ export function trainNow(req: Request): Response {
       const fenBefore = positions[i]?.fen_before;
       if (!fenBefore) continue;
 
+      // Skip move 1 — starting position is never a useful drill
+      const moveNum = Math.floor(i / 2) + 1;
+      if (moveNum <= 1) continue;
+
       const nFen = normalizeFen(fenBefore);
 
-      // Look up correct repertoire move for this FEN
+      // Only include positions that are in the user's repertoire.
+      // Do NOT fall back to engine bestMove — that would drill positions
+      // from openings the user isn't studying.
       const repMove = db
         .query("SELECT san FROM positions WHERE repertoire_id = ? AND fen = ? LIMIT 1")
         .get(repertoireId, nFen) as { san: string } | null;
 
-      let correctSan = repMove?.san ?? uciToSan(fenBefore, m.bestMove) ?? "";
+      if (!repMove) continue;
+
+      let correctSan = repMove.san;
 
       // Sanity check: verify the correct move is actually legal from fenBefore
       if (correctSan) {
@@ -241,7 +249,6 @@ export function trainNow(req: Request): Response {
 
       const existing = candidates.get(nFen);
       const cpLoss = cpLossPawns;
-      const moveNum = Math.floor(i / 2) + 1;
       // Keep the higher cpLoss entry
       if (!existing || cpLoss > existing.cpLoss) {
         candidates.set(nFen, {
