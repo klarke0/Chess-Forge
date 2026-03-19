@@ -2,7 +2,7 @@ import { join } from "path";
 import { listRepertoires, getPositions, getChapters, importPgn, updateChapterLearnRuns, addPosition } from "./routes/repertoire";
 import { getProgress, recordAttempt, getWeakPositions, getDuePositions, getProgressStats } from "./routes/progress";
 import { createSession, endSession, listSessions } from "./routes/sessions";
-import { syncGames, getGameStats, getLabStats, uploadGames, listGames, getGame, saveAnalysis, getBlunders } from "./routes/games";
+import { syncGames, getGameStats, getLabStats, uploadGames, listGames, getGame, saveAnalysis, getBlunders, backfillDeviations } from "./routes/games";
 import { analyzePosition, generateRepertoireComment, explainBlunder } from "./routes/analyze";
 import { getPatternReport, runPatternAnalysis } from "./routes/patterns";
 import { trainNow } from "./routes/v2_train_now";
@@ -285,6 +285,11 @@ async function route(method: string, path: string, url: URL, req: Request): Prom
   // GET /api/v2/train-now
   if (method === "GET" && segments[1] === "v2" && segments[2] === "train-now" && segments.length === 3) {
     return trainNow(req);
+  }
+
+  // POST /api/v2/backfill-deviations
+  if (method === "POST" && segments[1] === "v2" && segments[2] === "backfill-deviations" && segments.length === 3) {
+    return backfillDeviations();
   }
 
   // POST /api/analyze/blunder

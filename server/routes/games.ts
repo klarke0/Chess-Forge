@@ -487,3 +487,29 @@ export function getBlunders(limit: number = 20): Response {
   blunders.sort((a, b) => b.cpLoss - a.cpLoss);
   return Response.json(blunders.slice(0, limit));
 }
+
+/**
+ * POST /api/v2/backfill-deviations
+ * Recomputes deviations for all previously analyzed games.
+ * Safe to run multiple times — computeAndPersistDeviations deletes existing rows first.
+ */
+export async function backfillDeviations(): Promise<Response> {
+  const games = db.query(
+    "SELECT id, analysis_json FROM games WHERE analysis_json IS NOT NULL ORDER BY id"
+  ).all() as { id: number; analysis_json: string }[];
+
+  let processed = 0;
+  let failed = 0;
+
+  for (const game of games) {
+    try {
+      const analysis = JSON.parse(game.analysis_json);
+      computeAndPersistDeviations(game.id, analysis);
+      processed++;
+    } catch {
+      failed++;
+    }
+  }
+
+  return Response.json({ processed, failed, total: games.length });
+}

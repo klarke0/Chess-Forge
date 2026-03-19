@@ -250,6 +250,7 @@ export function trainNow(req: Request): Response {
        FROM deviations d
        JOIN games g ON d.game_id = g.id
        WHERE d.repertoire_id = ? AND g.date >= ?
+         AND (d.notes = 'player' OR d.notes IS NULL)
        ORDER BY g.date DESC`,
     )
     .all(repertoireId, ninetyDaysAgo) as any[];
