@@ -363,6 +363,7 @@ const onDrop = useCallback((source: string, target: string) => {
               correctMove={currentPosition.correctSan}
               cpLoss={currentPosition.cpLoss ?? null}
               phase={currentPosition.phase}
+              revealed={revealed}
               onNext={handleNext}
             />
           </>

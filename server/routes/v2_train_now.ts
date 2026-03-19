@@ -20,6 +20,14 @@ interface TrainPosition {
   gameId?: number;
   moveNumber?: number;
   context?: string;
+  phase?: "opening" | "middlegame" | "endgame";
+}
+
+function derivePhase(moveNumber: number | undefined): "opening" | "middlegame" | "endgame" {
+  if (!moveNumber) return "middlegame";
+  if (moveNumber <= 15) return "opening";
+  if (moveNumber <= 35) return "middlegame";
+  return "endgame";
 }
 
 /**
@@ -361,6 +369,7 @@ export function trainNow(req: Request): Response {
       gameId: cand.gameId,
       moveNumber: cand.moveNumber,
       context: cand.context,
+      phase: derivePhase(cand.moveNumber),
     });
   }
 

@@ -9,6 +9,7 @@ interface BlunderExplanationProps {
   correctMove: string;
   cpLoss: number | null;
   phase?: string;
+  revealed: boolean;
   onNext: () => void;
 }
 
@@ -23,13 +24,18 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
   correctMove,
   cpLoss,
   phase,
+  revealed,
   onNext,
 }) => {
+  // Only call Gemini when there's something to explain (a mistake was made or answer was revealed)
+  const needsExplanation = revealed || wrongMove !== null;
+
   const [analysis, setAnalysis] = useState<BlunderAnalysis | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(needsExplanation);
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    if (!needsExplanation) return;
     setLoading(true);
     setError(false);
     setAnalysis(null);
@@ -41,7 +47,28 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
       .then(setAnalysis)
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [fen, wrongMove, correctMove, cpLoss, phase]);
+  }, [fen, wrongMove, correctMove, cpLoss, phase, needsExplanation]);
+
+  // Clean correct — no explanation needed, just a quick confirmation
+  if (!needsExplanation) {
+    return (
+      <div className="flex flex-col gap-4 p-6 bg-[#0d1117] border-t border-white/5">
+        <p className="text-sm text-slate-500">Keep it up.</p>
+        <button
+          onClick={onNext}
+          className={cn(
+            'w-full flex items-center justify-center gap-2',
+            'bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98]',
+            'text-white font-black uppercase tracking-widest text-sm',
+            'py-4 rounded-xl transition-all',
+            'border border-indigo-400/20',
+          )}
+        >
+          Next <ChevronRight size={18} />
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 p-6 bg-[#0d1117] border-t border-white/5">
