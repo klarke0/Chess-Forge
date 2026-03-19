@@ -54,7 +54,7 @@ export const UniversalBoard: React.FC<UniversalBoardProps> = ({
   arrows: arrowsProp,
   readonly = false,
   showThreatsControl = false,
-  mobileSquare = false,
+  mobileSquare: _mobileSquare = false,
   mobileControls = false,
   onDeepAnalysis,
   onDemoLine,
@@ -161,14 +161,14 @@ export const UniversalBoard: React.FC<UniversalBoardProps> = ({
         <div className="flex items-center justify-center relative max-w-full">
           {showEvalBar && (
             <div className="w-2.5 lg:w-3 mr-2 lg:mr-4 shrink-0 relative overflow-hidden flex flex-col-reverse rounded-full bg-slate-800 border border-black/50"
-                 style={{ height: 'min(70vh, 100%)' }}>
+                 style={{ height: '100%' }}>
               <EvalBar />
             </div>
           )}
 
           <div className={cn(
             "relative lg:w-[min(60vw,70vh)] lg:h-[min(60vw,70vh)] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] rounded-xl lg:rounded-2xl overflow-hidden border-[4px] lg:border-[10px] border-[#161b22] bg-[#161b22] shrink-0",
-            mobileSquare ? "w-full max-w-[calc(100dvh-340px)] aspect-square" : "w-[min(95vw,60vh)] h-[min(95vw,60vh)]",
+            "w-full aspect-square lg:aspect-auto",
           )}>
             <Chessboard
               position={fen}
