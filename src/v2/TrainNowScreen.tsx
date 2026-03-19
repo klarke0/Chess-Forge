@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import { ArrowLeft, Check, X, Eye, Loader2, Timer } from 'lucide-react';
+import { ArrowLeft, Check, X, Eye, Loader2, Timer, RotateCcw } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useRepertoireStore } from '@/stores/repertoireStore';
 import { request } from '@/services/api';
 import { BlunderExplanation } from './BlunderExplanation';
+import { useSound } from '@/hooks/useSound';
 
 type SessionState = 'idle' | 'loading' | 'queued' | 'drilling' | 'explanation' | 'complete';
 
@@ -84,6 +85,7 @@ function looseSan(san: string) {
 
 export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({ onBack }) => {
   const repertoireId = useRepertoireStore(s => s.repertoireId);
+  const { playSound } = useSound();
 
   const [state, setState] = useState<SessionState>('idle');
   const [positions, setPositions] = useState<TrainPosition[]>([]);
@@ -120,6 +122,8 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({ onBack }) => {
 
   async function loadSession() {
     setState('loading');
+    setCurrentIdx(0);
+    setPositions([]);
     try {
       const data = await request<{ positions: TrainPosition[] }>(
         `/v2/train-now?repertoireId=${repertoireId}`
@@ -213,6 +217,16 @@ const onDrop = useCallback((source: string, target: string) => {
       if (speedMode) {
         responseTimes.current.push((Date.now() - positionStartRef.current) / 1000);
       }
+      // Play sound based on move type
+      if (move.flags.includes('c') || move.flags.includes('e')) {
+        playSound('capture');
+      } else if (move.flags.includes('k') || move.flags.includes('q')) {
+        playSound('move');
+      } else if (chess.inCheck()) {
+        playSound('check');
+      } else {
+        playSound('move');
+      }
       setFen(chess.fen());
       if (mistakes === 0) {
         setStats(s => ({ ...s, correct: s.correct + 1 }));
@@ -224,6 +238,7 @@ const onDrop = useCallback((source: string, target: string) => {
     }
 
     // Wrong move
+    playSound('wrong');
     setWrongMove(move.san);
     const newMistakes = mistakes + 1;
     setMistakes(newMistakes);
@@ -314,25 +329,18 @@ const onDrop = useCallback((source: string, target: string) => {
           <h2 className="text-sm font-black text-slate-200 uppercase tracking-wider">
             {state === 'complete' ? 'Session Complete' : 'Training'}
           </h2>
-          {state === 'drilling' && positions.length > 0 && (
-            <p className="text-[10px] text-slate-500 font-semibold">
-              {currentIdx + 1} / {positions.length}
-            </p>
-          )}
         </div>
-        {state === 'drilling' && (
-          <div className="flex gap-1">
-            {positions.map((_, i) => (
+        {(state === 'drilling' || state === 'explanation') && positions.length > 0 && (
+          <div className="flex items-center gap-1 w-32">
+            <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
               <div
-                key={i}
-                className={cn(
-                  'w-1.5 h-1.5 rounded-full transition-all',
-                  i < currentIdx ? 'bg-emerald-500' :
-                  i === currentIdx ? 'bg-indigo-400 w-3' :
-                  'bg-white/10',
-                )}
+                className="h-full bg-indigo-500 rounded-full transition-all duration-300"
+                style={{ width: `${(currentIdx / positions.length) * 100}%` }}
               />
-            ))}
+            </div>
+            <span className="text-[10px] text-slate-500 tabular-nums shrink-0">
+              {currentIdx + 1}/{positions.length}
+            </span>
           </div>
         )}
       </div>
@@ -544,17 +552,32 @@ const onDrop = useCallback((source: string, target: string) => {
               </>
             )}
 
-            <button
-              onClick={onBack}
-              className={cn(
-                'px-8 py-3 rounded-xl',
-                'bg-white/5 border border-white/10',
-                'text-slate-300 font-semibold text-sm',
-                'hover:bg-white/10 transition-all active:scale-[0.98]',
-              )}
-            >
-              Back to Home
-            </button>
+            <div className="flex flex-col items-center gap-3 w-full max-w-xs">
+              <button
+                onClick={loadSession}
+                className={cn(
+                  'w-full flex items-center justify-center gap-2 py-4 rounded-2xl',
+                  'bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98]',
+                  'text-white font-black text-base uppercase tracking-widest',
+                  'shadow-xl shadow-indigo-600/30 border border-indigo-400/20',
+                  'transition-all',
+                )}
+              >
+                <RotateCcw size={16} />
+                Drill Again
+              </button>
+              <button
+                onClick={onBack}
+                className={cn(
+                  'w-full px-8 py-3 rounded-xl',
+                  'bg-white/5 border border-white/10',
+                  'text-slate-400 font-semibold text-sm',
+                  'hover:bg-white/10 transition-all active:scale-[0.98]',
+                )}
+              >
+                Back to Home
+              </button>
+            </div>
           </div>
         )}
       </div>

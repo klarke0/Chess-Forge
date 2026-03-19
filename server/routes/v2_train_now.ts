@@ -33,7 +33,7 @@ function derivePhase(moveNumber: number | undefined): "opening" | "middlegame" |
 /**
  * Score a position for the mistake pool.
  *
- * score = cpLossWeight * recencyWeight * repetitionWeight / familiarityDecay
+ * score = cpLossWeight * recencyWeight * repetitionWeight / familiarityDecay * phaseMultiplier
  */
 function scorePosition(
   cpLoss: number,
@@ -42,6 +42,7 @@ function scorePosition(
   correctDrills: number,
   everDrilled: boolean,
   lastDrillCorrect: boolean,
+  phase?: "opening" | "middlegame" | "endgame",
 ): number {
   // cpLossWeight
   let cpLossWeight: number;
@@ -75,7 +76,10 @@ function scorePosition(
   else if (correctDrills >= 2) familiarityDecay = 3;
   else familiarityDecay = 1.5;
 
-  return (cpLossWeight * recencyWeight * repetitionWeight) / familiarityDecay;
+  // phaseMultiplier: opening blunders score highest
+  const phaseMultiplier = phase === "opening" ? 1.5 : phase === "middlegame" ? 1.2 : 1.0;
+
+  return (cpLossWeight * recencyWeight * repetitionWeight * phaseMultiplier) / familiarityDecay;
 }
 
 function normalizeFen(fen: string): string {
@@ -158,7 +162,8 @@ export function trainNow(req: Request): Response {
          AND (
            (p.total_attempts > 0 AND CAST(p.correct_attempts AS REAL) / p.total_attempts < 0.7)
            OR (p.next_review IS NOT NULL AND p.next_review <= ?)
-         )`,
+         )
+       ORDER BY p.next_review ASC`,
     )
     .all(repertoireId, now) as any[];
 
@@ -177,10 +182,15 @@ export function trainNow(req: Request): Response {
     if (!repMoves2) continue;
 
     if (!candidates.has(nFen)) {
+      // Use accuracy as a proxy for cpLoss: chronic misses score higher
+      const accuracy = row.total_attempts > 0
+        ? row.correct_attempts / row.total_attempts
+        : 0.5;
+      const proxyCpLoss = (1 - accuracy) * 3;
       candidates.set(nFen, {
         san: "",
         correctSan: repMoves2.san,
-        cpLoss: 0,
+        cpLoss: proxyCpLoss,
         source: "review",
         date: row.last_reviewed,
       });
@@ -378,6 +388,7 @@ export function trainNow(req: Request): Response {
     const lastDrillCorrect = (prog?.streak ?? 0) > 0;
     const fenOccurrences = fenCounts.get(fen) ?? 1;
 
+    const phase = derivePhase(cand.moveNumber);
     const score = scorePosition(
       cand.cpLoss,
       cand.date,
@@ -385,6 +396,7 @@ export function trainNow(req: Request): Response {
       correctDrills,
       everDrilled,
       lastDrillCorrect,
+      phase,
     );
 
     scored.push({
@@ -397,7 +409,7 @@ export function trainNow(req: Request): Response {
       gameId: cand.gameId,
       moveNumber: cand.moveNumber,
       context: cand.context,
-      phase: derivePhase(cand.moveNumber),
+      phase,
     });
   }
 
