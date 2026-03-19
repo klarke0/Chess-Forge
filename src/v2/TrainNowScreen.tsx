@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import { ArrowLeft, Check, X, Eye, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, X, Eye, Loader2, Timer } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useRepertoireStore } from '@/stores/repertoireStore';
 import { request } from '@/services/api';
@@ -16,6 +16,7 @@ interface TrainPosition {
   context?: string;
   cpLoss?: number;
   phase?: string;
+  source?: 'blunder' | 'deviation' | 'review';
 }
 
 interface SessionStats {
@@ -23,6 +24,53 @@ interface SessionStats {
   correct: number;
   revealed: number;
 }
+
+function getTimerDuration(source?: string): number {
+  return source === 'blunder' ? 25 : 15;
+}
+
+function timerColor(fraction: number): string {
+  if (fraction <= 0.25) return '#f43f5e'; // rose-500
+  if (fraction <= 0.50) return '#f59e0b'; // amber-500
+  return '#6366f1'; // indigo-500
+}
+
+interface CountdownRingProps {
+  remaining: number;
+  total: number;
+}
+
+const CountdownRing: React.FC<CountdownRingProps> = ({ remaining, total }) => {
+  const size = 44;
+  const stroke = 3.5;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const fraction = total > 0 ? remaining / total : 0;
+  const offset = circumference * (1 - fraction);
+  const color = timerColor(fraction);
+
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2} cy={size / 2} r={radius}
+          fill="none" stroke="white" strokeOpacity={0.07} strokeWidth={stroke}
+        />
+        <circle
+          cx={size / 2} cy={size / 2} r={radius}
+          fill="none" stroke={color} strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          style={{ transition: 'stroke-dashoffset 0.3s linear, stroke 0.3s' }}
+        />
+      </svg>
+      <span className="absolute text-[11px] font-black tabular-nums" style={{ color }}>
+        {Math.ceil(remaining)}
+      </span>
+    </div>
+  );
+};
 
 interface TrainNowScreenProps {
   onBack: () => void;
@@ -47,6 +95,14 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({ onBack }) => {
   const [shaking, setShaking] = useState(false);
   const [stats, setStats] = useState<SessionStats>({ total: 0, correct: 0, revealed: 0 });
 
+  // Speed mode
+  const [speedMode, setSpeedMode] = useState(false);
+  const [timerRemaining, setTimerRemaining] = useState(0);
+  const [timerTotal, setTimerTotal] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const positionStartRef = useRef<number>(0);
+  const responseTimes = useRef<number[]>([]);
+
   const chessRef = useRef(new Chess());
   const currentPosition = positions[currentIdx] ?? null;
 
@@ -56,6 +112,11 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({ onBack }) => {
   useEffect(() => {
     loadSession();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, []);
 
   async function loadSession() {
     setState('loading');
@@ -82,9 +143,32 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({ onBack }) => {
     // Find first drillable position
     const first = positions.findIndex(p => p.correctSan && p.correctSan.trim());
     if (first === -1) { setState('complete'); return; }
+    responseTimes.current = [];
     setCurrentIdx(first);
     setupPosition(positions[first]);
     setState('drilling');
+  }
+
+  const handleRevealRef = useRef<() => void>(() => {});
+
+  function clearTimer() {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }
+
+  function startTimer(duration: number) {
+    clearTimer();
+    setTimerTotal(duration);
+    setTimerRemaining(duration);
+    const start = Date.now();
+    timerRef.current = setInterval(() => {
+      const elapsed = (Date.now() - start) / 1000;
+      const left = Math.max(0, duration - elapsed);
+      setTimerRemaining(left);
+      if (left <= 0) {
+        clearTimer();
+        handleRevealRef.current();
+      }
+    }, 100);
   }
 
   function setupPosition(pos: TrainPosition) {
@@ -93,6 +177,10 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({ onBack }) => {
     setMistakes(0);
     setWrongMove(null);
     setRevealed(false);
+    positionStartRef.current = Date.now();
+    if (speedMode) {
+      startTimer(getTimerDuration(pos.source));
+    }
   }
 
 const onDrop = useCallback((source: string, target: string) => {
@@ -121,6 +209,10 @@ const onDrop = useCallback((source: string, target: string) => {
     }
 
     if (isCorrect) {
+      clearTimer();
+      if (speedMode) {
+        responseTimes.current.push((Date.now() - positionStartRef.current) / 1000);
+      }
       setFen(chess.fen());
       if (mistakes === 0) {
         setStats(s => ({ ...s, correct: s.correct + 1 }));
@@ -166,6 +258,7 @@ const onDrop = useCallback((source: string, target: string) => {
       nextIdx++;
     }
     if (nextIdx >= positions.length) {
+      clearTimer();
       setState('complete');
       return;
     }
@@ -175,6 +268,10 @@ const onDrop = useCallback((source: string, target: string) => {
   }
 
   function handleReveal() {
+    clearTimer();
+    if (speedMode) {
+      responseTimes.current.push((Date.now() - positionStartRef.current) / 1000);
+    }
     if (currentPosition) {
       recordAttempt(currentPosition.fen, false, 1);
       // Play the correct move so the board shows where the piece goes
@@ -189,9 +286,16 @@ const onDrop = useCallback((source: string, target: string) => {
     setState('explanation');
   }
 
+  // Keep ref in sync for timer callback
+  handleRevealRef.current = handleReveal;
+
   const accuracy = stats.total > 0
     ? Math.round((stats.correct / stats.total) * 100)
     : 0;
+
+  const avgResponseTime = responseTimes.current.length > 0
+    ? (responseTimes.current.reduce((a, b) => a + b, 0) / responseTimes.current.length).toFixed(1)
+    : null;
 
   // Estimated time: ~1.5 min per position
   const estMinutes = Math.max(1, Math.round(positions.length * 1.5));
@@ -257,6 +361,34 @@ const onDrop = useCallback((source: string, target: string) => {
                 ~{estMinutes} min
               </p>
             </div>
+
+            {/* Speed Mode toggle */}
+            <button
+              onClick={() => setSpeedMode(s => !s)}
+              className={cn(
+                'flex items-center gap-3 px-5 py-3 rounded-xl transition-all',
+                'border',
+                speedMode
+                  ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300'
+                  : 'bg-white/5 border-white/10 text-slate-400',
+              )}
+            >
+              <Timer size={18} />
+              <div className="text-left">
+                <p className="text-sm font-bold">Speed Mode</p>
+                <p className="text-[10px] opacity-60">~15s per position</p>
+              </div>
+              <div className={cn(
+                'ml-auto w-9 h-5 rounded-full transition-all flex items-center px-0.5',
+                speedMode ? 'bg-indigo-500' : 'bg-white/10',
+              )}>
+                <div className={cn(
+                  'w-4 h-4 rounded-full bg-white transition-transform',
+                  speedMode ? 'translate-x-4' : 'translate-x-0',
+                )} />
+              </div>
+            </button>
+
             <button
               onClick={startDrilling}
               className={cn(
@@ -285,9 +417,14 @@ const onDrop = useCallback((source: string, target: string) => {
 
             {/* Board */}
             <div className={cn(
-              'flex-1 flex items-center justify-center p-4',
+              'flex-1 flex items-center justify-center p-4 relative',
               shaking && 'animate-shake',
             )}>
+              {speedMode && state === 'drilling' && (
+                <div className="absolute top-2 right-2 z-10">
+                  <CountdownRing remaining={timerRemaining} total={timerTotal} />
+                </div>
+              )}
               <div className="w-full aspect-square rounded-xl overflow-hidden border-[6px] border-[#161b22] bg-[#161b22] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)]">
                 <Chessboard
                   position={fen}
@@ -383,7 +520,9 @@ const onDrop = useCallback((source: string, target: string) => {
               <>
                 <div className="text-center">
                   <p className="text-4xl font-black text-slate-100 mb-1">{accuracy}%</p>
-                  <p className="text-sm text-slate-500">accuracy</p>
+                  <p className="text-sm text-slate-500">
+                    accuracy{avgResponseTime && <span className="ml-2 text-indigo-400">Avg: {avgResponseTime}s</span>}
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-3 gap-6 text-center">
