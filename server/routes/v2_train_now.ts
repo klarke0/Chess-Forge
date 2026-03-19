@@ -82,6 +82,8 @@ function normalizeFen(fen: string): string {
   return fen.split(" ").slice(0, 4).join(" ");
 }
 
+const STARTING_FEN = normalizeFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+
 /** Ensure FEN is valid for chess.js (needs 6 fields). Pads with dummy clock/move counters if needed. */
 function ensureFullFen(fen: string): string {
   const parts = fen.split(" ");
@@ -163,6 +165,7 @@ export function trainNow(req: Request): Response {
   // For progress-based positions, look up the correct move from the repertoire
   for (const row of progressRows) {
     const nFen = normalizeFen(row.fen);
+    if (nFen === STARTING_FEN) continue; // never drill the starting position
     const repMoves = db
       .query("SELECT san FROM positions WHERE repertoire_id = ? AND fen = ? LIMIT 1")
       .get(repertoireId, row.fen) as { san: string } | null;
@@ -274,6 +277,7 @@ export function trainNow(req: Request): Response {
        JOIN games g ON d.game_id = g.id
        WHERE d.repertoire_id = ? AND g.date >= ?
          AND (d.notes = 'player' OR d.notes IS NULL)
+         AND d.move_number > 1
        ORDER BY g.date DESC`,
     )
     .all(repertoireId, ninetyDaysAgo) as any[];
