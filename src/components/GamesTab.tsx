@@ -18,6 +18,8 @@ interface GamesTabProps {
   onDrillDeviation: (fen: string) => void;
   initialGameId?: number | null;
   initialMoveIdx?: number | null;
+  onAnalysisOpen?: () => void;
+  onAnalysisClose?: () => void;
 }
 
 const TIME_CLASS_STYLES: Record<string, string> = {
@@ -39,10 +41,12 @@ const ResultIcon: React.FC<{ result: string | null }> = ({ result }) => {
   return <Minus size={12} />;
 };
 
-export const GamesTab: React.FC<GamesTabProps> = ({ 
-  onDrillDeviation, 
+export const GamesTab: React.FC<GamesTabProps> = ({
+  onDrillDeviation,
   initialGameId,
-  initialMoveIdx 
+  initialMoveIdx,
+  onAnalysisOpen,
+  onAnalysisClose,
 }) => {
   const [view, setView] = useState<GamesView>('database');
   const [games, setGames] = useState<api.GameRecord[]>([]);
@@ -196,6 +200,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
       setLoadingGameId(null);
       setLoadingStep('');
       setView('analysis');
+      onAnalysisOpen?.();
     } catch (e: any) {
       console.error('Failed to load game:', e);
       setError(e.message || 'An unexpected error occurred while loading the game.');
@@ -581,6 +586,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                 setAnalyzedGame(null);
                 setParsedGame(null);
                 setSelectedMoveIdx(null);
+                onAnalysisClose?.();
               }}
               onDrillDeviation={(deviation) => onDrillDeviation(deviation.fen)}
             />
