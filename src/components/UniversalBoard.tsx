@@ -158,7 +158,7 @@ export const UniversalBoard: React.FC<UniversalBoardProps> = ({
   return (
     <div className="flex flex-col items-center justify-center w-full max-h-full">
       <div className="flex flex-col lg:flex-row items-center justify-center relative w-full px-1 lg:px-4 py-1 lg:py-2 gap-2 lg:gap-0">
-        <div className="flex items-center justify-center relative max-w-full">
+        <div className="flex items-center justify-center relative w-full lg:w-auto max-w-full">
           {showEvalBar && (
             <div className="w-2.5 lg:w-3 mr-2 lg:mr-4 shrink-0 relative overflow-hidden flex flex-col-reverse rounded-full bg-slate-800 border border-black/50"
                  style={{ height: '100%' }}>
