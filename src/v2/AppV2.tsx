@@ -37,7 +37,7 @@ const AppV2: React.FC = () => {
       {/* Phone-width container — centered on desktop, full-width on mobile */}
       <div className="relative flex flex-col h-screen w-full max-w-[430px] bg-[var(--bg-base)] overflow-hidden shadow-2xl shadow-black/60">
       {/* Main content */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden mb-16">
+      <div className={`flex-1 min-h-0 flex flex-col overflow-hidden ${drilling ? '' : 'mb-16'}`}>
         {drilling ? (
           <TrainNowScreen onBack={handleBackFromDrill} />
         ) : (

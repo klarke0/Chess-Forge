@@ -532,8 +532,8 @@ export const GameAnalysis: React.FC<GameAnalysisProps> = ({
       <div className="flex-1 flex overflow-hidden flex-col lg:flex-row">
         
         {/* LEFT: Board Area */}
-        <div className="flex-[1.5] flex flex-col bg-[#0d1117]/20 relative lg:overflow-hidden min-w-0 min-h-0">
-          <div className="flex-1 relative p-2 lg:p-4 min-h-0 flex items-center justify-center">
+        <div className="flex-[1.5] flex flex-col bg-[#0d1117]/20 relative overflow-hidden min-w-0 min-h-0">
+          <div className="flex-1 relative p-2 lg:p-4 min-h-0 flex items-center justify-center overflow-hidden">
             <div className="w-full h-full max-h-full max-w-full flex items-center justify-center relative">
               <UniversalBoard
                 fen={currentFen}

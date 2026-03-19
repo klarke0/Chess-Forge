@@ -168,7 +168,7 @@ export const UniversalBoard: React.FC<UniversalBoardProps> = ({
 
           <div className={cn(
             "relative lg:w-[min(60vw,70vh)] lg:h-[min(60vw,70vh)] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] rounded-xl lg:rounded-2xl overflow-hidden border-[4px] lg:border-[10px] border-[#161b22] bg-[#161b22] shrink-0",
-            mobileSquare ? "w-[min(100vw,calc(100dvh-340px))] aspect-square" : "w-[min(95vw,60vh)] h-[min(95vw,60vh)]",
+            mobileSquare ? "w-full max-w-[calc(100dvh-340px)] aspect-square" : "w-[min(95vw,60vh)] h-[min(95vw,60vh)]",
           )}>
             <Chessboard
               position={fen}

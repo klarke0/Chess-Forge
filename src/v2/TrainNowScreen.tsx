@@ -288,7 +288,7 @@ const onDrop = useCallback((source: string, target: string) => {
               'flex-1 flex items-center justify-center p-4',
               shaking && 'animate-shake',
             )}>
-              <div className="w-full max-w-[90vw] aspect-square max-h-[60vh] rounded-xl overflow-hidden border-[6px] border-[#161b22] bg-[#161b22] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)]">
+              <div className="w-full aspect-square max-h-[60vh] rounded-xl overflow-hidden border-[6px] border-[#161b22] bg-[#161b22] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)]">
                 <Chessboard
                   position={fen}
                   onPieceDrop={onDrop}
@@ -329,7 +329,7 @@ const onDrop = useCallback((source: string, target: string) => {
           <>
             {/* Board (static) */}
             <div className="flex items-center justify-center p-4">
-              <div className="w-full max-w-[70vw] aspect-square max-h-[40vh] rounded-xl overflow-hidden border-[6px] border-[#161b22] bg-[#161b22]">
+              <div className="w-[70%] aspect-square max-h-[40vh] rounded-xl overflow-hidden border-[6px] border-[#161b22] bg-[#161b22]">
                 <Chessboard
                   position={fen}
                   boardOrientation={boardOrientation}
