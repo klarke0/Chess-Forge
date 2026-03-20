@@ -596,14 +596,14 @@ export const GameAnalysis: React.FC<GameAnalysisProps> = ({
           <button
             onClick={() => _handleNav(-1)}
             disabled={currentMoveIdx <= -1}
-            className="p-2 rounded-xl bg-[#0d1117] border border-white/10 text-slate-400 hover:text-white disabled:opacity-20 transition-all active:scale-95"
+            className="p-2.5 rounded-xl bg-[#0d1117] border border-white/10 text-slate-400 hover:text-white disabled:opacity-20 transition-all active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="Back"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={18} />
           </button>
           <button
             onClick={() => _handleNav('start')}
-            className="p-2 rounded-xl bg-rose-600/10 border border-rose-500/20 text-rose-400 hover:bg-rose-600/20 transition-all active:scale-95"
+            className="p-2.5 rounded-xl bg-rose-600/10 border border-rose-500/20 text-rose-400 hover:bg-rose-600/20 transition-all active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="Reset"
           >
             <RotateCw size={14} />
@@ -611,10 +611,10 @@ export const GameAnalysis: React.FC<GameAnalysisProps> = ({
           <button
             onClick={() => _handleNav(1)}
             disabled={currentMoveIdx >= movesList.length - 1}
-            className="p-2 rounded-xl bg-[#0d1117] border border-white/10 text-slate-400 hover:text-white disabled:opacity-20 transition-all active:scale-95"
+            className="p-2.5 rounded-xl bg-[#0d1117] border border-white/10 text-slate-400 hover:text-white disabled:opacity-20 transition-all active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="Forward"
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={18} />
           </button>
 
           <div className="h-6 w-px bg-white/10 mx-1 shrink-0" />

@@ -59,15 +59,15 @@ export const MoveTickerStrip: React.FC<MoveTickerStripProps> = ({
   }, [currentIdx]);
 
   return (
-    <div className="shrink-0 flex items-center h-10 bg-[#0a0d14] border-t border-white/5 px-1 gap-1">
+    <div className="shrink-0 flex items-center h-12 bg-[#0a0d14] border-t border-white/5 px-1 gap-1">
       {/* Prev arrow */}
       <button
         onClick={onPrev}
         disabled={atStart}
-        className="shrink-0 p-1.5 rounded-lg text-slate-500 hover:text-white active:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        className="shrink-0 p-2 rounded-lg text-slate-500 hover:text-white active:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center"
         aria-label="Previous move"
       >
-        <ChevronLeft size={16} />
+        <ChevronLeft size={18} />
       </button>
 
       {/* Scrollable strip */}
@@ -115,10 +115,10 @@ export const MoveTickerStrip: React.FC<MoveTickerStripProps> = ({
       <button
         onClick={onNext}
         disabled={atEnd}
-        className="shrink-0 p-1.5 rounded-lg text-slate-500 hover:text-white active:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        className="shrink-0 p-2 rounded-lg text-slate-500 hover:text-white active:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center"
         aria-label="Next move"
       >
-        <ChevronRight size={16} />
+        <ChevronRight size={18} />
       </button>
     </div>
   );
