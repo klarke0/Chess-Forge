@@ -235,9 +235,9 @@ export function trainNow(req: Request): Response {
       const fenBefore = positions[i]?.fen_before;
       if (!fenBefore) continue;
 
-      // Skip move 1 — starting position is never a useful drill
+      // Skip first 2 moves — too obvious to drill (move 1 = starting position, move 2 = trivial response)
       const moveNum = Math.floor(i / 2) + 1;
-      if (moveNum <= 1) continue;
+      if (moveNum <= 2) continue;
 
       const nFen = normalizeFen(fenBefore);
 
@@ -287,7 +287,7 @@ export function trainNow(req: Request): Response {
        JOIN games g ON d.game_id = g.id
        WHERE d.repertoire_id = ? AND g.date >= ?
          AND (d.notes = 'player' OR d.notes IS NULL)
-         AND d.move_number > 1
+         AND d.move_number > 2
        ORDER BY g.date DESC`,
     )
     .all(repertoireId, ninetyDaysAgo) as any[];
@@ -418,31 +418,45 @@ export function trainNow(req: Request): Response {
   // Only return positions where we know the correct answer
   const valid = scored.filter(p => p.correctSan && p.correctSan.trim().length > 0);
 
+  // Add small random jitter to top candidates so each session has some variety.
+  // Only jitter among candidates within the top score tier (score > 50% of top score).
+  const topScore = valid[0]?.score ?? 1;
+  const tierCutoff = topScore * 0.5;
+  const tierPositions = valid.filter(p => p.score >= tierCutoff);
+  const belowTier = valid.filter(p => p.score < tierCutoff);
+  // Fisher-Yates shuffle within tier for variety
+  for (let i = tierPositions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [tierPositions[i], tierPositions[j]] = [tierPositions[j], tierPositions[i]];
+  }
+  // Re-sort tier by score (stable within random order), keep high scores first overall
+  tierPositions.sort((a, b) => b.score - a.score);
+  const shuffledValid = [...tierPositions, ...belowTier];
+
   // ---------- Enforce session composition (blunders first, then deviation, then review) ----------
-  const SESSION_SIZE = 8;
-  const blunders = valid.filter(p => p.source === "blunder");
-  const deviationsList = valid.filter(p => p.source === "deviation");
-  const reviewList = valid.filter(p => p.source === "review");
+  const SESSION_SIZE = 12;
+  const blunders = shuffledValid.filter(p => p.source === "blunder");
+  const deviationsList = shuffledValid.filter(p => p.source === "deviation");
+  const reviewList = shuffledValid.filter(p => p.source === "review");
 
   const session: TrainPosition[] = [];
 
-  // Reserve 1 slot for top deviation
-  const topDeviation = deviationsList.shift();
-  // Reserve 1 slot for top review
-  const topReview = reviewList.shift();
+  // Reserve 2 slots for deviations, 2 for review
+  const topDeviations = deviationsList.splice(0, 2);
+  const topReviews = reviewList.splice(0, 2);
 
-  // Fill up to 6 slots with blunders
-  const blunderSlots = Math.min(blunders.length, SESSION_SIZE - (topDeviation ? 1 : 0) - (topReview ? 1 : 0));
+  // Fill blunder slots
+  const blunderSlots = Math.min(blunders.length, SESSION_SIZE - topDeviations.length - topReviews.length);
   session.push(...blunders.slice(0, blunderSlots));
 
-  // Add the reserved deviation and review
-  if (topDeviation) session.push(topDeviation);
-  if (topReview) session.push(topReview);
+  // Add the reserved deviations and reviews
+  session.push(...topDeviations);
+  session.push(...topReviews);
 
   // If we still have room (some source didn't have enough), fill from remaining highest-scored
   if (session.length < SESSION_SIZE) {
     const usedFens = new Set(session.map(p => p.fen));
-    const remaining = valid.filter(p => !usedFens.has(p.fen));
+    const remaining = shuffledValid.filter(p => !usedFens.has(p.fen));
     session.push(...remaining.slice(0, SESSION_SIZE - session.length));
   }
 
