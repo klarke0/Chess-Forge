@@ -22,10 +22,13 @@ export interface SM2Output {
  * Grade 3-5: advance (rep 0->1day, rep 1->6days, rep 2+->interval*EF), EF adjusts
  */
 export function computeSM2(input: SM2Input, grade: number): SM2Output {
-  const { easeFactor, intervalDays, repetitions } = input;
+  const easeFactor = Number.isFinite(input.easeFactor) ? input.easeFactor : 2.5;
+  const intervalDays = Number.isFinite(input.intervalDays) ? input.intervalDays : 0;
+  const repetitions = Number.isInteger(input.repetitions) ? input.repetitions : 0;
 
-  let nextEaseFactor = easeFactor + 0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02);
-  nextEaseFactor = Math.max(1.3, nextEaseFactor);
+  let nextEaseFactor =
+    easeFactor + 0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02);
+  nextEaseFactor = Math.max(1.3, Math.min(2.5, nextEaseFactor));
 
   if (grade < 3) {
     return {
@@ -45,7 +48,10 @@ export function computeSM2(input: SM2Input, grade: number): SM2Output {
   } else {
     nextIntervalDays = Math.round(intervalDays * easeFactor);
   }
+  nextIntervalDays = Math.min(180, nextIntervalDays);
 
-  const nextReviewDate = new Date(Date.now() + nextIntervalDays * 86400 * 1000).toISOString();
+  const nextReviewDate = new Date(
+    Date.now() + nextIntervalDays * 86400 * 1000,
+  ).toISOString();
   return { nextEaseFactor, nextIntervalDays, nextRepetitions, nextReviewDate };
 }
