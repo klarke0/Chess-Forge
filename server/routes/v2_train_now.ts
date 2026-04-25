@@ -185,6 +185,64 @@ export function trainNow(req: Request): Response {
   // Collect all candidate positions into a map keyed by normalized FEN
   const countOnly = url.searchParams.get("countOnly") === "true";
 
+  // ---------- Repertoire drill mode ----------
+  if (modeParam === "repertoire") {
+    const repDrillRows = db
+      .query(
+        `SELECT p.fen, p.san,
+                COALESCE(prog.correct_attempts, 0) AS correct_attempts,
+                COALESCE(prog.total_attempts, 0) AS total_attempts
+         FROM positions p
+         LEFT JOIN progress prog ON prog.fen = p.fen AND prog.repertoire_id = p.repertoire_id
+         WHERE p.repertoire_id = ?
+           AND p.fen != ?
+         ORDER BY COALESCE(prog.correct_attempts, 0) ASC,
+                  prog.next_review ASC NULLS FIRST`,
+      )
+      .all(repertoireId, STARTING_FEN) as {
+      fen: string;
+      san: string;
+      correct_attempts: number;
+      total_attempts: number;
+    }[];
+
+    if (countOnly) {
+      const total = repDrillRows.filter(
+        (r) => !dismissedSet.has(normalizeFen(r.fen)) && r.san,
+      ).length;
+      return Response.json({ blunders: 0, deviations: 0, review: 0, total });
+    }
+
+    const SESSION_SIZE_REP = 12;
+    const repSession: TrainPosition[] = [];
+    for (const row of repDrillRows) {
+      const nFen = normalizeFen(row.fen);
+      if (nFen === STARTING_FEN) continue;
+      if (dismissedSet.has(nFen)) continue;
+      if (!row.san) continue;
+      if (repSession.length >= SESSION_SIZE_REP) break;
+
+      const moveNum = parseInt(row.fen.split(" ")[5] ?? "1", 10) || 1;
+
+      if (phaseParam === "opening" && moveNum > 35) continue;
+      if (phaseParam === "endgame" && moveNum <= 35) continue;
+
+      repSession.push({
+        fen: ensureFullFen(row.fen),
+        san: "",
+        correctSan: row.san,
+        cpLoss: 0,
+        score: 1.0,
+        source: "repertoire",
+        moveNumber: moveNum,
+        phase: derivePhase(moveNum),
+        firstEncounter: row.total_attempts === 0,
+      });
+    }
+
+    return Response.json({ positions: repSession });
+  }
+
   const candidates = new Map<
     string,
     {
