@@ -485,7 +485,8 @@ export function trainNow(req: Request): Response {
       if (!cand.correctSan || !cand.correctSan.trim()) continue;
       if (cand.source === "blunder") blunders++;
       else if (cand.source === "deviation") deviations++;
-      else review++;
+      else if (cand.source === "review") review++;
+      // "repertoire" positions are fill — not counted in actionable backlog
     }
     return Response.json({
       blunders,
