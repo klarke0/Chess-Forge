@@ -193,9 +193,15 @@ export function trainNow(req: Request): Response {
                 COALESCE(prog.correct_attempts, 0) AS correct_attempts,
                 COALESCE(prog.total_attempts, 0) AS total_attempts
          FROM positions p
+         JOIN repertoires r ON r.id = p.repertoire_id
          LEFT JOIN progress prog ON prog.fen = p.fen AND prog.repertoire_id = p.repertoire_id
          WHERE p.repertoire_id = ?
            AND p.fen != ?
+           AND (
+             (r.side = 'white' AND SUBSTR(p.fen, INSTR(p.fen, ' ') + 1, 1) = 'w')
+             OR
+             (r.side = 'black' AND SUBSTR(p.fen, INSTR(p.fen, ' ') + 1, 1) = 'b')
+           )
          ORDER BY COALESCE(prog.correct_attempts, 0) ASC,
                   prog.next_review ASC NULLS FIRST`,
       )

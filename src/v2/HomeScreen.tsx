@@ -132,30 +132,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </p>
         )}
 
-        {/* Phase filter */}
-        <div className="flex gap-1 mb-5 bg-forge-border-subtle rounded-xl p-1">
-          {(
-            [
-              { value: "opening" as PhaseFilter, label: "Opening/Mid" },
-              { value: "all" as PhaseFilter, label: "All" },
-              { value: "endgame" as PhaseFilter, label: "Endgame" },
-            ] as { value: PhaseFilter; label: string }[]
-          ).map(({ value, label }) => (
-            <button
-              key={value}
-              onClick={() => setPhase(value)}
-              className={cn(
-                "flex-1 py-2 text-xs font-black uppercase tracking-wide rounded-lg transition-all",
-                phase === value
-                  ? "bg-forge-primary text-white"
-                  : "text-slate-400 hover:text-slate-200",
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
         <button
           onClick={() => onTrainNow("blunder", phase)}
           className={cn(
@@ -170,6 +146,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <Play size={22} fill="currentColor" />
           Train Now
         </button>
+      </div>
+
+      {/* Phase filter — below the main Train Now card */}
+      <div className="flex gap-2 justify-center mb-4">
+        {(["opening", "all", "endgame"] as PhaseFilter[]).map((v) => (
+          <button
+            key={v}
+            onClick={() => setPhase(v)}
+            className={cn(
+              "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide transition-all",
+              phase === v
+                ? "bg-forge-primary text-white"
+                : "bg-forge-card text-slate-500 border border-forge-border-subtle hover:text-slate-300",
+            )}
+          >
+            {v === "opening" ? "Opening/Mid" : v === "endgame" ? "Endgame" : "All"}
+          </button>
+        ))}
       </div>
 
       {/* Secondary Cards */}
