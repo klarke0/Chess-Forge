@@ -456,6 +456,7 @@ export function trainNow(req: Request): Response {
 
   for (const row of repertoireFillRows) {
     const nFen = normalizeFen(row.fen);
+    if (nFen === STARTING_FEN) continue;
     if (dismissedSet.has(nFen)) continue;
     if (candidates.has(nFen)) continue;
     if (!row.san) continue;
