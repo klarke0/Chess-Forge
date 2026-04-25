@@ -2,12 +2,18 @@ import db from "../db";
 import { Chess } from "chess.js";
 
 function uciToSan(fen: string, uci: string): string {
-  if (!uci || uci.length < 4) return '';
+  if (!uci || uci.length < 4) return "";
   try {
     const chess = new Chess(fen);
-    const move = chess.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] ?? 'q' });
-    return move?.san ?? '';
-  } catch { return ''; }
+    const move = chess.move({
+      from: uci.slice(0, 2),
+      to: uci.slice(2, 4),
+      promotion: uci[4] ?? "q",
+    });
+    return move?.san ?? "";
+  } catch {
+    return "";
+  }
 }
 
 interface TrainPosition {
@@ -16,14 +22,17 @@ interface TrainPosition {
   correctSan: string;
   cpLoss: number;
   score: number;
-  source: "blunder" | "deviation" | "review";
+  source: "blunder" | "deviation" | "review" | "repertoire";
   gameId?: number;
   moveNumber?: number;
   context?: string;
   phase?: "opening" | "middlegame" | "endgame";
+  firstEncounter?: boolean;
 }
 
-function derivePhase(moveNumber: number | undefined): "opening" | "middlegame" | "endgame" {
+function derivePhase(
+  moveNumber: number | undefined,
+): "opening" | "middlegame" | "endgame" {
   if (!moveNumber) return "middlegame";
   if (moveNumber <= 15) return "opening";
   if (moveNumber <= 35) return "middlegame";
@@ -52,14 +61,11 @@ function scorePosition(
   else if (cpLoss >= 0.5) cpLossWeight = 2;
   else cpLossWeight = 1;
 
-  // recencyWeight
+  // recencyWeight — exponential decay: ~3x for today, smooth decay to ~1x over 90 days
   let recencyWeight = 1;
   if (dateStr) {
     const daysSince = (Date.now() - new Date(dateStr).getTime()) / 86400000;
-    if (daysSince <= 7) recencyWeight = 3;
-    else if (daysSince <= 30) recencyWeight = 2;
-    else if (daysSince <= 90) recencyWeight = 1.5;
-    else recencyWeight = 1;
+    recencyWeight = 1 + 2 * Math.exp(-daysSince / 30);
   }
 
   // repetitionWeight
@@ -77,16 +83,22 @@ function scorePosition(
   else familiarityDecay = 1.5;
 
   // phaseMultiplier: opening blunders score highest
-  const phaseMultiplier = phase === "opening" ? 1.5 : phase === "middlegame" ? 1.2 : 1.0;
+  const phaseMultiplier =
+    phase === "opening" ? 1.5 : phase === "middlegame" ? 1.2 : 1.0;
 
-  return (cpLossWeight * recencyWeight * repetitionWeight * phaseMultiplier) / familiarityDecay;
+  return (
+    (cpLossWeight * recencyWeight * repetitionWeight * phaseMultiplier) /
+    familiarityDecay
+  );
 }
 
 function normalizeFen(fen: string): string {
   return fen.split(" ").slice(0, 4).join(" ");
 }
 
-const STARTING_FEN = normalizeFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+const STARTING_FEN = normalizeFen(
+  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
+);
 
 /** Ensure FEN is valid for chess.js (needs 6 fields). Pads with dummy clock/move counters if needed. */
 function ensureFullFen(fen: string): string {
@@ -96,7 +108,20 @@ function ensureFullFen(fen: string): string {
   return fen;
 }
 
-const SHORT_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const SHORT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 function formatShortDate(dateStr: string | null): string {
   if (!dateStr) return "";
@@ -106,11 +131,19 @@ function formatShortDate(dateStr: string | null): string {
 }
 
 function buildContext(gameId: number, moveNumber?: number): string {
-  const game = db.query(
-    "SELECT white_username, black_username, user_color, date FROM games WHERE id = ?"
-  ).get(gameId) as { white_username: string | null; black_username: string | null; user_color: string | null; date: string | null } | null;
+  const game = db
+    .query(
+      "SELECT white_username, black_username, user_color, date FROM games WHERE id = ?",
+    )
+    .get(gameId) as {
+    white_username: string | null;
+    black_username: string | null;
+    user_color: string | null;
+    date: string | null;
+  } | null;
   if (!game) return "";
-  const opponent = game.user_color === "black" ? game.white_username : game.black_username;
+  const opponent =
+    game.user_color === "black" ? game.white_username : game.black_username;
   const shortDate = formatShortDate(game.date);
   const parts: string[] = [];
   if (opponent) parts.push(`vs. ${opponent}`);
@@ -124,7 +157,10 @@ export function trainNow(req: Request): Response {
   const repertoireIdParam = url.searchParams.get("repertoireId");
 
   if (!repertoireIdParam) {
-    return Response.json({ error: "repertoireId query param required" }, { status: 400 });
+    return Response.json(
+      { error: "repertoireId query param required" },
+      { status: 400 },
+    );
   }
   const repertoireId = parseInt(repertoireIdParam, 10);
   if (isNaN(repertoireId)) {
@@ -132,7 +168,16 @@ export function trainNow(req: Request): Response {
   }
 
   const now = new Date().toISOString();
-  const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString();
+  const ninetyDaysAgo = new Date(Date.now() - 365 * 86400000).toISOString();
+
+  // Pre-load dismissed positions so they're never served again
+  const dismissedSet = new Set<string>(
+    (
+      db
+        .query("SELECT fen FROM dismissed_positions WHERE repertoire_id = ?")
+        .all(repertoireId) as { fen: string }[]
+    ).map((r) => normalizeFen(r.fen)),
+  );
 
   // Collect all candidate positions into a map keyed by normalized FEN
   const countOnly = url.searchParams.get("countOnly") === "true";
@@ -142,8 +187,9 @@ export function trainNow(req: Request): Response {
     {
       san: string;
       correctSan: string;
-      cpLoss: number;
-      source: "blunder" | "deviation" | "review";
+      totalCpLoss: number;
+      occurrences: number;
+      source: "blunder" | "deviation" | "review" | "repertoire";
       gameId?: number;
       moveNumber?: number;
       date: string | null;
@@ -172,25 +218,33 @@ export function trainNow(req: Request): Response {
     const nFen = normalizeFen(row.fen);
     if (nFen === STARTING_FEN) continue; // never drill the starting position
     const repMoves = db
-      .query("SELECT san FROM positions WHERE repertoire_id = ? AND fen = ? LIMIT 1")
+      .query(
+        "SELECT san FROM positions WHERE repertoire_id = ? AND fen = ? LIMIT 1",
+      )
       .get(repertoireId, row.fen) as { san: string } | null;
     // Also try normalized
-    const repMoves2 = repMoves ?? (db
-      .query("SELECT san FROM positions WHERE repertoire_id = ? AND fen = ? LIMIT 1")
-      .get(repertoireId, nFen) as { san: string } | null);
+    const repMoves2 =
+      repMoves ??
+      (db
+        .query(
+          "SELECT san FROM positions WHERE repertoire_id = ? AND fen = ? LIMIT 1",
+        )
+        .get(repertoireId, nFen) as { san: string } | null);
 
     if (!repMoves2) continue;
 
     if (!candidates.has(nFen)) {
       // Use accuracy as a proxy for cpLoss: chronic misses score higher
-      const accuracy = row.total_attempts > 0
-        ? row.correct_attempts / row.total_attempts
-        : 0.5;
+      const accuracy =
+        row.total_attempts > 0
+          ? row.correct_attempts / row.total_attempts
+          : 0.5;
       const proxyCpLoss = (1 - accuracy) * 3;
       candidates.set(nFen, {
         san: "",
         correctSan: repMoves2.san,
-        cpLoss: proxyCpLoss,
+        totalCpLoss: proxyCpLoss,
+        occurrences: 1,
         source: "review",
         date: row.last_reviewed,
       });
@@ -204,9 +258,36 @@ export function trainNow(req: Request): Response {
        FROM games g
        WHERE g.analysis_json IS NOT NULL AND g.date >= ?
        ORDER BY g.date DESC
-       LIMIT 200`,
+       LIMIT 500`,
     )
     .all(ninetyDaysAgo) as any[];
+
+  // Pre-load all game_positions for analyzed games in a single batch query
+  const allGameIds = analyzedGames.map((g: any) => g.id as number);
+  const gamePositionsMap = new Map<
+    number,
+    { fen_before: string; san: string }[]
+  >();
+  if (allGameIds.length > 0) {
+    const placeholders = allGameIds.map(() => "?").join(",");
+    const allGamePositions = db
+      .query(
+        `SELECT game_id, fen_before, san FROM game_positions WHERE game_id IN (${placeholders}) ORDER BY game_id, id`,
+      )
+      .all(...allGameIds) as {
+      game_id: number;
+      fen_before: string;
+      san: string;
+    }[];
+    for (const pos of allGamePositions) {
+      let arr = gamePositionsMap.get(pos.game_id);
+      if (!arr) {
+        arr = [];
+        gamePositionsMap.set(pos.game_id, arr);
+      }
+      arr.push({ fen_before: pos.fen_before, san: pos.san });
+    }
+  }
 
   for (const game of analyzedGames) {
     let moves: any[];
@@ -216,64 +297,87 @@ export function trainNow(req: Request): Response {
       continue;
     }
 
-    // Get fen_before for each position
-    const positions = db
-      .query("SELECT fen_before, san FROM game_positions WHERE game_id = ? ORDER BY id")
-      .all(game.id) as { fen_before: string; san: string }[];
+    const positions = gamePositionsMap.get(game.id) ?? [];
 
     for (let i = 0; i < moves.length; i++) {
       const m = moves[i];
       const isWhiteMove = i % 2 === 0;
-      const isUserMove = game.user_color === "white" ? isWhiteMove : !isWhiteMove;
+      const isUserMove =
+        game.user_color === "white" ? isWhiteMove : !isWhiteMove;
 
       if (!isUserMove) continue;
       if (m.grade !== "blunder" && m.grade !== "mistake") continue;
       // cpLoss from analysis_json is in centipawns; convert to pawns for scoring
       const cpLossPawns = (m.cpLoss ?? 0) / 100;
-      if (cpLossPawns < 0.5) continue;
+      if (cpLossPawns < 1.0) continue;
 
       const fenBefore = positions[i]?.fen_before;
       if (!fenBefore) continue;
 
-      // Skip first 2 moves — too obvious to drill (move 1 = starting position, move 2 = trivial response)
+      // Skip first 4 moves — early opening theory, not useful to drill
       const moveNum = Math.floor(i / 2) + 1;
-      if (moveNum <= 2) continue;
+      if (moveNum <= 4) continue;
 
       const nFen = normalizeFen(fenBefore);
+      if (dismissedSet.has(nFen)) continue;
 
-      // Only include positions that are in the user's repertoire.
-      // Do NOT fall back to engine bestMove — that would drill positions
-      // from openings the user isn't studying.
-      const repMove = db
-        .query("SELECT san FROM positions WHERE repertoire_id = ? AND fen = ? LIMIT 1")
-        .get(repertoireId, nFen) as { san: string } | null;
+      // Prefer the repertoire move so opening prep is never overwritten by engine suggestions.
+      // Fall back to engine bestMove for positions outside the repertoire (middlegame/endgame blunders).
+      const repMoves = db
+        .query("SELECT san FROM positions WHERE repertoire_id = ? AND fen = ?")
+        .all(repertoireId, nFen) as { san: string }[];
 
-      if (!repMove) continue;
+      // If the user's move is itself a valid repertoire move (just a different line),
+      // don't drill this as a mistake — there's no single "correct" answer.
+      const userSan = m.san ?? positions[i]?.san ?? "";
+      if (repMoves.length > 0 && repMoves.some((r) => r.san === userSan))
+        continue;
 
-      let correctSan = repMove.san;
+      const repMove = repMoves[0] ?? null;
+      // For positions outside the repertoire the correct move comes from depth-12
+      // engine analysis (bestMove), which is noisy. Require a larger loss to be sure.
+      if (!repMove && cpLossPawns < 2.0) continue;
+
+      let correctSan =
+        repMove?.san ?? uciToSan(ensureFullFen(fenBefore), m.bestMove ?? "");
+      if (!correctSan) continue;
 
       // Sanity check: verify the correct move is actually legal from fenBefore
-      if (correctSan) {
-        try {
-          const verify = new Chess(fenBefore);
-          if (!verify.move(correctSan)) correctSan = "";
-        } catch { correctSan = ""; }
+      try {
+        const verify = new Chess(ensureFullFen(fenBefore));
+        if (!verify.move(correctSan)) correctSan = "";
+      } catch {
+        correctSan = "";
       }
+      if (!correctSan) continue;
 
       const existing = candidates.get(nFen);
       const cpLoss = cpLossPawns;
-      // Keep the higher cpLoss entry
-      if (!existing || cpLoss > existing.cpLoss) {
+      if (existing && existing.source === "blunder") {
+        // Accumulate: track total cp loss and occurrence count
+        existing.totalCpLoss += cpLoss;
+        existing.occurrences += 1;
+        // Keep the most recent game's context for display
+        if (game.date && (!existing.date || game.date > existing.date)) {
+          existing.san = m.san ?? positions[i]?.san ?? "";
+          existing.gameId = game.id;
+          existing.moveNumber = moveNum;
+          existing.date = game.date;
+          existing.context = buildContext(game.id, moveNum);
+          existing.fullFen = fenBefore;
+        }
+      } else if (!existing) {
         candidates.set(nFen, {
           san: m.san ?? positions[i]?.san ?? "",
           correctSan,
-          cpLoss,
+          totalCpLoss: cpLoss,
+          occurrences: 1,
           source: "blunder",
           gameId: game.id,
           moveNumber: moveNum,
           date: game.date,
           context: buildContext(game.id, moveNum),
-          fullFen: fenBefore, // preserve original 6-part FEN
+          fullFen: fenBefore,
         });
       }
     }
@@ -287,13 +391,14 @@ export function trainNow(req: Request): Response {
        JOIN games g ON d.game_id = g.id
        WHERE d.repertoire_id = ? AND g.date >= ?
          AND (d.notes = 'player' OR d.notes IS NULL)
-         AND d.move_number > 2
+         AND d.move_number > 4
        ORDER BY g.date DESC`,
     )
     .all(repertoireId, ninetyDaysAgo) as any[];
 
   for (const dev of deviationRows) {
     const nFen = normalizeFen(dev.fen);
+    if (dismissedSet.has(nFen)) continue;
     const existing = candidates.get(nFen);
     const cpLoss = dev.eval_diff ?? 0;
 
@@ -303,14 +408,28 @@ export function trainNow(req: Request): Response {
       try {
         const verify = new Chess(ensureFullFen(dev.fen));
         if (!verify.move(devCorrectSan)) devCorrectSan = "";
-      } catch { devCorrectSan = ""; }
+      } catch {
+        devCorrectSan = "";
+      }
     }
 
-    if (!existing || (existing.source !== "blunder" && cpLoss >= (existing.cpLoss ?? 0))) {
+    if (existing && existing.source === "deviation") {
+      // Accumulate deviation occurrences
+      existing.totalCpLoss += cpLoss;
+      existing.occurrences += 1;
+      if (dev.date && (!existing.date || dev.date > existing.date)) {
+        existing.san = dev.played_san;
+        existing.gameId = dev.game_id;
+        existing.moveNumber = dev.move_number;
+        existing.date = dev.date;
+        existing.context = buildContext(dev.game_id, dev.move_number);
+      }
+    } else if (!existing) {
       candidates.set(nFen, {
         san: dev.played_san,
         correctSan: devCorrectSan,
-        cpLoss,
+        totalCpLoss: cpLoss,
+        occurrences: 1,
         source: "deviation",
         gameId: dev.game_id,
         moveNumber: dev.move_number,
@@ -320,16 +439,59 @@ export function trainNow(req: Request): Response {
     }
   }
 
+  // ---------- Source 4: Repertoire positions not yet mastered (fill pool) ----------
+  // Only fills candidates not already covered by Sources 1–3.
+  const repertoireFillRows = db
+    .query(
+      `SELECT p.fen, p.san
+       FROM positions p
+       LEFT JOIN progress prog ON prog.fen = p.fen AND prog.repertoire_id = p.repertoire_id
+       WHERE p.repertoire_id = ?
+         AND p.fen != ?
+         AND (prog.correct_attempts IS NULL OR prog.correct_attempts < 3)
+       ORDER BY COALESCE(prog.correct_attempts, 0) ASC
+       LIMIT 150`,
+    )
+    .all(repertoireId, STARTING_FEN) as { fen: string; san: string }[];
+
+  for (const row of repertoireFillRows) {
+    const nFen = normalizeFen(row.fen);
+    if (dismissedSet.has(nFen)) continue;
+    if (candidates.has(nFen)) continue;
+    if (!row.san) continue;
+
+    const fenParts = row.fen.split(" ");
+    const moveNumber =
+      fenParts.length >= 6 ? parseInt(fenParts[5], 10) || undefined : undefined;
+
+    candidates.set(nFen, {
+      san: "",
+      correctSan: row.san,
+      totalCpLoss: 0,
+      occurrences: 1,
+      source: "repertoire",
+      date: null,
+      moveNumber,
+    });
+  }
+
   // ---------- countOnly: return counts without scoring ----------
   if (countOnly) {
-    let blunders = 0, deviations = 0, review = 0;
+    let blunders = 0,
+      deviations = 0,
+      review = 0;
     for (const cand of candidates.values()) {
       if (!cand.correctSan || !cand.correctSan.trim()) continue;
       if (cand.source === "blunder") blunders++;
       else if (cand.source === "deviation") deviations++;
       else review++;
     }
-    return Response.json({ blunders, deviations, review, total: blunders + deviations + review });
+    return Response.json({
+      blunders,
+      deviations,
+      review,
+      total: blunders + deviations + review,
+    });
   }
 
   // ---------- Score all candidates ----------
@@ -340,7 +502,10 @@ export function trainNow(req: Request): Response {
       "SELECT fen, correct_attempts, streak, total_attempts FROM progress WHERE repertoire_id = ?",
     )
     .all(repertoireId) as any[];
-  const progressMap = new Map<string, { correct: number; streak: number; total: number }>();
+  const progressMap = new Map<
+    string,
+    { correct: number; streak: number; total: number }
+  >();
   for (const p of allProgress) {
     progressMap.set(normalizeFen(p.fen), {
       correct: p.correct_attempts,
@@ -358,9 +523,7 @@ export function trainNow(req: Request): Response {
     } catch {
       continue;
     }
-    const positions = db
-      .query("SELECT fen_before FROM game_positions WHERE game_id = ? ORDER BY id")
-      .all(game.id) as { fen_before: string }[];
+    const positions = gamePositionsMap.get(game.id) ?? [];
 
     for (let i = 0; i < moves.length; i++) {
       const m = moves[i];
@@ -389,8 +552,15 @@ export function trainNow(req: Request): Response {
     const fenOccurrences = fenCounts.get(fen) ?? 1;
 
     const phase = derivePhase(cand.moveNumber);
+    // Effective cpLoss: average severity scaled by frequency
+    // A position blundered 3x at 0.6 (effectiveCpLoss=0.83) outscores 1x at 1.0 (effectiveCpLoss=0.69)
+    const avgCpLoss =
+      cand.occurrences > 0
+        ? cand.totalCpLoss / cand.occurrences
+        : cand.totalCpLoss;
+    const effectiveCpLoss = avgCpLoss * Math.log(1 + cand.occurrences);
     const score = scorePosition(
-      cand.cpLoss,
+      effectiveCpLoss,
       cand.date,
       fenOccurrences,
       correctDrills,
@@ -403,27 +573,30 @@ export function trainNow(req: Request): Response {
       fen: ensureFullFen(cand.fullFen ?? fen),
       san: cand.san,
       correctSan: cand.correctSan,
-      cpLoss: cand.cpLoss,
+      cpLoss: avgCpLoss,
       score,
       source: cand.source,
       gameId: cand.gameId,
       moveNumber: cand.moveNumber,
       context: cand.context,
       phase,
+      firstEncounter: !everDrilled,
     });
   }
 
   scored.sort((a, b) => b.score - a.score);
 
   // Only return positions where we know the correct answer
-  const valid = scored.filter(p => p.correctSan && p.correctSan.trim().length > 0);
+  const valid = scored.filter(
+    (p) => p.correctSan && p.correctSan.trim().length > 0,
+  );
 
   // Add small random jitter to top candidates so each session has some variety.
   // Only jitter among candidates within the top score tier (score > 50% of top score).
   const topScore = valid[0]?.score ?? 1;
   const tierCutoff = topScore * 0.5;
-  const tierPositions = valid.filter(p => p.score >= tierCutoff);
-  const belowTier = valid.filter(p => p.score < tierCutoff);
+  const tierPositions = valid.filter((p) => p.score >= tierCutoff);
+  const belowTier = valid.filter((p) => p.score < tierCutoff);
   // Fisher-Yates shuffle within tier for variety
   for (let i = tierPositions.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -435,9 +608,9 @@ export function trainNow(req: Request): Response {
 
   // ---------- Enforce session composition (blunders first, then deviation, then review) ----------
   const SESSION_SIZE = 12;
-  const blunders = shuffledValid.filter(p => p.source === "blunder");
-  const deviationsList = shuffledValid.filter(p => p.source === "deviation");
-  const reviewList = shuffledValid.filter(p => p.source === "review");
+  const blunders = shuffledValid.filter((p) => p.source === "blunder");
+  const deviationsList = shuffledValid.filter((p) => p.source === "deviation");
+  const reviewList = shuffledValid.filter((p) => p.source === "review");
 
   const session: TrainPosition[] = [];
 
@@ -446,7 +619,10 @@ export function trainNow(req: Request): Response {
   const topReviews = reviewList.splice(0, 2);
 
   // Fill blunder slots
-  const blunderSlots = Math.min(blunders.length, SESSION_SIZE - topDeviations.length - topReviews.length);
+  const blunderSlots = Math.min(
+    blunders.length,
+    SESSION_SIZE - topDeviations.length - topReviews.length,
+  );
   session.push(...blunders.slice(0, blunderSlots));
 
   // Add the reserved deviations and reviews
@@ -455,13 +631,13 @@ export function trainNow(req: Request): Response {
 
   // If we still have room (some source didn't have enough), fill from remaining highest-scored
   if (session.length < SESSION_SIZE) {
-    const usedFens = new Set(session.map(p => p.fen));
-    const remaining = shuffledValid.filter(p => !usedFens.has(p.fen));
+    const usedFens = new Set(session.map((p) => p.fen));
+    const remaining = shuffledValid.filter((p) => !usedFens.has(p.fen));
     session.push(...remaining.slice(0, SESSION_SIZE - session.length));
   }
 
   // Order: blunders first, then deviations, then review
-  const sourceOrder = { blunder: 0, deviation: 1, review: 2 };
+  const sourceOrder = { blunder: 0, deviation: 1, review: 2, repertoire: 3 };
   session.sort((a, b) => sourceOrder[a.source] - sourceOrder[b.source]);
 
   return Response.json({ positions: session });
