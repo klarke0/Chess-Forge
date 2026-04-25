@@ -260,6 +260,13 @@ export interface AnalyzeRequest {
   mode?: string;
   repertoireMoves?: string[];
   mastersData?: MastersData | null;
+  moveHistory?: string[];
+  deviationContext?: {
+    moveNumber: number;
+    playedSan: string;
+    repertoireSan: string;
+    evalDiff: number;
+  } | null;
 }
 
 export interface AnalyzeResponse {
@@ -376,4 +383,19 @@ export function getTrainNowCounts(
   if (phase && phase !== 'all') params.set('phase', phase);
   if (mode && mode !== 'blunder') params.set('mode', mode);
   return request<TrainNowCounts>(`/v2/train-now?${params.toString()}`);
+}
+
+// --- Velocity / Blunder Trend ---
+
+export interface VelocityWeek {
+  label: string;
+  blunders: number;
+  games: number;
+  avgCpLoss: number;
+}
+
+export function fetchVelocity(repertoireId?: number): Promise<{ weeks: VelocityWeek[] }> {
+  const params = new URLSearchParams();
+  if (repertoireId) params.set('repertoireId', String(repertoireId));
+  return request<{ weeks: VelocityWeek[] }>(`/v2/insights/velocity?${params.toString()}`);
 }
