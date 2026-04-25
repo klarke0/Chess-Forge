@@ -288,6 +288,19 @@ export interface ProgressStats {
   dueToday: number;
   weeklyAccuracy: number;
   streak: number;
+  lastReviewed: string | null;
+}
+
+export interface WeakestPosition {
+  fen: string;
+  correctSan: string;
+  accuracy: number;
+}
+
+export async function getWeakestPosition(repertoireId: number): Promise<WeakestPosition | null> {
+  const res = await fetch(`/api/progress/${repertoireId}/weakest`);
+  if (!res.ok) return null;
+  return res.json();
 }
 
 export interface BlunderMove {
@@ -398,4 +411,8 @@ export function fetchVelocity(repertoireId?: number): Promise<{ weeks: VelocityW
   const params = new URLSearchParams();
   if (repertoireId) params.set('repertoireId', String(repertoireId));
   return request<{ weeks: VelocityWeek[] }>(`/v2/insights/velocity?${params.toString()}`);
+}
+
+export function refreshAnalysis(): Promise<{ ok: boolean; queued: number }> {
+  return request<{ ok: boolean; queued: number }>("/v2/refresh-analysis", { method: "POST" });
 }

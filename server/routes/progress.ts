@@ -3,21 +3,33 @@ import { computeSM2 } from "../utils/sm2";
 
 /** Strip halfmove clock + fullmove number so transpositions map to the same key. */
 function normalizeFen(fen: string): string {
-  return fen.split(' ').slice(0, 4).join(' ');
+  return fen.split(" ").slice(0, 4).join(" ");
 }
 
 export function getProgress(repertoireId: number): Response {
-  const rows = db.query(
-    `SELECT fen, total_attempts, correct_attempts, streak,
+  const rows = db
+    .query(
+      `SELECT fen, total_attempts, correct_attempts, streak,
             ease_factor, interval_days, next_review, last_reviewed
-     FROM progress WHERE repertoire_id = ?`
-  ).all(repertoireId);
+     FROM progress WHERE repertoire_id = ?`,
+    )
+    .all(repertoireId);
 
   return Response.json(rows);
 }
 
+function initialEaseFactor(source?: string, cpLoss?: number): number {
+  if (source === "blunder") {
+    if (cpLoss !== undefined && cpLoss > 2) return 1.3;
+    if (cpLoss !== undefined && cpLoss >= 1) return 1.8;
+    return 1.8;
+  }
+  if (source === "deviation") return 2.0;
+  return 2.5; // review or unknown
+}
+
 export async function recordAttempt(req: Request): Promise<Response> {
-  const body = await req.json() as {
+  const body = (await req.json()) as {
     repertoireId: number;
     fen: string;
     correct: boolean;
@@ -25,63 +37,107 @@ export async function recordAttempt(req: Request): Promise<Response> {
     easeFactor?: number;
     intervalDays?: number;
     nextReview?: string;
+    source?: string;
+    cpLoss?: number;
   };
 
   if (!body.repertoireId || !body.fen || body.correct === undefined) {
-    return Response.json({ error: "repertoireId, fen, and correct are required" }, { status: 400 });
+    return Response.json(
+      { error: "repertoireId, fen, and correct are required" },
+      { status: 400 },
+    );
   }
 
   const fen = normalizeFen(body.fen);
   const now = new Date().toISOString();
 
   // Upsert progress row
-  const existing = db.query(
-    "SELECT * FROM progress WHERE repertoire_id = ? AND fen = ?"
-  ).get(body.repertoireId, fen) as any;
+  const existing = db
+    .query("SELECT * FROM progress WHERE repertoire_id = ? AND fen = ?")
+    .get(body.repertoireId, fen) as any;
 
   if (!existing) {
     // v2: if grade is provided, compute SM-2 for the initial row
     if (body.grade !== undefined) {
+      const initEF = initialEaseFactor(body.source, body.cpLoss);
       const sm2 = computeSM2(
-        { easeFactor: 2.5, intervalDays: 0, repetitions: 0 },
+        { easeFactor: initEF, intervalDays: 0, repetitions: 0 },
         body.grade,
       );
       db.prepare(
         `INSERT INTO progress (repertoire_id, fen, total_attempts, correct_attempts, streak,
           ease_factor, interval_days, next_review, last_reviewed)
-         VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?)`
+         VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?)`,
       ).run(
-        body.repertoireId, fen, body.correct ? 1 : 0, body.correct ? 1 : 0,
-        sm2.nextEaseFactor, sm2.nextIntervalDays, sm2.nextReviewDate, now,
+        body.repertoireId,
+        fen,
+        body.correct ? 1 : 0,
+        body.correct ? 1 : 0,
+        sm2.nextEaseFactor,
+        sm2.nextIntervalDays,
+        sm2.nextReviewDate,
+        now,
       );
     } else {
       db.prepare(
         `INSERT INTO progress (repertoire_id, fen, total_attempts, correct_attempts, streak, last_reviewed)
-         VALUES (?, ?, 1, ?, ?, ?)`
-      ).run(body.repertoireId, fen, body.correct ? 1 : 0, body.correct ? 1 : 0, now);
+         VALUES (?, ?, 1, ?, ?, ?)`,
+      ).run(
+        body.repertoireId,
+        fen,
+        body.correct ? 1 : 0,
+        body.correct ? 1 : 0,
+        now,
+      );
     }
   } else {
     const newStreak = body.correct ? existing.streak + 1 : 0;
     const newCorrect = existing.correct_attempts + (body.correct ? 1 : 0);
 
     // If frontend sends pre-computed SM-2, trust it; skip server scheduling
-    if (body.grade !== undefined && body.easeFactor !== undefined && body.nextReview !== undefined) {
+    if (
+      body.grade !== undefined &&
+      body.easeFactor !== undefined &&
+      body.nextReview !== undefined
+    ) {
       db.prepare(
         `UPDATE progress SET total_attempts=total_attempts+1, correct_attempts=?,
           streak=?, ease_factor=?, interval_days=?, next_review=?, last_reviewed=?
-          WHERE repertoire_id=? AND fen=?`
-      ).run(newCorrect, newStreak, body.easeFactor, body.intervalDays ?? 0, body.nextReview, now, body.repertoireId, fen);
+          WHERE repertoire_id=? AND fen=?`,
+      ).run(
+        newCorrect,
+        newStreak,
+        body.easeFactor,
+        body.intervalDays ?? 0,
+        body.nextReview,
+        now,
+        body.repertoireId,
+        fen,
+      );
     } else if (body.grade !== undefined) {
       // v2: grade-only path — server computes SM-2 from grade + existing progress
       const sm2 = computeSM2(
-        { easeFactor: existing.ease_factor, intervalDays: existing.interval_days, repetitions: existing.streak },
+        {
+          easeFactor: existing.ease_factor,
+          intervalDays: existing.interval_days,
+          repetitions: existing.streak,
+        },
         body.grade,
       );
       db.prepare(
         `UPDATE progress SET total_attempts=total_attempts+1, correct_attempts=?,
           streak=?, ease_factor=?, interval_days=?, next_review=?, last_reviewed=?
-          WHERE repertoire_id=? AND fen=?`
-      ).run(newCorrect, newStreak, sm2.nextEaseFactor, sm2.nextIntervalDays, sm2.nextReviewDate, now, body.repertoireId, fen);
+          WHERE repertoire_id=? AND fen=?`,
+      ).run(
+        newCorrect,
+        newStreak,
+        sm2.nextEaseFactor,
+        sm2.nextIntervalDays,
+        sm2.nextReviewDate,
+        now,
+        body.repertoireId,
+        fen,
+      );
     } else {
       // Legacy server-side scheduling
       let easeFactor = existing.ease_factor;
@@ -97,7 +153,9 @@ export async function recordAttempt(req: Request): Promise<Response> {
         easeFactor = Math.max(1.3, easeFactor - 0.2);
       }
 
-      const nextReview = new Date(Date.now() + interval * 86400000).toISOString();
+      const nextReview = new Date(
+        Date.now() + interval * 86400000,
+      ).toISOString();
 
       db.prepare(
         `UPDATE progress SET
@@ -108,8 +166,17 @@ export async function recordAttempt(req: Request): Promise<Response> {
           interval_days = ?,
           next_review = ?,
           last_reviewed = ?
-         WHERE repertoire_id = ? AND fen = ?`
-      ).run(newCorrect, newStreak, easeFactor, interval, nextReview, now, body.repertoireId, fen);
+         WHERE repertoire_id = ? AND fen = ?`,
+      ).run(
+        newCorrect,
+        newStreak,
+        easeFactor,
+        interval,
+        nextReview,
+        now,
+        body.repertoireId,
+        fen,
+      );
     }
   }
 
@@ -117,26 +184,29 @@ export async function recordAttempt(req: Request): Promise<Response> {
 }
 
 export function getWeakPositions(repertoireId: number): Response {
-  const rows = db.query(
-    `SELECT fen, total_attempts, correct_attempts, streak,
+  const rows = db
+    .query(
+      `SELECT fen, total_attempts, correct_attempts, streak,
             CASE WHEN total_attempts > 0
               THEN CAST(correct_attempts AS REAL) / total_attempts
               ELSE 0 END as accuracy
      FROM progress
      WHERE repertoire_id = ? AND total_attempts >= 2
      ORDER BY accuracy ASC, total_attempts DESC
-     LIMIT 50`
-  ).all(repertoireId);
+     LIMIT 50`,
+    )
+    .all(repertoireId);
 
   return Response.json(rows);
 }
 
-export function getDuePositions(repertoireId: number | 'all'): Response {
+export function getDuePositions(repertoireId: number | "all"): Response {
   const now = new Date().toISOString();
 
-  if (repertoireId === 'all') {
-    const rawRows = db.query(
-      `SELECT p.fen, p.total_attempts, p.correct_attempts, p.streak,
+  if (repertoireId === "all") {
+    const rawRows = db
+      .query(
+        `SELECT p.fen, p.total_attempts, p.correct_attempts, p.streak,
               p.ease_factor, p.interval_days, p.next_review,
               r.side, r.name as repertoire_name, p.repertoire_id,
               json_group_array(pos.san) as expected_moves
@@ -146,25 +216,28 @@ export function getDuePositions(repertoireId: number | 'all'): Response {
        WHERE (p.next_review IS NULL OR p.next_review <= ?)
        GROUP BY p.id
        ORDER BY p.next_review ASC
-       LIMIT 200`
-    ).all(now) as any[];
+       LIMIT 200`,
+      )
+      .all(now) as any[];
 
-    const rows = rawRows.map(row => ({
+    const rows = rawRows.map((row) => ({
       ...row,
-      expected_moves: JSON.parse(row.expected_moves || '[]').filter(Boolean)
+      expected_moves: JSON.parse(row.expected_moves || "[]").filter(Boolean),
     }));
 
     return Response.json(rows);
   }
 
-  const rows = db.query(
-    `SELECT fen, total_attempts, correct_attempts, streak,
+  const rows = db
+    .query(
+      `SELECT fen, total_attempts, correct_attempts, streak,
             ease_factor, interval_days, next_review
      FROM progress
      WHERE repertoire_id = ? AND (next_review IS NULL OR next_review <= ?)
      ORDER BY next_review ASC
-     LIMIT 100`
-  ).all(repertoireId, now);
+     LIMIT 100`,
+    )
+    .all(repertoireId, now);
 
   return Response.json(rows);
 }
@@ -173,26 +246,79 @@ export function getProgressStats(repertoireId: number): Response {
   const now = new Date().toISOString();
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
 
-  const totalTracked = (db.query(
-    'SELECT COUNT(*) as c FROM progress WHERE repertoire_id = ?'
-  ).get(repertoireId) as any).c as number;
+  const totalTracked = (
+    db
+      .query("SELECT COUNT(*) as c FROM progress WHERE repertoire_id = ?")
+      .get(repertoireId) as any
+  ).c as number;
 
-  const mastered = (db.query(
-    'SELECT COUNT(*) as c FROM progress WHERE repertoire_id = ? AND streak >= 3'
-  ).get(repertoireId) as any).c as number;
+  const mastered = (
+    db
+      .query(
+        "SELECT COUNT(*) as c FROM progress WHERE repertoire_id = ? AND streak >= 3",
+      )
+      .get(repertoireId) as any
+  ).c as number;
 
-  const dueToday = (db.query(
-    'SELECT COUNT(*) as c FROM progress WHERE repertoire_id = ? AND (next_review IS NULL OR next_review <= ?)'
-  ).get(repertoireId, now) as any).c as number;
+  const dueToday = (
+    db
+      .query(
+        "SELECT COUNT(*) as c FROM progress WHERE repertoire_id = ? AND (next_review IS NULL OR next_review <= ?)",
+      )
+      .get(repertoireId, now) as any
+  ).c as number;
 
-  const weeklyRow = db.query(
-    'SELECT AVG(CAST(correct_attempts AS REAL) / NULLIF(total_attempts, 0)) as acc FROM progress WHERE repertoire_id = ? AND last_reviewed >= ?'
-  ).get(repertoireId, sevenDaysAgo) as any;
+  const weeklyRow = db
+    .query(
+      "SELECT AVG(CAST(correct_attempts AS REAL) / NULLIF(total_attempts, 0)) as acc FROM progress WHERE repertoire_id = ? AND last_reviewed >= ?",
+    )
+    .get(repertoireId, sevenDaysAgo) as any;
   const weeklyAccuracy: number = weeklyRow?.acc ?? 0;
 
-  const streak = (db.query(
-    'SELECT COUNT(DISTINCT date(last_reviewed)) as c FROM progress WHERE repertoire_id = ? AND last_reviewed >= ?'
-  ).get(repertoireId, sevenDaysAgo) as any).c as number;
+  const streak = (
+    db
+      .query(
+        "SELECT COUNT(DISTINCT date(last_reviewed)) as c FROM progress WHERE repertoire_id = ? AND last_reviewed >= ?",
+      )
+      .get(repertoireId, sevenDaysAgo) as any
+  ).c as number;
 
-  return Response.json({ totalTracked, mastered, dueToday, weeklyAccuracy, streak });
+  const lastReviewedRow = db
+    .query(
+      "SELECT MAX(last_reviewed) as lr FROM progress WHERE repertoire_id = ?",
+    )
+    .get(repertoireId) as any;
+  const lastReviewed: string | null = lastReviewedRow?.lr ?? null;
+
+  return Response.json({
+    totalTracked,
+    mastered,
+    dueToday,
+    weeklyAccuracy,
+    streak,
+    lastReviewed,
+  });
+}
+
+export function getWeakestPosition(repertoireId: number): Response {
+  const row = db
+    .query(
+      `SELECT p.fen, pos.san as correctSan,
+              CAST(p.correct_attempts AS REAL) / NULLIF(p.total_attempts, 0) as accuracy
+       FROM progress p
+       LEFT JOIN positions pos ON pos.fen = p.fen
+       WHERE p.repertoire_id = ?
+         AND p.total_attempts >= 2
+         AND pos.san IS NOT NULL
+       ORDER BY accuracy ASC
+       LIMIT 1`,
+    )
+    .get(repertoireId) as any;
+
+  if (!row) return Response.json(null);
+  return Response.json({
+    fen: row.fen,
+    correctSan: row.correctSan,
+    accuracy: Math.round((row.accuracy ?? 0) * 100),
+  });
 }

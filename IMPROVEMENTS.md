@@ -74,7 +74,7 @@ These block the app from being genuinely useful. Fix first.
 **What:** New session type selectable from HomeScreen: "Repertoire Run". Starts from starting position, Kevin plays his move, app responds with the mainline opponent move, Kevin continues. On wrong move: show correct move, continue. Track accuracy. End when Kevin reaches a leaf node or after N moves.
 **Files:** New `src/v2/RepertoireRunScreen.tsx`, `server/routes/v2_repertoire_run.ts`, updates to `AppV2.tsx`
 
-#### P1-3: Session summary screen with real stats
+#### ~~P1-3: Session summary screen with real stats~~ ✅ DONE 2026-04-24
 **Why:** The complete screen currently shows raw counts. Kevin should see: positions seen, accuracy %, time spent, which positions he missed (with FEN thumbnails), streak update. Makes sessions feel meaningful.
 **What:** Redesign the complete screen in `TrainNowScreen`. Show missed positions list (tap to review). Show streak. Show a grade (S/A/B/C based on accuracy).
 **Files:** `src/v2/TrainNowScreen.tsx`
@@ -83,17 +83,17 @@ These block the app from being genuinely useful. Fix first.
 
 ### 🔴 P2 — GUI Polish
 
-#### P2-1: Board sizing is inconsistent on iPhone
+#### ~~P2-1: Board sizing is inconsistent on iPhone~~ ✅ DONE 2026-04-24
 **Why:** Board sometimes renders too small or clips on certain iPhone screen sizes. The `max-w-[430px]` container works on desktop but mobile Safari has safe areas and dynamic toolbar that affect available height.
 **What:** Audit board sizing across `TrainNowScreen`, `BlunderExplanation`. Use `dvh` (dynamic viewport height) instead of `vh` where needed. Test at 375px (iPhone SE) and 390px (iPhone 14).
 **Files:** `src/v2/TrainNowScreen.tsx`, `src/index.css`
 
-#### P2-2: Loading states feel janky
+#### ~~P2-2: Loading states feel janky~~ ✅ DONE 2026-04-24
 **Why:** Transitions between drill states (loading → queued → drilling) have no smooth animation. The board just snaps.
 **What:** Add subtle fade or slide transition between states. The queued → drilling transition especially needs a "position is appearing" feel. CSS transitions on the board container.
 **Files:** `src/v2/TrainNowScreen.tsx`, `src/index.css`
 
-#### P2-3: HomeScreen feels sparse
+#### ~~P2-3: HomeScreen feels sparse~~ ✅ DONE 2026-04-24
 **Why:** The home screen has a train button and counts but little else to motivate opening the app. Should feel like a dashboard.
 **What:** Add: last session date + grade, current streak prominently, a "your weakest position" preview card (the FEN thumbnail of the highest-scored un-drilled position), and a visual representation of the two repertoires (Caro-Kann / Jobava London) with position counts.
 **Files:** `src/v2/HomeScreen.tsx`, possibly new API endpoint for "weakest position preview"

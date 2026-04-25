@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Play, Film, BookOpen, Flame } from "lucide-react";
+import { Play, Film, BookOpen, Flame, RefreshCw, Loader2, Target } from "lucide-react";
+import { Chessboard } from "react-chessboard";
 import { cn } from "@/utils/cn";
 import { useRepertoireStore } from "@/stores/repertoireStore";
+import { useBackgroundStore } from "@/stores/backgroundStore";
+import { BackgroundAnalysisQueue } from "@/services/background_analysis";
 import * as api from "@/services/api";
 
 export type TrainingMode = "blunder" | "repertoire";
@@ -10,6 +13,15 @@ export type PhaseFilter = "all" | "opening" | "endgame";
 interface HomeScreenProps {
   onTrainNow: (mode: TrainingMode, phase: PhaseFilter) => void;
   onGames: () => void;
+}
+
+function formatLastSeen(iso: string | null): string {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return "Last session: today";
+  if (days === 1) return "Last session: yesterday";
+  return `Last session: ${days}d ago`;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -23,14 +35,42 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const setActiveRepertoire = useRepertoireStore((s) => s.setActiveRepertoire);
   const [count, setCount] = useState<api.TrainNowCounts | null>(null);
   const [streak, setStreak] = useState(0);
+  const [lastReviewed, setLastReviewed] = useState<string | null>(null);
+  const [weakest, setWeakest] = useState<api.WeakestPosition | null>(null);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<PhaseFilter>("all");
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshMsg, setRefreshMsg] = useState<string | null>(null);
+
+  const isAnalyzing = useBackgroundStore((s) => s.isAnalyzing);
+  const analyzedCount = useBackgroundStore((s) => s.analyzedCount);
+  const totalInQueue = useBackgroundStore((s) => s.totalInQueue);
+  const activeGameName = useBackgroundStore((s) => s.activeGameName);
+
+  async function handleRefreshAnalysis() {
+    if (refreshing || isAnalyzing) return;
+    setRefreshing(true);
+    setRefreshMsg(null);
+    try {
+      const { queued } = await api.refreshAnalysis();
+      if (queued === 0) {
+        setRefreshMsg("All games already up to date");
+      } else {
+        setRefreshMsg(`Queued ${queued} games for re-analysis`);
+        BackgroundAnalysisQueue.triggerNow();
+      }
+    } catch {
+      setRefreshMsg("Failed to queue games");
+    } finally {
+      setRefreshing(false);
+      setTimeout(() => setRefreshMsg(null), 4000);
+    }
+  }
 
   useEffect(() => {
     if (!repertoireId) return;
     setLoading(true);
 
-    // Fetch train-now counts and progress stats in parallel
     Promise.all([
       api
         .getTrainNowCounts(repertoireId, phase)
@@ -44,31 +84,39 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             }) as api.TrainNowCounts,
         ),
       api.getProgressStats(repertoireId).catch(() => null),
+      api.getWeakestPosition(repertoireId).catch(() => null),
     ])
-      .then(([counts, stats]) => {
+      .then(([counts, stats, weak]) => {
         setCount(counts);
         if (stats) {
           setStreak(stats.streak);
+          setLastReviewed(stats.lastReviewed ?? null);
         }
+        setWeakest(weak);
       })
       .finally(() => setLoading(false));
   }, [repertoireId, phase]);
 
   const greeting = getGreeting();
+  const lastSeenLabel = formatLastSeen(lastReviewed);
 
   return (
-    <div className="flex-1 flex flex-col px-6 pt-12 pb-24 overflow-y-auto">
-      {/* Greeting + Streak */}
-      <div className="mb-10">
+    <div className="flex-1 flex flex-col px-6 pt-10 pb-24 overflow-y-auto">
+      {/* Greeting + meta row */}
+      <div className="mb-8">
         <h1 className="text-2xl font-black text-slate-100 tracking-tight">
           {greeting}
         </h1>
-        <div className="flex items-center gap-3 mt-2">
+        <div className="flex items-center gap-3 mt-2 flex-wrap">
           {streak > 0 && (
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <Flame size={16} className="text-forge-warm" />
-              <span className="font-semibold">{streak} day streak</span>
+            <div className="flex items-center gap-1.5 bg-forge-card border border-forge-border-subtle rounded-full px-3 py-1">
+              <Flame size={13} className="text-forge-warm" />
+              <span className="text-xs font-black text-slate-200">{streak}</span>
+              <span className="text-xs text-slate-500">day streak</span>
             </div>
+          )}
+          {lastSeenLabel && (
+            <span className="text-xs text-slate-600">{lastSeenLabel}</span>
           )}
           {availableRepertoires.length > 1 && (
             <select
@@ -87,7 +135,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       </div>
 
       {/* Train Now Card */}
-      <div className="bg-forge-card border border-forge-border-subtle rounded-[2.5rem] p-8 mb-6">
+      <div className="bg-forge-card border border-forge-border-subtle rounded-[2.5rem] p-8 mb-5">
         {loading ? (
           <div className="space-y-3">
             <div className="h-4 w-40 bg-forge-border-subtle rounded-full animate-pulse" />
@@ -148,8 +196,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </button>
       </div>
 
-      {/* Phase filter — below the main Train Now card */}
-      <div className="flex gap-2 justify-center mb-4">
+      {/* Phase filter */}
+      <div className="flex gap-2 justify-center mb-5">
         {(["opening", "all", "endgame"] as PhaseFilter[]).map((v) => (
           <button
             key={v}
@@ -166,8 +214,46 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         ))}
       </div>
 
+      {/* Weakest position preview */}
+      {weakest && (
+        <button
+          onClick={() => onTrainNow("blunder", "all")}
+          className={cn(
+            "w-full flex items-center gap-4 p-4 mb-5",
+            "bg-forge-card border border-forge-border-subtle rounded-forge-xl",
+            "text-left active:scale-[0.98] transition-all",
+          )}
+        >
+          <div className="w-16 aspect-square rounded-lg overflow-hidden border border-forge-border-subtle shrink-0">
+            <Chessboard
+              position={weakest.fen}
+              arePiecesDraggable={false}
+              boardWidth={64}
+              animationDuration={0}
+              customDarkSquareStyle={{ backgroundColor: "#1e293b" }}
+              customLightSquareStyle={{ backgroundColor: "#475569" }}
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <Target size={12} className="text-rose-400 shrink-0" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                Weakest position
+              </span>
+            </div>
+            <p className="text-sm font-black text-slate-200">
+              {weakest.correctSan}
+            </p>
+            <p className="text-xs text-rose-400 font-semibold mt-0.5">
+              {weakest.accuracy}% accuracy
+            </p>
+          </div>
+          <div className="text-slate-600 shrink-0">›</div>
+        </button>
+      )}
+
       {/* Secondary Cards */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 mb-4">
         <button
           onClick={onGames}
           className={cn(
@@ -196,6 +282,34 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </span>
         </button>
       </div>
+
+      {/* Analysis status + refresh */}
+      {isAnalyzing ? (
+        <div className="flex items-center gap-2 px-2 py-2 text-xs text-slate-500">
+          <Loader2 size={12} className="animate-spin text-indigo-400 shrink-0" />
+          <span className="truncate">
+            {activeGameName
+              ? `Analyzing ${analyzedCount}/${totalInQueue} — ${activeGameName}`
+              : "Analyzing games..."}
+          </span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 px-2">
+          <button
+            onClick={handleRefreshAnalysis}
+            disabled={refreshing}
+            className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-400 transition-colors disabled:opacity-40"
+          >
+            {refreshing
+              ? <Loader2 size={11} className="animate-spin" />
+              : <RefreshCw size={11} />}
+            Refresh analysis
+          </button>
+          {refreshMsg && (
+            <span className="text-xs text-slate-500">{refreshMsg}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 };

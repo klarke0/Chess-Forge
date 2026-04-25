@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  font-family: 'Outfit', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Outfit", system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -21,7 +21,7 @@ body {
   margin: 0;
   display: flex;
   min-width: 320px;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 #root {
@@ -29,22 +29,70 @@ body {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-  20%, 40%, 60%, 80% { transform: translateX(4px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-4px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(4px);
+  }
 }
 
 .animate-shake {
-  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .animate-shimmer {
   animation: shimmer 2s infinite;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s ease-out both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out both;
 }
 
 /* ── Theme: Dark (default) ── */
@@ -53,6 +101,46 @@ html[data-theme="dark"] {
   --bg-base: #050507;
   --bg-surface: #0a0d14;
   --bg-nav: rgba(10, 13, 20, 0.9);
+
+  /* Design tokens — forge namespace */
+  --forge-bg-base: #050507;
+  --forge-bg-surface: #0a0d14;
+  --forge-bg-card: #0d1117;
+  --forge-bg-elevated: #111520;
+  --forge-bg-shell: #020204;
+  --forge-bg-board: #161b22;
+
+  --forge-accent-primary: #4f46e5;
+  --forge-accent-primary-hover: #6366f1;
+  --forge-accent-primary-shadow: rgba(79, 70, 229, 0.3);
+  --forge-accent-warm: #f97316;
+  --forge-accent-warm-muted: #fb923c;
+  --forge-accent-success: #34d399;
+  --forge-accent-success-muted: rgba(52, 211, 153, 0.1);
+  --forge-accent-success-border: rgba(52, 211, 153, 0.2);
+  --forge-accent-danger: #fb7185;
+  --forge-accent-danger-muted: rgba(251, 113, 133, 0.1);
+  --forge-accent-danger-border: rgba(251, 113, 133, 0.2);
+  --forge-accent-warning: #fbbf24;
+  --forge-accent-warning-muted: rgba(251, 191, 36, 0.1);
+  --forge-accent-warning-border: rgba(251, 191, 36, 0.2);
+  --forge-accent-insight: #a78bfa;
+  --forge-accent-insight-muted: rgba(167, 139, 250, 0.1);
+  --forge-accent-insight-border: rgba(167, 139, 250, 0.2);
+
+  --forge-text-primary: #e2e8f0;
+  --forge-text-secondary: #94a3b8;
+  --forge-text-inactive: #64748b;
+  --forge-text-muted: #475569;
+
+  --forge-border-subtle: rgba(255, 255, 255, 0.05);
+  --forge-border-default: rgba(255, 255, 255, 0.10);
+
+  --forge-radius-sm: 0.75rem;
+  --forge-radius-md: 1rem;
+  --forge-radius-lg: 1.5rem;
+  --forge-radius-xl: 2rem;
+  --forge-radius-pill: 9999px;
 }
 
 /* ── Theme: Night ── */
@@ -60,4 +148,10 @@ html[data-theme="night"] {
   --bg-base: #000000;
   --bg-surface: #03040a;
   --bg-nav: rgba(3, 4, 10, 0.92);
+
+  /* Night overrides — only bg tokens shift */
+  --forge-bg-base: #000000;
+  --forge-bg-surface: #03040a;
+  --forge-bg-card: #080b10;
+  --forge-bg-elevated: #0c0f18;
 }

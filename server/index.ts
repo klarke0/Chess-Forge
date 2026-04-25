@@ -1,11 +1,42 @@
 import { join } from "path";
-import { listRepertoires, getPositions, getChapters, importPgn, updateChapterLearnRuns, addPosition } from "./routes/repertoire";
-import { getProgress, recordAttempt, getWeakPositions, getDuePositions, getProgressStats } from "./routes/progress";
+import {
+  listRepertoires,
+  getPositions,
+  getChapters,
+  importPgn,
+  updateChapterLearnRuns,
+  addPosition,
+} from "./routes/repertoire";
+import {
+  getProgress,
+  recordAttempt,
+  getWeakPositions,
+  getDuePositions,
+  getProgressStats,
+  getWeakestPosition,
+} from "./routes/progress";
 import { createSession, endSession, listSessions } from "./routes/sessions";
-import { syncGames, getGameStats, getLabStats, uploadGames, listGames, getGame, saveAnalysis, getBlunders, backfillDeviations } from "./routes/games";
-import { analyzePosition, generateRepertoireComment, explainBlunder } from "./routes/analyze";
+import {
+  syncGames,
+  getGameStats,
+  getLabStats,
+  uploadGames,
+  listGames,
+  getGame,
+  saveAnalysis,
+  getBlunders,
+  backfillDeviations,
+} from "./routes/games";
+import {
+  analyzePosition,
+  generateRepertoireComment,
+  explainBlunder,
+} from "./routes/analyze";
 import { getPatternReport, runPatternAnalysis } from "./routes/patterns";
 import { trainNow } from "./routes/v2_train_now";
+import { insightsVelocity } from "./routes/v2_insights";
+import { dismissPosition } from "./routes/v2_dismiss";
+import { refreshAnalysis } from "./routes/v2_refresh_analysis";
 
 const PORT = 3001;
 const DIST_PATH = join(import.meta.dir, "../dist");
@@ -30,15 +61,20 @@ function addCors(response: Response): Response {
 
 function checkAuth(req: Request): boolean {
   if (!REMOTE_PASSWORD) return true;
-  
+
   // 1. Determine if the request is local
   const host = req.headers.get("host") || "";
   const forwarded = req.headers.get("x-forwarded-for");
   const forwardedHost = req.headers.get("x-forwarded-host");
 
   // If there are no forwarding headers AND the host is local, skip auth
-  const isLocalHost = host.includes("localhost") || host.includes("127.0.0.1") || host.includes("::1");
-  const isPrivateIp = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(host);
+  const isLocalHost =
+    host.includes("localhost") ||
+    host.includes("127.0.0.1") ||
+    host.includes("::1");
+  const isPrivateIp = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(
+    host,
+  );
 
   if (!forwarded && !forwardedHost && (isLocalHost || isPrivateIp)) {
     return true;
@@ -51,7 +87,7 @@ function checkAuth(req: Request): boolean {
   try {
     const [type, credentials] = authHeader.split(" ");
     if (type !== "Basic") return false;
-    
+
     const decoded = atob(credentials);
     const [user, pass] = decoded.split(":");
     return pass === REMOTE_PASSWORD;
@@ -95,17 +131,17 @@ Bun.serve({
     if (!path.startsWith("/api")) {
       const filePath = join(DIST_PATH, path === "/" ? "index.html" : path);
       const file = Bun.file(filePath);
-      
+
       if (await file.exists()) {
         return new Response(file);
       }
-      
+
       // SPA fallback to index.html
       const indexFile = Bun.file(join(DIST_PATH, "index.html"));
       if (await indexFile.exists()) {
         return new Response(indexFile);
       }
-      
+
       return new Response("Not found", { status: 404 });
     }
 
@@ -115,12 +151,19 @@ Bun.serve({
       return addCors(response);
     } catch (err) {
       console.error("Server error:", err);
-      return addCors(Response.json({ error: "Internal server error" }, { status: 500 }));
+      return addCors(
+        Response.json({ error: "Internal server error" }, { status: 500 }),
+      );
     }
   },
 });
 
-async function route(method: string, path: string, url: URL, req: Request): Promise<Response> {
+async function route(
+  method: string,
+  path: string,
+  url: URL,
+  req: Request,
+): Promise<Response> {
   // Match routes using simple pattern matching
   const segments = path.split("/").filter(Boolean); // e.g. ["api", "repertoires", "1", "positions"]
 
@@ -129,45 +172,79 @@ async function route(method: string, path: string, url: URL, req: Request): Prom
   }
 
   // GET /api/repertoires
-  if (method === "GET" && segments[1] === "repertoires" && segments.length === 2) {
+  if (
+    method === "GET" &&
+    segments[1] === "repertoires" &&
+    segments.length === 2
+  ) {
     return listRepertoires();
   }
 
   // GET /api/repertoires/:id/positions
-  if (method === "GET" && segments[1] === "repertoires" && segments[3] === "positions" && segments.length === 4) {
+  if (
+    method === "GET" &&
+    segments[1] === "repertoires" &&
+    segments[3] === "positions" &&
+    segments.length === 4
+  ) {
     const id = parseId(segments[2]);
     if (id < 0) return Response.json({ error: "Invalid ID" }, { status: 400 });
     return getPositions(id);
   }
 
   // GET /api/repertoires/:id/chapters
-  if (method === "GET" && segments[1] === "repertoires" && segments[3] === "chapters" && segments.length === 4) {
+  if (
+    method === "GET" &&
+    segments[1] === "repertoires" &&
+    segments[3] === "chapters" &&
+    segments.length === 4
+  ) {
     const id = parseId(segments[2]);
     if (id < 0) return Response.json({ error: "Invalid ID" }, { status: 400 });
     return getChapters(id);
   }
 
   // POST /api/repertoires/:id/positions
-  if (method === "POST" && segments[1] === "repertoires" && segments[3] === "positions" && segments.length === 4) {
+  if (
+    method === "POST" &&
+    segments[1] === "repertoires" &&
+    segments[3] === "positions" &&
+    segments.length === 4
+  ) {
     const id = parseId(segments[2]);
     if (id < 0) return Response.json({ error: "Invalid ID" }, { status: 400 });
     return addPosition(req, id);
   }
 
   // POST /api/repertoires/import
-  if (method === "POST" && segments[1] === "repertoires" && segments[2] === "import" && segments.length === 3) {
+  if (
+    method === "POST" &&
+    segments[1] === "repertoires" &&
+    segments[2] === "import" &&
+    segments.length === 3
+  ) {
     return importPgn(req);
   }
 
   // PATCH /api/chapters/:id/learn_runs
-  if (method === "PATCH" && segments[1] === "chapters" && segments[3] === "learn_runs" && segments.length === 4) {
+  if (
+    method === "PATCH" &&
+    segments[1] === "chapters" &&
+    segments[3] === "learn_runs" &&
+    segments.length === 4
+  ) {
     const id = parseId(segments[2]);
     if (id < 0) return Response.json({ error: "Invalid ID" }, { status: 400 });
     return updateChapterLearnRuns(req, id);
   }
 
   // GET /api/progress/:repertoireId/stats
-  if (method === "GET" && segments[1] === "progress" && segments[3] === "stats" && segments.length === 4) {
+  if (
+    method === "GET" &&
+    segments[1] === "progress" &&
+    segments[3] === "stats" &&
+    segments.length === 4
+  ) {
     const id = parseId(segments[2]);
     if (id < 0) return Response.json({ error: "Invalid ID" }, { status: 400 });
     return getProgressStats(id);
@@ -181,17 +258,39 @@ async function route(method: string, path: string, url: URL, req: Request): Prom
     return getProgress(id);
   }
 
+  // GET /api/progress/:repertoireId/weakest
+  if (
+    method === "GET" &&
+    segments[1] === "progress" &&
+    segments[3] === "weakest" &&
+    segments.length === 4
+  ) {
+    const id = parseId(segments[2]);
+    if (id < 0) return Response.json({ error: "Invalid ID" }, { status: 400 });
+    return getWeakestPosition(id);
+  }
+
   // GET /api/progress/:repertoireId/weak
-  if (method === "GET" && segments[1] === "progress" && segments[3] === "weak" && segments.length === 4) {
+  if (
+    method === "GET" &&
+    segments[1] === "progress" &&
+    segments[3] === "weak" &&
+    segments.length === 4
+  ) {
     const id = parseId(segments[2]);
     if (id < 0) return Response.json({ error: "Invalid ID" }, { status: 400 });
     return getWeakPositions(id);
   }
 
   // GET /api/progress/:repertoireId/due
-  if (method === "GET" && segments[1] === "progress" && segments[3] === "due" && segments.length === 4) {
+  if (
+    method === "GET" &&
+    segments[1] === "progress" &&
+    segments[3] === "due" &&
+    segments.length === 4
+  ) {
     if (segments[2] === "all") {
-      return getDuePositions('all');
+      return getDuePositions("all");
     }
     const id = parseId(segments[2]);
     if (id < 0) return Response.json({ error: "Invalid ID" }, { status: 400 });
@@ -199,17 +298,30 @@ async function route(method: string, path: string, url: URL, req: Request): Prom
   }
 
   // POST /api/progress/record
-  if (method === "POST" && segments[1] === "progress" && segments[2] === "record" && segments.length === 3) {
+  if (
+    method === "POST" &&
+    segments[1] === "progress" &&
+    segments[2] === "record" &&
+    segments.length === 3
+  ) {
     return recordAttempt(req);
   }
 
   // POST /api/sessions
-  if (method === "POST" && segments[1] === "sessions" && segments.length === 2) {
+  if (
+    method === "POST" &&
+    segments[1] === "sessions" &&
+    segments.length === 2
+  ) {
     return createSession(req);
   }
 
   // PATCH /api/sessions/:id
-  if (method === "PATCH" && segments[1] === "sessions" && segments.length === 3) {
+  if (
+    method === "PATCH" &&
+    segments[1] === "sessions" &&
+    segments.length === 3
+  ) {
     const id = parseId(segments[2]);
     if (id < 0) return Response.json({ error: "Invalid ID" }, { status: 400 });
     return endSession(req, id);
@@ -227,7 +339,12 @@ async function route(method: string, path: string, url: URL, req: Request): Prom
   }
 
   // GET /api/games/blunders
-  if (method === "GET" && segments[1] === "games" && segments[2] === "blunders" && segments.length === 3) {
+  if (
+    method === "GET" &&
+    segments[1] === "games" &&
+    segments[2] === "blunders" &&
+    segments.length === 3
+  ) {
     const limit = parseInt(url.searchParams.get("limit") || "20", 10);
     return getBlunders(limit);
   }
@@ -238,13 +355,22 @@ async function route(method: string, path: string, url: URL, req: Request): Prom
   }
 
   // POST /api/games/clear-analysis
-  if (method === "POST" && segments[1] === "games" && segments[2] === "clear-analysis" && segments.length === 3) {
+  if (
+    method === "POST" &&
+    segments[1] === "games" &&
+    segments[2] === "clear-analysis" &&
+    segments.length === 3
+  ) {
     const { clearAllAnalysis } = await import("./routes/games");
     return clearAllAnalysis(req);
   }
 
   // POST /api/games/:id/analysis
-  if (method === "POST" && segments[1] === "games" && segments[3] === "analysis") {
+  if (
+    method === "POST" &&
+    segments[1] === "games" &&
+    segments[3] === "analysis"
+  ) {
     return saveAnalysis(req);
   }
 
@@ -254,7 +380,11 @@ async function route(method: string, path: string, url: URL, req: Request): Prom
   }
 
   // POST /api/games/upload
-  if (method === "POST" && segments[1] === "games" && segments[2] === "upload") {
+  if (
+    method === "POST" &&
+    segments[1] === "games" &&
+    segments[2] === "upload"
+  ) {
     return uploadGames(req);
   }
 
@@ -268,37 +398,96 @@ async function route(method: string, path: string, url: URL, req: Request): Prom
     return getLabStats(req);
   }
 
-      // GET /api/analyze/patterns — return cached report
-      if (method === "GET" && segments[1] === "analyze" && segments[2] === "patterns") {
-        return getPatternReport(req);
-      }
-  
-      // POST /api/analyze/patterns — run new analysis
-      if (method === "POST" && segments[1] === "analyze" && segments[2] === "patterns") {
-        return runPatternAnalysis(req);
-      }
-  
-      // POST /api/analyze
-      if (method === "POST" && segments[1] === "analyze" && segments.length === 2) {
-        return analyzePosition(req);
-      }
+  // GET /api/analyze/patterns — return cached report
+  if (
+    method === "GET" &&
+    segments[1] === "analyze" &&
+    segments[2] === "patterns"
+  ) {
+    return getPatternReport(req);
+  }
+
+  // POST /api/analyze/patterns — run new analysis
+  if (
+    method === "POST" &&
+    segments[1] === "analyze" &&
+    segments[2] === "patterns"
+  ) {
+    return runPatternAnalysis(req);
+  }
+
+  // POST /api/analyze
+  if (method === "POST" && segments[1] === "analyze" && segments.length === 2) {
+    return analyzePosition(req);
+  }
   // GET /api/v2/train-now
-  if (method === "GET" && segments[1] === "v2" && segments[2] === "train-now" && segments.length === 3) {
+  if (
+    method === "GET" &&
+    segments[1] === "v2" &&
+    segments[2] === "train-now" &&
+    segments.length === 3
+  ) {
     return trainNow(req);
   }
 
+  // GET /api/v2/insights/velocity
+  if (
+    method === "GET" &&
+    segments[1] === "v2" &&
+    segments[2] === "insights" &&
+    segments[3] === "velocity" &&
+    segments.length === 4
+  ) {
+    return insightsVelocity(req);
+  }
+
   // POST /api/v2/backfill-deviations
-  if (method === "POST" && segments[1] === "v2" && segments[2] === "backfill-deviations" && segments.length === 3) {
+  if (
+    method === "POST" &&
+    segments[1] === "v2" &&
+    segments[2] === "backfill-deviations" &&
+    segments.length === 3
+  ) {
     return backfillDeviations();
   }
 
+  // POST /api/v2/dismiss-position
+  if (
+    method === "POST" &&
+    segments[1] === "v2" &&
+    segments[2] === "dismiss-position" &&
+    segments.length === 3
+  ) {
+    return dismissPosition(req);
+  }
+
+  // POST /api/v2/refresh-analysis
+  if (
+    method === "POST" &&
+    segments[1] === "v2" &&
+    segments[2] === "refresh-analysis" &&
+    segments.length === 3
+  ) {
+    return refreshAnalysis(req);
+  }
+
   // POST /api/analyze/blunder
-  if (method === "POST" && segments[1] === "analyze" && segments[2] === "blunder" && segments.length === 3) {
+  if (
+    method === "POST" &&
+    segments[1] === "analyze" &&
+    segments[2] === "blunder" &&
+    segments.length === 3
+  ) {
     return explainBlunder(req);
   }
 
   // POST /api/analyze/repertoire-comment
-  if (method === "POST" && segments[1] === "analyze" && segments[2] === "repertoire-comment" && segments.length === 3) {
+  if (
+    method === "POST" &&
+    segments[1] === "analyze" &&
+    segments[2] === "repertoire-comment" &&
+    segments.length === 3
+  ) {
     return generateRepertoireComment(req);
   }
 

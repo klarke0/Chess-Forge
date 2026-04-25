@@ -535,7 +535,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
 
         {/* QUEUED state */}
         {state === "queued" && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6">
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6 animate-fadeIn">
             <div className="text-center">
               <p className="text-3xl font-black text-slate-100">
                 {positions.length} positions
@@ -602,8 +602,9 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
 
             {/* Board */}
             <div
+              key={`board-${currentIdx}`}
               className={cn(
-                "flex-1 flex items-center justify-center p-4 relative transition-all duration-300",
+                "flex-1 flex items-center justify-center p-4 relative transition-all duration-300 animate-fadeIn",
                 shaking && "animate-shake",
               )}
             >
