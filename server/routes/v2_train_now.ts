@@ -207,9 +207,15 @@ export function trainNow(req: Request): Response {
     }[];
 
     if (countOnly) {
-      const total = repDrillRows.filter(
-        (r) => !dismissedSet.has(normalizeFen(r.fen)) && r.san,
-      ).length;
+      const total = repDrillRows.filter((r) => {
+        if (dismissedSet.has(normalizeFen(r.fen)) || !r.san) return false;
+        if (phaseParam !== "all") {
+          const moveNum = parseInt(r.fen.split(" ")[5] ?? "1", 10) || 1;
+          if (phaseParam === "opening" && moveNum > 35) return false;
+          if (phaseParam === "endgame" && moveNum <= 35) return false;
+        }
+        return true;
+      }).length;
       return Response.json({ blunders: 0, deviations: 0, review: 0, total });
     }
 
