@@ -308,6 +308,8 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
   }
 
   function setupPosition(pos: TrainPosition) {
+    // Always reset board to the canonical position FEN — never carry over
+    // state from a coach animation (coachFen is cleared by clearCoach before this).
     chessRef.current = new Chess(pos.fen);
     setFen(pos.fen);
     setMistakes(0);
@@ -417,6 +419,8 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
   }
 
   function handleNext() {
+    // Cancel any in-flight coach animations before moving on
+    clearCoach();
     // Find next drillable position (skip any with missing correctSan)
     let nextIdx = currentIdx + 1;
     while (
@@ -460,17 +464,14 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
   }
 
   function handleTeachingGotIt() {
-    if (currentPosition) {
-      recordAttempt(currentPosition.fen, true, 4);
-    }
-    handleNext();
+    // Don't skip the position — drill it immediately after the coaching preview
+    clearCoach();
+    setupPosition(currentPosition!);
+    setState("drilling");
   }
 
   // Keep ref in sync for timer callback
   handleRevealRef.current = handleReveal;
-
-  const accuracy =
-    stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
 
   const avgResponseTime =
     responseTimes.current.length > 0
@@ -783,10 +784,10 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
 
         {/* COMPLETE state */}
         {state === "complete" && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6 pb-24">
+          <div className="flex-1 flex flex-col items-center gap-6 px-6 pt-8 pb-24 overflow-y-auto">
             {stats.total === 0 ? (
               <>
-                <p className="text-xl font-black text-slate-300">
+                <p className="text-xl font-black text-slate-300 mt-8">
                   Nothing to train
                 </p>
                 <p className="text-sm text-slate-500 text-center">
@@ -795,50 +796,51 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
               </>
             ) : (
               <>
-                <div className="text-center">
-                  <p className="text-4xl font-black text-slate-100 mb-1">
-                    {accuracy}%
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    accuracy
-                    {avgResponseTime && (
-                      <span className="ml-2 text-indigo-400">
-                        Avg: {avgResponseTime}s
-                      </span>
-                    )}
-                  </p>
-                </div>
+                {/* Grade + accuracy */}
+                {(() => {
+                  const acc = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+                  const grade =
+                    acc >= 90 ? { letter: "S", color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/30", msg: "Exceptional" }
+                    : acc >= 75 ? { letter: "A", color: "text-emerald-400", bg: "bg-emerald-400/10 border-emerald-400/30", msg: "Strong session" }
+                    : acc >= 60 ? { letter: "B", color: "text-indigo-400", bg: "bg-indigo-400/10 border-indigo-400/30", msg: "Good progress" }
+                    : acc >= 40 ? { letter: "C", color: "text-amber-400", bg: "bg-amber-400/10 border-amber-400/30", msg: "Keep drilling" }
+                    :             { letter: "D", color: "text-rose-400",   bg: "bg-rose-400/10 border-rose-400/30",   msg: "Tough session — review the mistakes" };
+                  return (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className={cn("w-20 h-20 rounded-[2rem] border-2 flex items-center justify-center", grade.bg)}>
+                        <span className={cn("text-5xl font-black", grade.color)}>{grade.letter}</span>
+                      </div>
+                      <p className={cn("text-sm font-black uppercase tracking-wider", grade.color)}>
+                        {grade.msg}
+                      </p>
+                      <div className="flex items-center gap-3 text-sm text-slate-500">
+                        <span className="font-black text-slate-200">{acc}%</span>
+                        <span>accuracy</span>
+                        {avgResponseTime && (
+                          <>
+                            <span className="text-slate-700">·</span>
+                            <span className="text-indigo-400 font-semibold">{avgResponseTime}s avg</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
-                <div className="grid grid-cols-3 gap-6 text-center">
-                  <div>
-                    <p className="text-2xl font-black text-slate-200">
-                      {stats.total}
-                    </p>
-                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
-                      drilled
-                    </p>
+                <div className="grid grid-cols-3 gap-4 text-center w-full">
+                  <div className="bg-forge-card border border-forge-border-subtle rounded-2xl py-4">
+                    <p className="text-2xl font-black text-slate-200">{stats.total}</p>
+                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">drilled</p>
                   </div>
-                  <div>
-                    <p className="text-2xl font-black text-emerald-400">
-                      {stats.correct}
-                    </p>
-                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
-                      correct
-                    </p>
+                  <div className="bg-forge-card border border-forge-border-subtle rounded-2xl py-4">
+                    <p className="text-2xl font-black text-emerald-400">{stats.correct}</p>
+                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">correct</p>
                   </div>
-                  <div>
-                    <p className="text-2xl font-black text-amber-400">
-                      {stats.revealed}
-                    </p>
-                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
-                      revealed
-                    </p>
+                  <div className="bg-forge-card border border-forge-border-subtle rounded-2xl py-4">
+                    <p className="text-2xl font-black text-amber-400">{stats.revealed}</p>
+                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">revealed</p>
                   </div>
                 </div>
-
-                <p className="text-lg font-black text-slate-300 mt-4">
-                  Great work
-                </p>
 
                 {/* Mistakes replay */}
                 {revealedPositions.length > 0 && (
