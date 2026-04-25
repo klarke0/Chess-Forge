@@ -364,6 +364,16 @@ export interface TrainNowCounts {
   total: number;
 }
 
-export function getTrainNowCounts(repertoireId: number): Promise<TrainNowCounts> {
-  return request<TrainNowCounts>(`/v2/train-now?repertoireId=${repertoireId}&countOnly=true`);
+export function getTrainNowCounts(
+  repertoireId: number,
+  phase?: string,
+  mode?: string,
+): Promise<TrainNowCounts> {
+  const params = new URLSearchParams({
+    repertoireId: String(repertoireId),
+    countOnly: 'true',
+  });
+  if (phase && phase !== 'all') params.set('phase', phase);
+  if (mode && mode !== 'blunder') params.set('mode', mode);
+  return request<TrainNowCounts>(`/v2/train-now?${params.toString()}`);
 }
