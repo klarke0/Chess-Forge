@@ -1,9 +1,6 @@
 const BASE = "/api";
 
-export async function request<T>(
-  path: string,
-  options?: RequestInit,
-): Promise<T> {
+export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10000);
   try {
@@ -28,7 +25,7 @@ export interface Repertoire {
   id: number;
   name: string;
   description: string | null;
-  side: "white" | "black";
+  side: 'white' | 'black';
   created_at: string;
   updated_at: string;
 }
@@ -62,24 +59,14 @@ export function getChapters(repertoireId: number) {
   return request<Chapter[]>(`/repertoires/${repertoireId}/chapters`);
 }
 
-export function importRepertoire(data: {
-  name: string;
-  chapters?: any[];
-  positions: Record<string, any[]>;
-}) {
-  return request<{ repertoireId: number; positionCount: number }>(
-    "/repertoires/import",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    },
-  );
+export function importRepertoire(data: { name: string; chapters?: any[]; positions: Record<string, any[]> }) {
+  return request<{ repertoireId: number; positionCount: number }>("/repertoires/import", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 }
 
-export function addRepertoirePosition(
-  repertoireId: number,
-  data: { fen: string; san: string; nextFen: string; comment?: string },
-) {
+export function addRepertoirePosition(repertoireId: number, data: { fen: string; san: string; nextFen: string; comment?: string }) {
   return request<{ ok: boolean }>(`/repertoires/${repertoireId}/positions`, {
     method: "POST",
     body: JSON.stringify(data),
@@ -90,7 +77,7 @@ export async function fetchLichessExplorer(fen: string) {
   const url = `https://explorer.lichess.ovh/lichess?fen=${encodeURIComponent(fen)}&ratings=1800,2000,2200,2500&speeds=blitz,rapid,classical`;
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error("Failed to fetch Lichess Explorer data");
+    throw new Error('Failed to fetch Lichess Explorer data');
   }
   return response.json();
 }
@@ -113,7 +100,7 @@ export interface MastersData {
 export async function fetchLichessMasters(fen: string): Promise<MastersData> {
   const url = `https://explorer.lichess.ovh/masters?fen=${encodeURIComponent(fen)}&moves=12&topGames=0`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error("Lichess Masters API error");
+  if (!res.ok) throw new Error('Lichess Masters API error');
   return res.json();
 }
 
@@ -129,7 +116,7 @@ export interface ProgressEntry {
   next_review: string | null;
   last_reviewed: string | null;
   expected_moves?: string[];
-  side?: "white" | "black";
+  side?: 'white' | 'black';
   repertoire_name?: string;
   repertoire_id?: number;
 }
@@ -162,12 +149,10 @@ export function updateChapterLearnRuns(chapterId: number, learnRuns: number) {
 }
 
 export function getWeakPositions(repertoireId: number) {
-  return request<(ProgressEntry & { accuracy: number })[]>(
-    `/progress/${repertoireId}/weak`,
-  );
+  return request<(ProgressEntry & { accuracy: number })[]>(`/progress/${repertoireId}/weak`);
 }
 
-export function getDuePositions(repertoireId: number | "all") {
+export function getDuePositions(repertoireId: number | 'all') {
   return request<ProgressEntry[]>(`/progress/${repertoireId}/due`);
 }
 
@@ -190,14 +175,7 @@ export function startSession(repertoireId: number) {
   });
 }
 
-export function endSession(
-  sessionId: number,
-  stats: {
-    positionsDrilled?: number;
-    correctCount?: number;
-    mistakeCount?: number;
-  },
-) {
+export function endSession(sessionId: number, stats: { positionsDrilled?: number; correctCount?: number; mistakeCount?: number }) {
   return request<{ ok: boolean }>(`/sessions/${sessionId}`, {
     method: "PATCH",
     body: JSON.stringify(stats),
@@ -216,12 +194,12 @@ export interface GameRecord {
   uuid: string | null;
   white_username: string | null;
   black_username: string | null;
-  user_color: "white" | "black" | null;
-  result: "win" | "loss" | "draw" | null;
+  user_color: 'white' | 'black' | null;
+  result: 'win' | 'loss' | 'draw' | null;
   white_result: string | null;
   black_result: string | null;
   time_control: string | null;
-  time_class: "bullet" | "blitz" | "rapid" | "classical" | null;
+  time_class: 'bullet' | 'blitz' | 'rapid' | 'classical' | null;
   opening_class: string | null;
   opening_name: string | null;
   eco: string | null;
@@ -234,7 +212,7 @@ export interface GameRecord {
 }
 
 export function listGames(limit = 50, offset = 0, unanalyzedOnly = false) {
-  const query = `limit=${limit}&offset=${offset}${unanalyzedOnly ? "&unanalyzedOnly=true" : ""}`;
+  const query = `limit=${limit}&offset=${offset}${unanalyzedOnly ? '&unanalyzedOnly=true' : ''}`;
   return request<GameRecord[]>(`/games?${query}`);
 }
 
@@ -250,21 +228,21 @@ export function saveGameAnalysis(id: number, analysis: any[]) {
 }
 
 export function clearAllAnalysis() {
-  return request<{ ok: boolean }>("/games/clear-analysis", {
-    method: "POST",
+  return request<{ ok: boolean }>('/games/clear-analysis', {
+    method: 'POST',
   });
 }
 
 export function syncGamesFromChessCom(username: string) {
-  return request<{ imported: number }>("/games/sync", {
-    method: "POST",
+  return request<{ imported: number }>('/games/sync', {
+    method: 'POST',
     body: JSON.stringify({ username }),
   });
 }
 
 export function uploadGamesPgn(pgn: string, username: string) {
-  return request<{ imported: number }>("/games/upload", {
-    method: "POST",
+  return request<{ imported: number }>('/games/upload', {
+    method: 'POST',
     body: JSON.stringify({ pgn, username }),
   });
 }
@@ -282,13 +260,6 @@ export interface AnalyzeRequest {
   mode?: string;
   repertoireMoves?: string[];
   mastersData?: MastersData | null;
-  moveHistory?: string[];
-  deviationContext?: {
-    moveNumber: number;
-    playedSan: string;
-    repertoireSan: string;
-    evalDiff: number;
-  } | null;
 }
 
 export interface AnalyzeResponse {
@@ -298,8 +269,8 @@ export interface AnalyzeResponse {
 }
 
 export function analyzePosition(data: AnalyzeRequest) {
-  return request<AnalyzeResponse>("/analyze", {
-    method: "POST",
+  return request<AnalyzeResponse>('/analyze', {
+    method: 'POST',
     body: JSON.stringify(data),
   });
 }
@@ -329,17 +300,15 @@ export interface BlunderMove {
   evals: number[];
 }
 
-export async function getProgressStats(
-  repertoireId: number,
-): Promise<ProgressStats> {
+export async function getProgressStats(repertoireId: number): Promise<ProgressStats> {
   const res = await fetch(`/api/progress/${repertoireId}/stats`);
-  if (!res.ok) throw new Error("Failed to fetch progress stats");
+  if (!res.ok) throw new Error('Failed to fetch progress stats');
   return res.json();
 }
 
 export async function getBlunders(limit = 20): Promise<BlunderMove[]> {
   const res = await fetch(`/api/games/blunders?limit=${limit}`);
-  if (!res.ok) throw new Error("Failed to fetch blunders");
+  if (!res.ok) throw new Error('Failed to fetch blunders');
   return res.json();
 }
 
@@ -377,14 +346,14 @@ export interface PatternAnalysis {
 }
 
 export async function getPatternReport(): Promise<PatternAnalysis | null> {
-  const res = await fetch("/api/analyze/patterns");
-  if (!res.ok) throw new Error("Failed to fetch pattern report");
+  const res = await fetch('/api/analyze/patterns');
+  if (!res.ok) throw new Error('Failed to fetch pattern report');
   return res.json();
 }
 
 export async function runPatternAnalysis(): Promise<PatternAnalysis> {
-  const res = await fetch("/api/analyze/patterns", { method: "POST" });
-  if (!res.ok) throw new Error("Failed to run pattern analysis");
+  const res = await fetch('/api/analyze/patterns', { method: 'POST' });
+  if (!res.ok) throw new Error('Failed to run pattern analysis');
   return res.json();
 }
 
@@ -395,33 +364,6 @@ export interface TrainNowCounts {
   total: number;
 }
 
-export function getTrainNowCounts(
-  repertoireId: number,
-  phase?: string,
-  mode?: string,
-): Promise<TrainNowCounts> {
-  const params = new URLSearchParams({
-    repertoireId: String(repertoireId),
-    countOnly: "true",
-  });
-  if (phase && phase !== "all") params.set("phase", phase);
-  if (mode && mode !== "blunder") params.set("mode", mode);
-  return request<TrainNowCounts>(`/v2/train-now?${params.toString()}`);
-}
-
-// --- Velocity / Blunder Trend ---
-
-export interface VelocityWeek {
-  label: string;
-  blunders: number;
-  games: number;
-  avgCpLoss: number;
-}
-
-export interface VelocityData {
-  weeks: VelocityWeek[];
-}
-
-export function fetchVelocity(): Promise<VelocityData> {
-  return request<VelocityData>("/v2/insights/velocity");
+export function getTrainNowCounts(repertoireId: number): Promise<TrainNowCounts> {
+  return request<TrainNowCounts>(`/v2/train-now?repertoireId=${repertoireId}&countOnly=true`);
 }
