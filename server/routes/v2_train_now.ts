@@ -167,6 +167,9 @@ export function trainNow(req: Request): Response {
     return Response.json({ error: "Invalid repertoireId" }, { status: 400 });
   }
 
+  const phaseParam = url.searchParams.get("phase") ?? "all";
+  const modeParam = url.searchParams.get("mode") ?? "blunder";
+
   const now = new Date().toISOString();
   const ninetyDaysAgo = new Date(Date.now() - 365 * 86400000).toISOString();
 
@@ -474,6 +477,17 @@ export function trainNow(req: Request): Response {
       date: null,
       moveNumber,
     });
+  }
+
+  // ---------- Phase filter ----------
+  if (phaseParam !== "all") {
+    for (const [fen, cand] of [...candidates.entries()]) {
+      const moveNum =
+        cand.moveNumber ??
+        (parseInt(fen.split(" ")[5] ?? "1", 10) || 1);
+      if (phaseParam === "opening" && moveNum > 35) candidates.delete(fen);
+      if (phaseParam === "endgame" && moveNum <= 35) candidates.delete(fen);
+    }
   }
 
   // ---------- countOnly: return counts without scoring ----------
