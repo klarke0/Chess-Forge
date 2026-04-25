@@ -1,0 +1,154 @@
+# Chess Forge — Improvement Backlog
+
+> **Session protocol:** Read this file first. Pick the top `🔴 Ready` item. Implement it. Test it. Update this file. Commit. Repeat.
+>
+> **This file is the thread.** Every improvement session updates it. Never start without reading it.
+
+---
+
+## Vision
+
+A mobile-first chess training app Kevin can pick up at any moment and get genuine improvement value from. Two repertoires only: **Caro-Kann (Black)** and **Jobava London (White)**. Training is driven by real game mistakes and spaced repetition — not abstract puzzles. The experience should feel like a finished, polished product: clean board, no glitches, confident UX. It should reliably show Kevin positions he actually got wrong, teach him the right move, and remember whether he learned it.
+
+**The test:** After a week of daily sessions, Kevin's opening accuracy in those two repertoires measurably improves.
+
+---
+
+## Current State (as of 2026-04-24)
+
+- **V2 is live** at port 3001 (SPA mode, served by Bun backend)
+- **562 games** imported from Chess.com, **497 analyzed**
+- **97 games** have `bestMove` in analysis (rest are pre-March 2026, need backfill)
+- **5,381 repertoire positions** across Caro-Kann (id=2) and Jobava London (id=3)
+- **55 SM-2 progress rows**, 40 due now
+- **579 deviation rows** in DB
+- Drill pool sources: blunders (>1 pawn loss), deviations, SM-2 review
+- Session size: 12 positions
+- Teaching mode: up to 2 first-encounter coach animations per session
+- Backend: Bun + SQLite on :3001
+- Frontend: React/Vite/Tailwind, mobile-first, dark theme with forge-* design tokens
+
+### Known Active Bugs
+- [ ] **`bestMove` missing** on 400 older games — drill pool for non-repertoire blunders is thin. Need backfill UI or script trigger from app.
+- [ ] **Drill pool shows fewer than 12** sometimes — session state or filtering issue in `TrainNowScreen`
+- [ ] **Board rendering edge cases** — verify coach animation doesn't leave board in wrong state after dismiss
+
+---
+
+## Improvement Queue
+
+Priority order: 🔴 Ready to build → 🟡 Needs design decision → ⚪ Future
+
+---
+
+### 🔴 P0 — Reliability & Core Loop
+
+These block the app from being genuinely useful. Fix first.
+
+#### ~~P0-1: Backfill `bestMove` for existing games — trigger from UI~~ ✅ DONE 2026-04-24
+**Why:** 400 analyzed games have no `bestMove`. Drill pool is thin without it. Background analysis already captures it for new games; old games need re-analysis.
+**What:** Add a "Refresh Analysis" button on the HomeScreen (or Settings). Calls a backend endpoint that clears `analysis_json` for the last N games (e.g. 200 most recent) and lets `BackgroundAnalysisQueue` re-analyze them. Show progress indicator. Notify when done.
+**Files:** `server/routes/games.ts` (new endpoint), `src/v2/HomeScreen.tsx`
+
+#### ~~P0-2: Fix session size — always deliver 12 positions~~ ✅ DONE 2026-04-24
+**Why:** Session sometimes shows < 12. Likely a `correctSan` filter or `firstEncounter` state bug.
+**What:** Add logging/tracing to `v2_train_now.ts` to understand what's being filtered out. Fix root cause. Add a fallback: if < 12 valid positions, pad with SM-2 review items regardless of `next_review` date.
+**Files:** `server/routes/v2_train_now.ts`, `src/v2/TrainNowScreen.tsx`
+
+#### ~~P0-3: Verify board state integrity after coach animation~~ ✅ DONE 2026-04-24
+**Why:** `useCoachBoard` animates pieces through multiple FEN states. If a position is dismissed or the user taps "Next" mid-animation, the board can be left in a stale FEN.
+**What:** Audit `TrainNowScreen` — ensure `clearCoach()` is called on every state transition that exits a position. Add a safety reset: on entry to `drilling` state, always set board FEN from `currentPosition.fen`.
+**Files:** `src/v2/TrainNowScreen.tsx`, `src/v2/useCoachBoard.ts`
+
+---
+
+### 🔴 P1 — Training Quality
+
+#### ~~P1-1: Opening Explorer integration on explanation screen~~ ✅ DONE 2026-04-24
+**Why:** When Kevin sees a blunder or deviation, showing "in master games, 78% play Nd5 here" makes the lesson stick. Infrastructure exists (`useLichessMasters` hook, `explorer.lichess.ovh`).
+**What:** Add a compact masters-stats widget to `BlunderExplanation` — top 3 moves, frequency bars, W/D/L. Fetch on mount when `fen` is available. Lightweight, no extra API cost.
+**Files:** `src/v2/BlunderExplanation.tsx`, `src/hooks/useLichessMasters.ts`
+
+#### P1-2: Repertoire drill mode (pure opening practice)
+**Why:** Sometimes Kevin wants to just run through the Caro-Kann or Jobava from move 1, not just drill mistakes. Pure rehearsal of the full tree — answers with the repertoire move, opponent plays the main line response.
+**What:** New session type selectable from HomeScreen: "Repertoire Run". Starts from starting position, Kevin plays his move, app responds with the mainline opponent move, Kevin continues. On wrong move: show correct move, continue. Track accuracy. End when Kevin reaches a leaf node or after N moves.
+**Files:** New `src/v2/RepertoireRunScreen.tsx`, `server/routes/v2_repertoire_run.ts`, updates to `AppV2.tsx`
+
+#### P1-3: Session summary screen with real stats
+**Why:** The complete screen currently shows raw counts. Kevin should see: positions seen, accuracy %, time spent, which positions he missed (with FEN thumbnails), streak update. Makes sessions feel meaningful.
+**What:** Redesign the complete screen in `TrainNowScreen`. Show missed positions list (tap to review). Show streak. Show a grade (S/A/B/C based on accuracy).
+**Files:** `src/v2/TrainNowScreen.tsx`
+
+---
+
+### 🔴 P2 — GUI Polish
+
+#### P2-1: Board sizing is inconsistent on iPhone
+**Why:** Board sometimes renders too small or clips on certain iPhone screen sizes. The `max-w-[430px]` container works on desktop but mobile Safari has safe areas and dynamic toolbar that affect available height.
+**What:** Audit board sizing across `TrainNowScreen`, `BlunderExplanation`. Use `dvh` (dynamic viewport height) instead of `vh` where needed. Test at 375px (iPhone SE) and 390px (iPhone 14).
+**Files:** `src/v2/TrainNowScreen.tsx`, `src/index.css`
+
+#### P2-2: Loading states feel janky
+**Why:** Transitions between drill states (loading → queued → drilling) have no smooth animation. The board just snaps.
+**What:** Add subtle fade or slide transition between states. The queued → drilling transition especially needs a "position is appearing" feel. CSS transitions on the board container.
+**Files:** `src/v2/TrainNowScreen.tsx`, `src/index.css`
+
+#### P2-3: HomeScreen feels sparse
+**Why:** The home screen has a train button and counts but little else to motivate opening the app. Should feel like a dashboard.
+**What:** Add: last session date + grade, current streak prominently, a "your weakest position" preview card (the FEN thumbnail of the highest-scored un-drilled position), and a visual representation of the two repertoires (Caro-Kann / Jobava London) with position counts.
+**Files:** `src/v2/HomeScreen.tsx`, possibly new API endpoint for "weakest position preview"
+
+---
+
+### 🟡 P3 — Features (needs design decision before building)
+
+#### P3-1: Pattern clustering in sessions
+Woodpecker Method — group positions by theme (back rank, overloaded piece, etc.) rather than random order. Requires either Gemini classification or heuristic approach. **Decision needed:** Gemini batch call vs. heuristic classifier.
+
+#### P3-2: Lichess game import
+Kevin may play on Lichess. Should be importable. **Decision needed:** Does Kevin actually use Lichess?
+
+#### P3-3: Opponent punishment lines
+When Kevin deviates, show what the opponent *should* have played as punishment. Already in v1 as "Play Demo". **Decision needed:** Should this be automatic after each deviation drill?
+
+#### P3-4: Daily challenge / streak goal
+A defined daily target (e.g. "do 1 session") with streak tracking. Already has streak in HomeScreen. **Decision needed:** Should there be a notification/reminder?
+
+---
+
+### ⚪ Future (not yet prioritized)
+
+- Full insights dashboard (time management, game shape, opening stats by repertoire)
+- Lichess Masters integration in Gemini coach prompts (v1 had design doc)
+- Opening tree visualization (v1 had `RepertoireTree` component)
+- Performance over time charts
+- Settings screen for repertoire management (add/remove PGN)
+- Opponent model (track which opponents deviate where)
+
+---
+
+## Completed (this backlog's scope)
+
+*Items move here when merged and verified working on device.*
+
+- [x] Coach board animation (`useCoachBoard.ts`) — wrong→correct reveal sequence
+- [x] Teaching mode — first-encounter positions get a coach reveal before drilling
+- [x] Drill-from-games-tab — `onDrillDeviation(fen)` wired in `AppV2.tsx`
+- [x] Occurrence-weighted scoring — repeat blunders score higher
+- [x] Smooth exponential recency decay (replaced step function)
+- [x] Dismissed positions table + endpoint + filter in drill pool
+- [x] N+1 DB query fix — batch game_positions load
+- [x] Non-repertoire blunders included via engine bestMove (≥2 pawns)
+- [x] `dev.sh` stop no longer kills Furu's Vite process (PID-file approach)
+- [x] Menubar controller updated — Furu and Chess Forge run independently
+
+---
+
+## Design Principles (don't violate these)
+
+1. **Mobile-first** — everything must work on iPhone with one thumb
+2. **Forge design tokens** — use `forge-*` utilities, never hardcoded hex
+3. **Dark theme** — near-black backgrounds, slate text, indigo accents
+4. **No modal hell** — prefer inline state changes over popups
+5. **SM-2 is sacred** — never bypass spaced repetition scheduling
+6. **V1 is frozen** — do not touch `src/App.tsx` or v1 components unless asked
