@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { BottomNav, V2Tab } from "./BottomNav";
 import { HomeScreen, type TrainingMode, type PhaseFilter } from "./HomeScreen";
 import { TrainNowScreen } from "./TrainNowScreen";
+import { RepertoireRunScreen } from "./RepertoireRunScreen";
 import { GamesTab } from "@/components/GamesTab";
 import { InsightsTab } from "@/components/InsightsTab";
 import { useRepertoireStore } from "@/stores/repertoireStore";
@@ -12,6 +13,7 @@ import { BackgroundAnalysisQueue } from "@/services/background_analysis";
 const AppV2: React.FC = () => {
   const [activeTab, setActiveTab] = useState<V2Tab>("train");
   const [drilling, setDrilling] = useState(false);
+  const [repertoireRun, setRepertoireRun] = useState(false);
   const [analyzingGame, setAnalyzingGame] = useState(false);
   const [deviationFen, setDeviationFen] = useState<string | null>(null);
   const [trainingMode, setTrainingMode] = useState<TrainingMode>("blunder");
@@ -30,6 +32,10 @@ const AppV2: React.FC = () => {
   }, []);
 
   function handleTrainNow(mode: TrainingMode, phase: PhaseFilter) {
+    if (mode === "repertoire") {
+      setRepertoireRun(true);
+      return;
+    }
     setTrainingMode(mode);
     setPhaseFilter(phase);
     setDrilling(true);
@@ -37,6 +43,7 @@ const AppV2: React.FC = () => {
 
   function handleBackFromDrill() {
     setDrilling(false);
+    setRepertoireRun(false);
     setDeviationFen(null);
   }
 
@@ -50,9 +57,11 @@ const AppV2: React.FC = () => {
       <div className="relative flex flex-col h-[100dvh] w-full max-w-[430px] bg-[var(--bg-base)] overflow-hidden shadow-2xl shadow-black/60">
         {/* Main content */}
         <div
-          className={`flex-1 min-h-0 flex flex-col overflow-hidden ${drilling || analyzingGame ? "" : "mb-16"}`}
+          className={`flex-1 min-h-0 flex flex-col overflow-hidden ${drilling || repertoireRun || analyzingGame ? "" : "mb-16"}`}
         >
-          {drilling ? (
+          {repertoireRun ? (
+            <RepertoireRunScreen onBack={handleBackFromDrill} />
+          ) : drilling ? (
             <TrainNowScreen
               onBack={handleBackFromDrill}
               singlePositionFen={deviationFen ?? undefined}
@@ -85,7 +94,7 @@ const AppV2: React.FC = () => {
         </div>
 
         {/* Bottom nav — hide during drilling or game analysis */}
-        {!drilling && !analyzingGame && (
+        {!drilling && !repertoireRun && !analyzingGame && (
           <BottomNav activeTab={activeTab} onNavigate={setActiveTab} />
         )}
       </div>

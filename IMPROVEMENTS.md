@@ -69,7 +69,7 @@ These block the app from being genuinely useful. Fix first.
 **What:** Add a compact masters-stats widget to `BlunderExplanation` — top 3 moves, frequency bars, W/D/L. Fetch on mount when `fen` is available. Lightweight, no extra API cost.
 **Files:** `src/v2/BlunderExplanation.tsx`, `src/hooks/useLichessMasters.ts`
 
-#### P1-2: Repertoire drill mode (pure opening practice)
+#### ~~P1-2: Repertoire drill mode (pure opening practice)~~ ✅ DONE 2026-04-24
 **Why:** Sometimes Kevin wants to just run through the Caro-Kann or Jobava from move 1, not just drill mistakes. Pure rehearsal of the full tree — answers with the repertoire move, opponent plays the main line response.
 **What:** New session type selectable from HomeScreen: "Repertoire Run". Starts from starting position, Kevin plays his move, app responds with the mainline opponent move, Kevin continues. On wrong move: show correct move, continue. Track accuracy. End when Kevin reaches a leaf node or after N moves.
 **Files:** New `src/v2/RepertoireRunScreen.tsx`, `server/routes/v2_repertoire_run.ts`, updates to `AppV2.tsx`
