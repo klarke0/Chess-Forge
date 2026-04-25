@@ -36,8 +36,6 @@ const AppV2: React.FC = () => {
   }
 
   function handleBackFromDrill() {
-    setTrainingMode("blunder");
-    setPhaseFilter("all");
     setDrilling(false);
     setDeviationFen(null);
   }
