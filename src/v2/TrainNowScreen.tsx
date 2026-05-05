@@ -9,42 +9,48 @@ import {
   Loader2,
   Timer,
   RotateCcw,
-  BookOpen,
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { useRepertoireStore } from "@/stores/repertoireStore";
-import { request } from "@/services/api";
+import { fetchTrainNowSession, recordAttempt as apiRecordAttempt } from "@/services/api";
+import type { AttemptRecord } from "@/services/api";
 import { normalizeFen } from "@/utils/normalizeFen";
+import { BOARD_THEME } from "@/design/tokens";
+import { looseSan } from "@/utils/san";
 import { BlunderExplanation } from "./BlunderExplanation";
 import { useSound } from "@/hooks/useSound";
 import { useCoachBoard } from "./useCoachBoard";
 import { type TrainingMode, type PhaseFilter } from "./HomeScreen";
+import { useDrillSession, type TrainPosition, type TacticalPattern } from "./useDrillSession";
 
-type SessionState =
-  | "idle"
-  | "loading"
-  | "queued"
-  | "drilling"
-  | "explanation"
-  | "teaching"
-  | "complete";
+/** Human-readable label + colour for each tactical pattern. */
+const PATTERN_META: Record<TacticalPattern, { label: string; className: string }> = {
+  "back-rank": { label: "Back Rank", className: "bg-rose-500/15 text-rose-400 border-rose-500/25" },
+  "fork":       { label: "Fork",      className: "bg-amber-500/15 text-amber-400 border-amber-500/25" },
+  "pin":        { label: "Pin",        className: "bg-violet-500/15 text-violet-400 border-violet-500/25" },
+  "discovered-attack": { label: "Discovery", className: "bg-orange-500/15 text-orange-400 border-orange-500/25" },
+  "promotion":  { label: "Promotion", className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25" },
+  "endgame":    { label: "Endgame",   className: "bg-sky-500/15 text-sky-400 border-sky-500/25" },
+  "opening":    { label: "Opening",   className: "bg-indigo-500/15 text-indigo-400 border-indigo-500/25" },
+  "middlegame": { label: "Middlegame", className: "bg-slate-500/15 text-slate-400 border-slate-500/25" },
+  "other":      { label: "Tactics",   className: "bg-slate-500/15 text-slate-400 border-slate-500/25" },
+};
 
-interface TrainPosition {
-  id: string;
-  fen: string;
-  correctSan: string;
-  san?: string;
-  context?: string;
-  cpLoss?: number;
-  phase?: string;
-  source?: "blunder" | "deviation" | "review" | "repertoire";
-  firstEncounter?: boolean;
-}
-
-interface SessionStats {
-  total: number;
-  correct: number;
-  revealed: number;
+function PatternBadge({ pattern, className }: { pattern?: TacticalPattern; className?: string }) {
+  if (!pattern || pattern === "other" || pattern === "middlegame") return null;
+  const meta = PATTERN_META[pattern];
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center px-2 py-0.5 rounded-full border",
+        "text-[9px] font-black uppercase tracking-wider",
+        meta.className,
+        className,
+      )}
+    >
+      {meta.label}
+    </span>
+  );
 }
 
 function getTimerDuration(source?: string): number {
@@ -116,11 +122,6 @@ interface TrainNowScreenProps {
   phase?: PhaseFilter;
 }
 
-// Strip check/capture noise for loose SAN comparison
-function looseSan(san: string) {
-  return san.replace(/[+#x]/g, "").trim();
-}
-
 export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
   onBack,
   singlePositionFen,
@@ -137,28 +138,34 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
     triggerReveal,
     clearCoach,
     replayCoach,
+    beatReset,
+    beatPlayMove,
+    beatHighlight,
+    beatArrow,
   } = useCoachBoard();
 
-  const [state, setState] = useState<SessionState>("idle");
-  const [positions, setPositions] = useState<TrainPosition[]>([]);
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [fen, setFen] = useState(
-    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-  );
-  const [mistakes, setMistakes] = useState(0);
-  const [wrongMove, setWrongMove] = useState<string | null>(null);
-  const [revealed, setRevealed] = useState(false);
-  const [shaking, setShaking] = useState(false);
-  const [stats, setStats] = useState<SessionStats>({
-    total: 0,
-    correct: 0,
-    revealed: 0,
-  });
-  const [revealedPositions, setRevealedPositions] = useState<TrainPosition[]>(
-    [],
-  );
-  const [teachingCount, setTeachingCount] = useState(0);
+  // The 11 session-state vars live in a single useReducer-backed hook so
+  // every transition is atomic (a wrong-move dispatch can't leave shaking,
+  // mistakes, and wrongMove in inconsistent intermediate renders).
+  const [drill, dispatch] = useDrillSession();
+  const {
+    state,
+    positions,
+    currentIdx,
+    fen,
+    mistakes,
+    wrongMove,
+    revealed,
+    shaking,
+    stats,
+    revealedPositions,
+    teachingCount,
+  } = drill;
   const MAX_TEACHING_PER_SESSION = 2;
+
+  // Click-to-move (tap-to-move for mobile)
+  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [moveSquares, setMoveSquares] = useState<Record<string, React.CSSProperties>>({});
 
   // Speed mode
   const [speedMode, setSpeedMode] = useState(false);
@@ -171,9 +178,15 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
   const chessRef = useRef(new Chess());
   const currentPosition = positions[currentIdx] ?? null;
 
-  // Board orientation follows whose turn it is in the FEN
+  // Board orientation follows the side the user is drilling — derived from the
+  // position's ORIGINAL FEN (whose turn it is at the start of the drill), not
+  // the live `fen`. The live `fen` flips after a correct move (opponent to
+  // move on the post-move position), which would visually rotate the board
+  // mid-drill. Lock it to the position's perspective for the whole step.
   const boardOrientation =
-    (fen.split(" ")[1] ?? "w") === "w" ? "white" : "black";
+    ((currentPosition?.fen ?? fen).split(" ")[1] ?? "w") === "w"
+      ? "white"
+      : "black";
 
   // Fire coach reveal animation on teaching state entry
   useEffect(() => {
@@ -209,8 +222,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
     const nfen = normalizeFen(fenRaw);
     const moves = useRepertoireStore.getState().positions[nfen];
     if (!moves || moves.length === 0) {
-      setState("complete");
-      setStats({ total: 0, correct: 0, revealed: 0 });
+      dispatch({ type: "LOAD_EMPTY" });
       return;
     }
     const pos: TrainPosition = {
@@ -219,9 +231,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
       correctSan: moves[0].san,
       source: "deviation",
     };
-    setPositions([pos]);
-    setStats({ total: 1, correct: 0, revealed: 0 });
-    setState("queued");
+    dispatch({ type: "LOAD_SINGLE", pos });
   }
 
   // Cleanup timer on unmount
@@ -232,28 +242,20 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
   }, []);
 
   async function loadSession() {
-    setState("loading");
-    setCurrentIdx(0);
-    setPositions([]);
-    setTeachingCount(0);
+    dispatch({ type: "LOAD_START" });
     try {
-      const params = new URLSearchParams({ repertoireId: String(repertoireId) });
-      if (singlePositionFen) params.set("fen", singlePositionFen);
-      if (mode && mode !== "blunder") params.set("mode", mode);
-      if (phase && phase !== "all") params.set("phase", phase);
-      const sessionUrl = `/v2/train-now?${params.toString()}`;
-      const data = await request<{ positions: TrainPosition[] }>(sessionUrl);
+      const data = await fetchTrainNowSession(repertoireId, {
+        fen: singlePositionFen,
+        mode,
+        phase,
+      });
       if (data.positions.length === 0) {
-        setState("complete");
-        setStats({ total: 0, correct: 0, revealed: 0 });
+        dispatch({ type: "LOAD_EMPTY" });
         return;
       }
-      setPositions(data.positions);
-      setStats({ total: data.positions.length, correct: 0, revealed: 0 });
-      setState("queued");
+      dispatch({ type: "LOAD_SUCCESS", positions: data.positions });
     } catch {
-      setState("complete");
-      setStats({ total: 0, correct: 0, revealed: 0 });
+      dispatch({ type: "LOAD_EMPTY" });
     }
   }
 
@@ -268,17 +270,15 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
       (p) => p.correctSan && p.correctSan.trim(),
     );
     if (first === -1) {
-      setState("complete");
+      dispatch({ type: "COMPLETE" });
       return;
     }
     responseTimes.current = [];
-    setCurrentIdx(first);
     setupPosition(positions[first]);
     if (shouldTeach(positions[first])) {
-      setTeachingCount((c) => c + 1);
-      setState("teaching");
+      dispatch({ type: "ENTER_TEACHING", idx: first, pos: positions[first] });
     } else {
-      setState("drilling");
+      dispatch({ type: "ENTER_DRILLING", idx: first, pos: positions[first] });
     }
   }
 
@@ -308,13 +308,13 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
   }
 
   function setupPosition(pos: TrainPosition) {
-    // Always reset board to the canonical position FEN — never carry over
-    // state from a coach animation (coachFen is cleared by clearCoach before this).
+    // Reset board ref + UI input state. Position-scoped session state
+    // (fen, mistakes, wrongMove, revealed, shaking) is reset atomically by
+    // the dispatched action that drives the transition (ENTER_DRILLING /
+    // ENTER_TEACHING / TEACHING_GOT_IT) — see useDrillSession reducer.
     chessRef.current = new Chess(pos.fen);
-    setFen(pos.fen);
-    setMistakes(0);
-    setWrongMove(null);
-    setRevealed(false);
+    setSelectedSquare(null);
+    setMoveSquares({});
     positionStartRef.current = Date.now();
     if (speedMode) {
       startTimer(getTimerDuration(pos.source));
@@ -364,38 +364,34 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
         } else {
           playSound("move");
         }
-        setFen(chess.fen());
-        if (mistakes === 0) {
-          setStats((s) => ({ ...s, correct: s.correct + 1 }));
-        }
-        if (mistakes === 0) setWrongMove(null);
-        recordAttempt(currentPosition.fen, true, mistakes === 0 ? 5 : 3);
-        setState("explanation");
+        const firstTry = mistakes === 0;
+        recordAttempt(currentPosition.fen, true, firstTry ? 5 : 3);
+        dispatch({ type: "CORRECT_MOVE", newFen: chess.fen(), firstTry });
         return true;
       }
 
       // Wrong move
       playSound("wrong");
-      setWrongMove(move.san);
       const newMistakes = mistakes + 1;
-      setMistakes(newMistakes);
-
-      // Shake feedback
-      setShaking(true);
-      setTimeout(() => setShaking(false), 500);
 
       if (newMistakes >= 2) {
-        // Reveal after 2nd miss
+        // Reveal after 2nd miss — atomic state update + delayed transition
         recordAttempt(currentPosition.fen, false, 1);
         triggerReveal(
           currentPosition.fen,
           move.san,
           currentPosition.correctSan,
         );
-        setRevealed(true);
-        setRevealedPositions((prev) => [...prev, currentPosition]);
-        setStats((s) => ({ ...s, revealed: s.revealed + 1 }));
-        setTimeout(() => setState("explanation"), 200);
+        dispatch({
+          type: "WRONG_MOVE_REVEAL",
+          san: move.san,
+          pos: currentPosition,
+        });
+        setTimeout(() => dispatch({ type: "SHAKING_OFF" }), 500);
+        setTimeout(() => dispatch({ type: "ENTER_EXPLANATION" }), 200);
+      } else {
+        dispatch({ type: "WRONG_MOVE", san: move.san });
+        setTimeout(() => dispatch({ type: "SHAKING_OFF" }), 500);
       }
 
       return false;
@@ -403,19 +399,60 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
     [state, currentPosition, fen, mistakes, triggerReveal],
   );
 
+  const onSquareClick = useCallback(
+    (square: string) => {
+      if (state !== "drilling" || !currentPosition) return;
+
+      if (selectedSquare) {
+        // Second tap — attempt the move
+        const moved = onDrop(selectedSquare, square);
+        setSelectedSquare(null);
+        setMoveSquares({});
+        if (moved !== false) return;
+        // If move failed and clicked a new piece of same color, re-select
+      }
+
+      // First tap — select a piece and show legal moves
+      const chess = new Chess(fen);
+      const piece = chess.get(square as any);
+      if (!piece) {
+        setSelectedSquare(null);
+        setMoveSquares({});
+        return;
+      }
+      const activeSide = fen.split(" ")[1]; // 'w' or 'b'
+      if (piece.color !== activeSide) return;
+
+      const legalMoves = chess.moves({ square: square as any, verbose: true });
+      const highlights: Record<string, React.CSSProperties> = {
+        [square]: { background: "rgba(99,102,241,0.4)", borderRadius: "4px" },
+      };
+      for (const m of legalMoves) {
+        highlights[m.to] = {
+          background: chess.get(m.to as any)
+            ? "radial-gradient(circle, rgba(239,68,68,0.5) 60%, transparent 65%)"
+            : "radial-gradient(circle, rgba(99,102,241,0.35) 30%, transparent 35%)",
+          borderRadius: "50%",
+        };
+      }
+      setSelectedSquare(square);
+      setMoveSquares(highlights);
+    },
+    [state, currentPosition, fen, selectedSquare, onDrop],
+  );
+
   function recordAttempt(positionFen: string, correct: boolean, grade: number) {
     if (!repertoireId) return;
-    request("/progress/record", {
-      method: "POST",
-      body: JSON.stringify({
-        repertoireId,
-        fen: positionFen,
-        correct,
-        grade,
-        source: currentPosition?.source,
-        cpLoss: currentPosition?.cpLoss,
-      }),
-    }).catch(() => {}); // fire-and-forget
+    const record: AttemptRecord = {
+      fen: positionFen,
+      correct,
+      grade,
+      source: currentPosition?.source,
+      cpLoss: currentPosition?.cpLoss,
+    };
+    // Fire-and-forget — UI advances regardless of network result, and the
+    // backend is idempotent for replayed attempts.
+    apiRecordAttempt(repertoireId, record).catch(() => {});
   }
 
   function handleNext() {
@@ -431,16 +468,15 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
     }
     if (nextIdx >= positions.length) {
       clearTimer();
-      setState("complete");
+      dispatch({ type: "COMPLETE" });
       return;
     }
-    setCurrentIdx(nextIdx);
-    setupPosition(positions[nextIdx]);
-    if (shouldTeach(positions[nextIdx])) {
-      setTeachingCount((c) => c + 1);
-      setState("teaching");
+    const nextPos = positions[nextIdx];
+    setupPosition(nextPos);
+    if (shouldTeach(nextPos)) {
+      dispatch({ type: "ENTER_TEACHING", idx: nextIdx, pos: nextPos });
     } else {
-      setState("drilling");
+      dispatch({ type: "ENTER_DRILLING", idx: nextIdx, pos: nextPos });
     }
   }
 
@@ -451,23 +487,19 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
         (Date.now() - positionStartRef.current) / 1000,
       );
     }
-    if (currentPosition) {
-      recordAttempt(currentPosition.fen, false, 1);
-      triggerReveal(currentPosition.fen, wrongMove, currentPosition.correctSan);
-    }
-    setRevealed(true);
-    if (currentPosition) {
-      setRevealedPositions((prev) => [...prev, currentPosition]);
-    }
-    setStats((s) => ({ ...s, revealed: s.revealed + 1 }));
-    setTimeout(() => setState("explanation"), 200);
+    if (!currentPosition) return;
+    recordAttempt(currentPosition.fen, false, 1);
+    triggerReveal(currentPosition.fen, wrongMove, currentPosition.correctSan);
+    dispatch({ type: "MANUAL_REVEAL", pos: currentPosition });
+    setTimeout(() => dispatch({ type: "ENTER_EXPLANATION" }), 200);
   }
 
   function handleTeachingGotIt() {
     // Don't skip the position — drill it immediately after the coaching preview
     clearCoach();
-    setupPosition(currentPosition!);
-    setState("drilling");
+    if (!currentPosition) return;
+    setupPosition(currentPosition);
+    dispatch({ type: "TEACHING_GOT_IT", pos: currentPosition });
   }
 
   // Keep ref in sync for timer callback
@@ -485,9 +517,9 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
   const estMinutes = Math.max(1, Math.round(positions.length * 1.5));
 
   return (
-    <div className="flex-1 flex flex-col bg-[var(--bg-base)] overflow-hidden">
+    <div className="flex-1 flex flex-col bg-forge-base overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-[#0a0d14] border-b border-white/5 shrink-0">
+      <div className="flex items-center gap-3 px-4 py-3 bg-forge-surface border-b border-forge-border-subtle shrink-0">
         <button
           onClick={onBack}
           className="p-2 -ml-2 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95"
@@ -508,10 +540,10 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
           state === "teaching") &&
           positions.length > 0 && (
             <div className="flex items-center gap-1 w-32">
-              <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div className="flex-1 h-1.5 bg-forge-border-default rounded-full overflow-hidden">
                 <div
                   className="h-full bg-indigo-500 rounded-full transition-all duration-300"
-                  style={{ width: `${(currentIdx / positions.length) * 100}%` }}
+                  style={{ width: `${((currentIdx + 1) / positions.length) * 100}%` }}
                 />
               </div>
               <span className="text-[10px] text-slate-500 tabular-nums shrink-0">
@@ -521,8 +553,11 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
           )}
       </div>
 
-      {/* Content area */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
+      {/* Content area — overflow-hidden during drill so scroll offset can't misalign the drag ghost */}
+      <div className={cn(
+        "flex-1 flex flex-col min-h-0",
+        state === "drilling" ? "overflow-hidden" : "overflow-y-auto",
+      )}>
         {/* LOADING state */}
         {state === "loading" && (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
@@ -543,6 +578,62 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
               <p className="text-sm text-slate-500 mt-1">~{estMinutes} min</p>
             </div>
 
+            {/* Session composition breakdown */}
+            {(() => {
+              const blunders = positions.filter((p) => p.source === "blunder").length;
+              const deviations = positions.filter((p) => p.source === "deviation").length;
+              const review = positions.filter((p) => p.source === "review").length;
+              const repertoire = positions.filter((p) => p.source === "repertoire").length;
+              const items = [
+                blunders > 0 && { label: "blunders", count: blunders, color: "text-rose-400" },
+                deviations > 0 && { label: "deviations", count: deviations, color: "text-amber-400" },
+                review > 0 && { label: "review", count: review, color: "text-slate-400" },
+                repertoire > 0 && { label: "repertoire", count: repertoire, color: "text-indigo-400" },
+              ].filter(Boolean) as { label: string; count: number; color: string }[];
+              if (items.length === 0) return null;
+              return (
+                <div className="flex items-center gap-4">
+                  {items.map((item) => (
+                    <div key={item.label} className="flex flex-col items-center gap-0.5">
+                      <span className={cn("text-xl font-black", item.color)}>{item.count}</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Pattern theme clusters — show non-generic themes present in session */}
+            {(() => {
+              const patternCounts = new Map<TacticalPattern, number>();
+              for (const p of positions) {
+                if (p.pattern && p.pattern !== "other" && p.pattern !== "middlegame") {
+                  patternCounts.set(p.pattern, (patternCounts.get(p.pattern) ?? 0) + 1);
+                }
+              }
+              if (patternCounts.size === 0) return null;
+              return (
+                <div className="flex flex-wrap justify-center gap-2">
+                  {[...patternCounts.entries()].map(([pattern, count]) => {
+                    const meta = PATTERN_META[pattern];
+                    return (
+                      <span
+                        key={pattern}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border",
+                          "text-[10px] font-bold uppercase tracking-wider",
+                          meta.className,
+                        )}
+                      >
+                        {meta.label}
+                        {count > 1 && <span className="opacity-70">×{count}</span>}
+                      </span>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
             {/* Speed Mode toggle */}
             <button
               onClick={() => setSpeedMode((s) => !s)}
@@ -551,7 +642,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 "border",
                 speedMode
                   ? "bg-indigo-600/20 border-indigo-500/40 text-indigo-300"
-                  : "bg-white/5 border-white/10 text-slate-400",
+                  : "bg-forge-border-subtle border-forge-border-default text-slate-400",
               )}
             >
               <Timer size={18} />
@@ -562,7 +653,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
               <div
                 className={cn(
                   "ml-auto w-9 h-5 rounded-full transition-all flex items-center px-0.5",
-                  speedMode ? "bg-indigo-500" : "bg-white/10",
+                  speedMode ? "bg-indigo-500" : "bg-forge-border-default",
                 )}
               >
                 <div
@@ -592,51 +683,69 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
 
         {/* DRILLING state */}
         {state === "drilling" && currentPosition && (
-          <>
+          <div className="flex-1 flex flex-col min-h-0">
             {/* Context line */}
             {currentPosition.context && (
-              <p className="text-xs text-slate-500 px-4 py-2 bg-[#0a0d14] border-b border-white/5">
+              <p className="text-xs text-slate-500 px-4 py-2 bg-forge-surface border-b border-forge-border-subtle shrink-0">
                 {currentPosition.context}
               </p>
             )}
 
-            {/* Board */}
-            <div
-              key={`board-${currentIdx}`}
-              className={cn(
-                "flex-1 flex items-center justify-center p-4 relative transition-all duration-300 animate-fadeIn",
-                shaking && "animate-shake",
-              )}
-            >
-              {speedMode && state === "drilling" && (
-                <div className="absolute top-2 right-2 z-10">
+            {/* Coach hint — shown above the board */}
+            <div className="flex items-start gap-3 px-4 pt-3 pb-1 shrink-0">
+              {/* Avatar */}
+              <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0 text-lg select-none">
+                🧙
+              </div>
+              {/* Speech bubble */}
+              <div className="flex-1 bg-forge-card border border-forge-border-default rounded-xl rounded-tl-sm px-3 py-2 min-h-[40px] flex items-center gap-2">
+                <p className="text-xs text-slate-300 leading-snug flex-1">
+                  {boardOrientation === "white" ? "White" : "Black"} to move
+                  {currentPosition.source === "blunder" ? " — you missed this before" : currentPosition.source === "deviation" ? " — stay in your repertoire" : ""}
+                </p>
+                <PatternBadge pattern={currentPosition.pattern} />
+              </div>
+              {speedMode && (
+                <div className="shrink-0">
                   <CountdownRing
                     remaining={timerRemaining}
                     total={timerTotal}
                   />
                 </div>
               )}
-              <div className="w-full aspect-square rounded-xl overflow-hidden border-[6px] border-[#161b22] bg-[#161b22] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] transition-all duration-300">
-                <Chessboard
-                  position={coachFen ?? fen}
-                  onPieceDrop={isCoachAnimating ? () => false : onDrop}
-                  boardOrientation={boardOrientation}
-                  animationDuration={isCoachAnimating ? 700 : 150}
-                  customArrows={coachArrows}
-                  customSquareStyles={coachSquareStyles}
-                  customDarkSquareStyle={{ backgroundColor: "#1e293b" }}
-                  customLightSquareStyle={{ backgroundColor: "#475569" }}
-                />
+            </div>
+
+            {/* Board — no transform-creating animations on this wrapper */}
+            <div
+              key={`board-${currentIdx}`}
+              className={cn(
+                "flex-1 flex items-start justify-center px-4 pt-2 pb-2 relative",
+                shaking && "animate-shake",
+              )}
+            >
+              <div className="w-full aspect-square rounded-xl overflow-hidden shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] bg-forge-board p-[6px]">
+                <div className="w-full h-full rounded-lg overflow-hidden">
+                  <Chessboard
+                    position={coachFen ?? fen}
+                    onPieceDrop={isCoachAnimating ? () => false : onDrop}
+                    onSquareClick={isCoachAnimating ? undefined : onSquareClick}
+                    boardOrientation={boardOrientation}
+                    animationDuration={isCoachAnimating ? 700 : 150}
+                    customArrows={coachArrows}
+                    customSquareStyles={{ ...coachSquareStyles, ...moveSquares }}
+                    {...BOARD_THEME}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Status bar */}
-            <div className="flex items-center justify-between px-6 py-3 bg-[#0a0d14] border-t border-white/5 shrink-0">
+            {/* Bottom nav bar */}
+            <div className="flex items-center justify-between px-6 py-3 bg-forge-surface border-t border-forge-border-subtle shrink-0">
               {mistakes > 0 && !revealed && (
                 <div className="flex items-center gap-2 text-sm">
                   <X size={14} className="text-rose-400" />
                   <span className="text-rose-400 font-semibold">
-                    {mistakes === 1 ? "Try again — 1 more attempt" : ""}
+                    {mistakes === 1 ? "Try again — 1 more attempt" : `${mistakes} misses`}
                   </span>
                 </div>
               )}
@@ -651,59 +760,45 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 <span className="font-semibold">Show</span>
               </button>
             </div>
-          </>
+          </div>
         )}
 
         {/* TEACHING state */}
         {state === "teaching" && currentPosition && (
           <>
-            {/* Board (static, no interaction) */}
-            <div className="flex items-center justify-center p-4 transition-all duration-300">
-              <div className="w-[70%] mx-auto aspect-square rounded-xl overflow-hidden border-[6px] border-[#161b22] bg-[#161b22] transition-all duration-300">
-                <Chessboard
-                  position={coachFen ?? fen}
-                  boardOrientation={boardOrientation}
-                  arePiecesDraggable={false}
-                  animationDuration={isCoachAnimating ? 500 : 0}
-                  customArrows={coachArrows}
-                  customSquareStyles={coachSquareStyles}
-                  customDarkSquareStyle={{ backgroundColor: "#1e293b" }}
-                  customLightSquareStyle={{ backgroundColor: "#475569" }}
-                />
+            {/* Context line — same as drill/explanation. Tightened vertical
+                padding (py-1) so the sub-header doesn't steal space from the
+                Coach Analysis card below the board on iPhone 12 Pro Max. */}
+            {currentPosition.context && (
+              <p className="text-xs text-slate-500 px-4 py-1 bg-forge-surface border-b border-forge-border-subtle shrink-0">
+                {currentPosition.context}
+              </p>
+            )}
+
+            {/* Board (static, no interaction) — consistent size with drill/explanation */}
+            <div className="px-4 pt-1 pb-0">
+              <div className="w-full aspect-square rounded-xl overflow-hidden shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] bg-forge-board p-[6px]">
+                <div className="w-full h-full rounded-lg overflow-hidden">
+                  <Chessboard
+                    position={coachFen ?? fen}
+                    boardOrientation={boardOrientation}
+                    arePiecesDraggable={false}
+                    animationDuration={isCoachAnimating ? 500 : 0}
+                    customArrows={coachArrows}
+                    customSquareStyles={coachSquareStyles}
+                    {...BOARD_THEME}
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="animate-slideUp px-6 py-3">
-              <div className="flex items-center gap-2 mb-3 text-indigo-400">
-                <BookOpen size={18} />
-                <span className="text-sm font-black uppercase tracking-wider">
-                  New Position
-                </span>
-              </div>
-              <p className="text-sm text-slate-300 mb-4">
-                {currentPosition.san ? (
-                  <>
-                    You played{" "}
-                    <span className="font-bold text-rose-400">
-                      {currentPosition.san}
-                    </span>
-                    , but{" "}
-                    <span className="font-bold text-emerald-400">
-                      {currentPosition.correctSan}
-                    </span>{" "}
-                    was better.
-                  </>
-                ) : (
-                  <>
-                    The best move here is{" "}
-                    <span className="font-bold text-emerald-400">
-                      {currentPosition.correctSan}
-                    </span>
-                    .
-                  </>
-                )}
-              </p>
-
+            {/* "New Position" / "You played X, but Y was better" banner removed —
+                redundant with the PLAYED → BEST chip row and Coach Analysis text
+                inside BlunderExplanation immediately below.
+                Tightened wrapper padding (pt-0 pb-2, px-4) so the WHY card
+                hugs the board on iPhone 12 Pro Max — every removed pixel here
+                surfaces another line of Coach Analysis above the fold. */}
+            <div className="animate-slideUp px-4 pt-0 pb-2">
               <BlunderExplanation
                 fen={currentPosition.fen}
                 wrongMove={currentPosition.san ?? null}
@@ -711,6 +806,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 cpLoss={currentPosition.cpLoss ?? null}
                 phase={currentPosition.phase}
                 revealed={true}
+                mistakeContext="original"
                 onNext={handleTeachingGotIt}
                 nextLabel="Got it"
                 onReplay={replayCoach}
@@ -720,6 +816,13 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 }}
                 repertoireId={repertoireId ?? undefined}
                 onDismiss={handleNext}
+                coachCallbacks={{
+                  onResetBoard: () => beatReset(currentPosition.fen),
+                  onPlayMove: (san, hl) =>
+                    beatPlayMove(currentPosition.fen, san, hl),
+                  onHighlight: (squares, color) => beatHighlight(squares, color),
+                  onArrow: (from, to, color) => beatArrow(from, to, color),
+                }}
               />
             </div>
           </>
@@ -728,36 +831,39 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
         {/* EXPLANATION state */}
         {state === "explanation" && currentPosition && (
           <>
-            {/* Board (static) */}
-            <div className="flex items-center justify-center p-4 transition-all duration-300">
-              <div className="w-[70%] mx-auto aspect-square rounded-xl overflow-hidden border-[6px] border-[#161b22] bg-[#161b22] transition-all duration-300">
-                <Chessboard
-                  position={coachFen ?? fen}
-                  boardOrientation={boardOrientation}
-                  arePiecesDraggable={false}
-                  animationDuration={isCoachAnimating ? 500 : 0}
-                  customArrows={coachArrows}
-                  customSquareStyles={coachSquareStyles}
-                  customDarkSquareStyle={{ backgroundColor: "#1e293b" }}
-                  customLightSquareStyle={{ backgroundColor: "#475569" }}
-                />
+            {/* Context line — keep game context visible in explanation.
+                Tight py-1 to leave more room for the Coach Analysis card. */}
+            {currentPosition.context && (
+              <p className="text-xs text-slate-500 px-4 py-1 bg-forge-surface border-b border-forge-border-subtle shrink-0">
+                {currentPosition.context}
+              </p>
+            )}
+
+            {/* Board (static) — consistent size with drill state */}
+            <div className="px-4 pt-1 pb-0">
+              <div className="w-full aspect-square rounded-xl overflow-hidden shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] bg-forge-board p-[6px]">
+                <div className="w-full h-full rounded-lg overflow-hidden">
+                  <Chessboard
+                    position={coachFen ?? fen}
+                    boardOrientation={boardOrientation}
+                    arePiecesDraggable={false}
+                    animationDuration={isCoachAnimating ? 500 : 0}
+                    customArrows={coachArrows}
+                    customSquareStyles={coachSquareStyles}
+                    {...BOARD_THEME}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Correct indicator */}
+            {/* Correct indicator (only when first-try correct — "Best move" is now
+                shown by the green BEST chip inside BlunderExplanation, so we no
+                longer render a redundant amber line here on reveal). */}
             {!revealed && (
-              <div className="flex items-center gap-2 px-6 py-2 text-emerald-400">
+              <div className="flex items-center gap-2 px-6 pt-1.5 pb-0 text-emerald-400">
                 <Check size={18} />
                 <span className="text-sm font-black uppercase tracking-wider">
                   Correct
-                </span>
-              </div>
-            )}
-            {revealed && (
-              <div className="flex items-center gap-2 px-6 py-2 text-amber-400">
-                <Eye size={18} />
-                <span className="text-sm font-black uppercase tracking-wider">
-                  Answer: {currentPosition.correctSan}
                 </span>
               </div>
             )}
@@ -765,11 +871,18 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
             <div className="animate-slideUp">
               <BlunderExplanation
                 fen={currentPosition.fen}
-                wrongMove={wrongMove}
+                /* IMPORTANT: pass the ORIGINAL game blunder
+                   (currentPosition.san), not the per-attempt drill miss
+                   (drill.wrongMove). The walkthrough explains the original
+                   mistake the position was queued for; the drill attempt is
+                   only surfaced in the chip row above as "PLAYED →
+                   BEST". */
+                wrongMove={currentPosition.san ?? wrongMove}
                 correctMove={currentPosition.correctSan}
                 cpLoss={currentPosition.cpLoss ?? null}
                 phase={currentPosition.phase}
                 revealed={revealed}
+                mistakeContext="drill"
                 onNext={handleNext}
                 onReplay={replayCoach}
                 onClose={() => {
@@ -778,6 +891,13 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 }}
                 repertoireId={repertoireId ?? undefined}
                 onDismiss={handleNext}
+                coachCallbacks={{
+                  onResetBoard: () => beatReset(currentPosition.fen),
+                  onPlayMove: (san, hl) =>
+                    beatPlayMove(currentPosition.fen, san, hl),
+                  onHighlight: (squares, color) => beatHighlight(squares, color),
+                  onArrow: (from, to, color) => beatArrow(from, to, color),
+                }}
               />
             </div>
           </>
@@ -862,18 +982,13 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                             key={`${pos.fen}-${i}`}
                             className="flex flex-col items-center gap-1.5"
                           >
-                            <div className="w-[120px] aspect-square rounded-lg overflow-hidden border-2 border-[#161b22]">
+                            <div className="w-[120px] aspect-square rounded-lg overflow-hidden border-2 border-forge-board">
                               <Chessboard
                                 position={pos.fen}
                                 arePiecesDraggable={false}
                                 boardWidth={120}
                                 animationDuration={0}
-                                customDarkSquareStyle={{
-                                  backgroundColor: "#1e293b",
-                                }}
-                                customLightSquareStyle={{
-                                  backgroundColor: "#475569",
-                                }}
+                                {...BOARD_THEME}
                               />
                             </div>
                             <span className="text-xs font-black text-amber-400">
@@ -914,9 +1029,9 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 onClick={onBack}
                 className={cn(
                   "w-full px-8 py-3 rounded-xl",
-                  "bg-white/5 border border-white/10",
+                  "bg-forge-border-subtle border border-forge-border-default",
                   "text-slate-400 font-semibold text-sm",
-                  "hover:bg-white/10 transition-all active:scale-[0.98]",
+                  "hover:bg-forge-border-default transition-all active:scale-[0.98]",
                 )}
               >
                 Back to Home

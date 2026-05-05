@@ -118,8 +118,9 @@ These block the app from being genuinely useful. Fix first.
 
 ### 🟡 P3 — Features (needs design decision before building)
 
-#### P3-1: Pattern clustering in sessions
-Woodpecker Method — group positions by theme (back rank, overloaded piece, etc.) rather than random order. Requires either Gemini classification or heuristic approach. **Decision needed:** Gemini batch call vs. heuristic classifier.
+#### ~~P3-1: Pattern clustering in sessions~~ ✅ DONE 2026-05-05
+Woodpecker Method — group positions by theme (back rank, overloaded piece, etc.) rather than random order. Requires either Gemini classification or heuristic approach. **Decision made:** Heuristic classifier (chess.js only, no Gemini).
+**Shipped:** `classifyPattern()` in `v2_train_now.ts` detects 8 tactical patterns (back-rank, fork, pin, discovered-attack, promotion, endgame, opening, middlegame) at session-build time using chess.js board analysis. `pattern` field added to `TrainPosition` type throughout. Session ordering now sorts within each source group by pattern so similar themes are adjacent. `PatternBadge` component shows colour-coded theme chips in the queued screen (cluster preview) and in the coach hint during drilling.
 
 #### P3-2: Lichess game import
 Kevin may play on Lichess. Should be importable. **Decision needed:** Does Kevin actually use Lichess?

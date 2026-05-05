@@ -391,6 +391,17 @@ export function getTrainNowCounts(
   return request<TrainNowCounts>(`/v2/train-now?${params.toString()}`);
 }
 
+export type TacticalPattern =
+  | "back-rank"
+  | "pin"
+  | "fork"
+  | "discovered-attack"
+  | "promotion"
+  | "endgame"
+  | "opening"
+  | "middlegame"
+  | "other";
+
 export interface TrainNowPosition {
   id: string;
   fen: string;
@@ -401,6 +412,8 @@ export interface TrainNowPosition {
   phase?: string;
   source?: 'blunder' | 'deviation' | 'review' | 'repertoire';
   firstEncounter?: boolean;
+  /** Heuristic tactical theme label assigned at session-build time. */
+  pattern?: TacticalPattern;
 }
 
 export interface FetchTrainNowOptions {

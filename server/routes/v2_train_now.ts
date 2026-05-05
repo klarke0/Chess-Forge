@@ -1,5 +1,9 @@
 import db from "../db";
 import { Chess } from "chess.js";
+import { batchLoadGamePositions } from "../utils/gamePositions";
+import { normalizeFen } from "../utils/fen";
+import { formatShortDate } from "../utils/dateFormat";
+import { parseAnalysisJson } from "../utils/analysis";
 
 function uciToSan(fen: string, uci: string): string {
   if (!uci || uci.length < 4) return "";
@@ -16,6 +20,17 @@ function uciToSan(fen: string, uci: string): string {
   }
 }
 
+export type TacticalPattern =
+  | "back-rank"
+  | "pin"
+  | "fork"
+  | "discovered-attack"
+  | "promotion"
+  | "endgame"
+  | "opening"
+  | "middlegame"
+  | "other";
+
 interface TrainPosition {
   fen: string;
   san: string;
@@ -28,6 +43,197 @@ interface TrainPosition {
   context?: string;
   phase?: "opening" | "middlegame" | "endgame";
   firstEncounter?: boolean;
+  pattern?: TacticalPattern;
+}
+
+/**
+ * Heuristic tactical pattern classifier.
+ *
+ * Runs at session-build time using chess.js board analysis only — no engine
+ * calls, no Gemini. Returns a broad theme label that's good enough to cluster
+ * similar positions adjacently in the session queue.
+ *
+ * Detection priority (first match wins):
+ *   1. back-rank   — opponent king on back rank + R/Q move or check
+ *   2. promotion   — correct move is a pawn push to rank 1/8
+ *   3. fork        — knight move after which it attacks 2+ high-value opponent pieces
+ *   4. pin         — correct move is a sliding piece targeting a piece that
+ *                    cannot move without exposing the opponent king
+ *   5. discovered  — pawn capture that gives check (reveals a sliding piece)
+ *   6. endgame     — ≤ 8 pieces total on board
+ *   7. opening     — move number ≤ 15
+ *   8. middlegame  — fallback for middlegame positions
+ */
+function classifyPattern(
+  fen: string,
+  correctSan: string,
+  moveNumber?: number,
+): TacticalPattern {
+  try {
+    const chess = new Chess(ensureFullFen(fen));
+    const board = chess.board();
+    const turn = chess.turn(); // 'w' or 'b'
+    const opp: "w" | "b" = turn === "w" ? "b" : "w";
+
+    // Count total pieces for endgame detection
+    let totalPieces = 0;
+    for (const row of board) {
+      for (const sq of row) {
+        if (sq) totalPieces++;
+      }
+    }
+
+    // Helper: get piece on algebraic square from board array
+    function pieceAt(sq: string): { type: string; color: string } | null {
+      const file = sq.charCodeAt(0) - 97; // 'a'=0
+      const rank = parseInt(sq[1], 10) - 1; // '1'=0
+      const boardRank = 7 - rank; // board[0] = rank 8
+      return board[boardRank]?.[file] ?? null;
+    }
+
+    // Knight attack offsets
+    const KNIGHT_OFFSETS = [
+      [2, 1], [2, -1], [-2, 1], [-2, -1],
+      [1, 2], [1, -2], [-1, 2], [-1, -2],
+    ];
+
+    function knightAttacksSquare(from: string, to: string): boolean {
+      const fc = from.charCodeAt(0) - 97;
+      const fr = parseInt(from[1], 10) - 1;
+      const tc = to.charCodeAt(0) - 97;
+      const tr = parseInt(to[1], 10) - 1;
+      return KNIGHT_OFFSETS.some(([dc, dr]) => fc + dc === tc && fr + dr === tr);
+    }
+    void knightAttacksSquare;
+
+    // ---- 1. Back-rank mate threat ----
+    {
+      const oppKingBoardRank = opp === "w" ? 7 : 0; // board[0]=rank8, board[7]=rank1
+      let kingOnBackRank = false;
+      for (const sq of board[oppKingBoardRank]) {
+        if (sq?.type === "k" && sq.color === opp) {
+          kingOnBackRank = true;
+          break;
+        }
+      }
+      if (kingOnBackRank) {
+        const san = correctSan;
+        if (/^[RQ]/.test(san) || san.includes("+") || san.includes("#")) {
+          return "back-rank";
+        }
+      }
+    }
+
+    // ---- 2. Promotion ----
+    if (correctSan.includes("=") || /[a-h][18]/.test(correctSan)) {
+      try {
+        const temp = new Chess(ensureFullFen(fen));
+        const mv = temp.move(correctSan);
+        if (mv && mv.piece === "p") return "promotion";
+      } catch { /* fall through */ }
+    }
+
+    // ---- 3. Fork (knight move attacking 2+ high-value opponent pieces) ----
+    if (/^N/.test(correctSan)) {
+      try {
+        const temp = new Chess(ensureFullFen(fen));
+        const mv = temp.move(correctSan);
+        if (mv && mv.piece === "n") {
+          const toFile = mv.to.charCodeAt(0) - 97;
+          const toRank = parseInt(mv.to[1], 10) - 1;
+          let attacked = 0;
+          for (const [dc, dr] of KNIGHT_OFFSETS) {
+            const f = toFile + dc;
+            const r = toRank + dr;
+            if (f < 0 || f > 7 || r < 0 || r > 7) continue;
+            const targetSq = String.fromCharCode(97 + f) + (r + 1);
+            const p = pieceAt(targetSq);
+            // Count opponent king, queen, rook, bishop, knight (not pawns)
+            if (p && p.color === opp && p.type !== "p") attacked++;
+          }
+          if (attacked >= 2) return "fork";
+        }
+      } catch { /* fall through */ }
+    }
+
+    // ---- 4. Pin (sliding piece move targeting a piece that can't escape) ----
+    if (/^[BRQ]/.test(correctSan) && totalPieces > 8 && (moveNumber ?? 0) > 8) {
+      try {
+        const temp = new Chess(ensureFullFen(fen));
+        const mv = temp.move(correctSan);
+        if (mv && !mv.captured) {
+          // After the move, check if opponent is in check — that's a discovery
+          // For a pin: look for an opponent piece that now has 0 legal escape moves
+          // Simplified: if after our move the opponent has fewer legal moves per piece
+          // We approximate: if the move puts a piece on a rank/file/diagonal toward king
+          // and there's an opponent piece in between, it's likely a pin.
+          // chess.js exposes moves() per square — use it.
+          const oppKingSquare = (() => {
+            for (let r = 7; r >= 0; r--) {
+              for (let f = 0; f < 8; f++) {
+                const sq = board[r]?.[f];
+                if (sq?.type === "k" && sq.color === opp) {
+                  return String.fromCharCode(97 + f) + (8 - r);
+                }
+              }
+            }
+            return null;
+          })();
+          if (oppKingSquare) {
+            // Check a random opponent piece between mover and king to confirm pin
+            // This is expensive to do precisely, so we just mark any sliding-piece
+            // move that doesn't capture as a potential pin if it's on the same
+            // rank/file/diagonal as the opponent king.
+            const toFile = mv.to.charCodeAt(0) - 97;
+            const toRank = parseInt(mv.to[1], 10) - 1;
+            const kFile = oppKingSquare.charCodeAt(0) - 97;
+            const kRank = parseInt(oppKingSquare[1], 10) - 1;
+            const df = kFile - toFile;
+            const dr = kRank - toRank;
+            const onSameRank = df === 0;
+            const onSameFile = dr === 0;
+            const onSameDiag = Math.abs(df) === Math.abs(dr);
+            if (onSameRank || onSameFile || onSameDiag) {
+              return "pin";
+            }
+          }
+        }
+      } catch { /* fall through */ }
+    }
+
+    // ---- 5. Discovered attack ----
+    {
+      if (/^[a-h]x/.test(correctSan) || /^[BNRQ]/.test(correctSan)) {
+        try {
+          const temp = new Chess(ensureFullFen(fen));
+          const mv = temp.move(correctSan);
+          if (mv) {
+            const inCheck = temp.inCheck();
+            // Only classify as discovery if the move itself isn't a check piece
+            // (i.e., the piece we moved isn't on the checking line)
+            if (inCheck && mv.piece !== "q" && mv.piece !== "r" && mv.piece !== "b") {
+              return "discovered-attack";
+            }
+            // Pawn capture that gives check — classic discovery
+            if (inCheck && mv.piece === "p" && mv.captured) {
+              return "discovered-attack";
+            }
+          }
+        } catch { /* fall through */ }
+      }
+    }
+
+    // ---- 6. Endgame ----
+    if (totalPieces <= 8) return "endgame";
+
+    // ---- 7. Opening / middlegame ----
+    if (moveNumber && moveNumber <= 15) return "opening";
+    if (moveNumber && moveNumber <= 35) return "middlegame";
+
+    return "other";
+  } catch {
+    return "other";
+  }
 }
 
 function derivePhase(
@@ -92,10 +298,6 @@ function scorePosition(
   );
 }
 
-function normalizeFen(fen: string): string {
-  return fen.split(" ").slice(0, 4).join(" ");
-}
-
 const STARTING_FEN = normalizeFen(
   "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
 );
@@ -106,28 +308,6 @@ function ensureFullFen(fen: string): string {
   if (parts.length >= 6) return fen;
   if (parts.length === 4) return fen + " 0 1";
   return fen;
-}
-
-const SHORT_MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-function formatShortDate(dateStr: string | null): string {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return "";
-  return `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
 }
 
 function buildContext(gameId: number, moveNumber?: number): string {
@@ -155,6 +335,9 @@ function buildContext(gameId: number, moveNumber?: number): string {
 export function trainNow(req: Request): Response {
   const url = new URL(req.url);
   const repertoireIdParam = url.searchParams.get("repertoireId");
+  console.log(
+    `[trainNow] url.search=${url.search} repertoireId=${repertoireIdParam}`,
+  );
 
   if (!repertoireIdParam) {
     return Response.json(
@@ -187,6 +370,8 @@ export function trainNow(req: Request): Response {
 
   // ---------- Repertoire drill mode ----------
   if (modeParam === "repertoire") {
+    // Pick ONE canonical (san) per FEN: prefer main-line, then lowest depth.
+    // Avoids drilling the same position with conflicting "correct" answers.
     const repDrillRows = db
       .query(
         `SELECT p.fen, p.san,
@@ -197,13 +382,18 @@ export function trainNow(req: Request): Response {
          LEFT JOIN progress prog ON prog.fen = p.fen AND prog.repertoire_id = p.repertoire_id
          WHERE p.repertoire_id = ?
            AND p.fen != ?
+           AND p.id = (
+             SELECT id FROM positions p2
+             WHERE p2.repertoire_id = p.repertoire_id AND p2.fen = p.fen
+             ORDER BY p2.is_main_line DESC, p2.depth ASC, p2.san ASC LIMIT 1
+           )
            AND (
              (r.side = 'white' AND SUBSTR(p.fen, INSTR(p.fen, ' ') + 1, 1) = 'w')
              OR
              (r.side = 'black' AND SUBSTR(p.fen, INSTR(p.fen, ' ') + 1, 1) = 'b')
            )
          ORDER BY COALESCE(prog.correct_attempts, 0) ASC,
-                  prog.next_review ASC NULLS FIRST`,
+                  RANDOM()`,
       )
       .all(repertoireId, STARTING_FEN) as {
       fen: string;
@@ -292,7 +482,7 @@ export function trainNow(req: Request): Response {
     if (nFen === STARTING_FEN) continue; // never drill the starting position
     const repMoves = db
       .query(
-        "SELECT san FROM positions WHERE repertoire_id = ? AND fen = ? LIMIT 1",
+        "SELECT san FROM positions WHERE repertoire_id = ? AND fen = ? ORDER BY is_main_line DESC, depth ASC, san ASC LIMIT 1",
       )
       .get(repertoireId, row.fen) as { san: string } | null;
     // Also try normalized
@@ -300,7 +490,7 @@ export function trainNow(req: Request): Response {
       repMoves ??
       (db
         .query(
-          "SELECT san FROM positions WHERE repertoire_id = ? AND fen = ? LIMIT 1",
+          "SELECT san FROM positions WHERE repertoire_id = ? AND fen = ? ORDER BY is_main_line DESC, depth ASC, san ASC LIMIT 1",
         )
         .get(repertoireId, nFen) as { san: string } | null);
 
@@ -336,39 +526,13 @@ export function trainNow(req: Request): Response {
     .all(ninetyDaysAgo) as any[];
 
   // Pre-load all game_positions for analyzed games in a single batch query
-  const allGameIds = analyzedGames.map((g: any) => g.id as number);
-  const gamePositionsMap = new Map<
-    number,
-    { fen_before: string; san: string }[]
-  >();
-  if (allGameIds.length > 0) {
-    const placeholders = allGameIds.map(() => "?").join(",");
-    const allGamePositions = db
-      .query(
-        `SELECT game_id, fen_before, san FROM game_positions WHERE game_id IN (${placeholders}) ORDER BY game_id, id`,
-      )
-      .all(...allGameIds) as {
-      game_id: number;
-      fen_before: string;
-      san: string;
-    }[];
-    for (const pos of allGamePositions) {
-      let arr = gamePositionsMap.get(pos.game_id);
-      if (!arr) {
-        arr = [];
-        gamePositionsMap.set(pos.game_id, arr);
-      }
-      arr.push({ fen_before: pos.fen_before, san: pos.san });
-    }
-  }
+  const gamePositionsMap = batchLoadGamePositions(
+    analyzedGames.map((g: any) => g.id as number),
+  );
 
   for (const game of analyzedGames) {
-    let moves: any[];
-    try {
-      moves = JSON.parse(game.analysis_json);
-    } catch {
-      continue;
-    }
+    const moves = parseAnalysisJson(game.analysis_json, game.id);
+    if (!moves) continue;
 
     const positions = gamePositionsMap.get(game.id) ?? [];
 
@@ -382,7 +546,7 @@ export function trainNow(req: Request): Response {
       if (m.grade !== "blunder" && m.grade !== "mistake") continue;
       // cpLoss from analysis_json is in centipawns; convert to pawns for scoring
       const cpLossPawns = (m.cpLoss ?? 0) / 100;
-      if (cpLossPawns < 1.0) continue;
+      if (cpLossPawns < 1.3) continue;
 
       const fenBefore = positions[i]?.fen_before;
       if (!fenBefore) continue;
@@ -397,7 +561,9 @@ export function trainNow(req: Request): Response {
       // Prefer the repertoire move so opening prep is never overwritten by engine suggestions.
       // Fall back to engine bestMove for positions outside the repertoire (middlegame/endgame blunders).
       const repMoves = db
-        .query("SELECT san FROM positions WHERE repertoire_id = ? AND fen = ?")
+        .query(
+          "SELECT san FROM positions WHERE repertoire_id = ? AND fen = ? ORDER BY is_main_line DESC, depth ASC, san ASC",
+        )
         .all(repertoireId, nFen) as { san: string }[];
 
       // If the user's move is itself a valid repertoire move (just a different line),
@@ -409,7 +575,7 @@ export function trainNow(req: Request): Response {
       const repMove = repMoves[0] ?? null;
       // For positions outside the repertoire the correct move comes from depth-12
       // engine analysis (bestMove), which is noisy. Require a larger loss to be sure.
-      if (!repMove && cpLossPawns < 2.0) continue;
+      if (!repMove && cpLossPawns < 2.5) continue;
 
       let correctSan =
         repMove?.san ?? uciToSan(ensureFullFen(fenBefore), m.bestMove ?? "");
@@ -423,6 +589,10 @@ export function trainNow(req: Request): Response {
         correctSan = "";
       }
       if (!correctSan) continue;
+
+      // Skip positions where the player already played the correct move —
+      // no drill value if Kevin already found the right answer in this game.
+      if (correctSan === userSan) continue;
 
       const existing = candidates.get(nFen);
       const cpLoss = cpLossPawns;
@@ -521,6 +691,11 @@ export function trainNow(req: Request): Response {
        LEFT JOIN progress prog ON prog.fen = p.fen AND prog.repertoire_id = p.repertoire_id
        WHERE p.repertoire_id = ?
          AND p.fen != ?
+         AND p.id = (
+           SELECT id FROM positions p2
+           WHERE p2.repertoire_id = p.repertoire_id AND p2.fen = p.fen
+           ORDER BY p2.is_main_line DESC, p2.depth ASC, p2.san ASC LIMIT 1
+         )
          AND (prog.correct_attempts IS NULL OR prog.correct_attempts < 3)
        ORDER BY COALESCE(prog.correct_attempts, 0) ASC
        LIMIT 150`,
@@ -603,12 +778,8 @@ export function trainNow(req: Request): Response {
   // Count FEN occurrences across blunders + deviations for repetitionWeight
   const fenCounts = new Map<string, number>();
   for (const game of analyzedGames) {
-    let moves: any[];
-    try {
-      moves = JSON.parse(game.analysis_json);
-    } catch {
-      continue;
-    }
+    const moves = parseAnalysisJson(game.analysis_json, game.id);
+    if (!moves) continue;
     const positions = gamePositionsMap.get(game.id) ?? [];
 
     for (let i = 0; i < moves.length; i++) {
@@ -655,8 +826,11 @@ export function trainNow(req: Request): Response {
       phase,
     );
 
+    const positionFen = ensureFullFen(cand.fullFen ?? fen);
+    const pattern = classifyPattern(positionFen, cand.correctSan, cand.moveNumber);
+
     scored.push({
-      fen: ensureFullFen(cand.fullFen ?? fen),
+      fen: positionFen,
       san: cand.san,
       correctSan: cand.correctSan,
       cpLoss: avgCpLoss,
@@ -667,6 +841,7 @@ export function trainNow(req: Request): Response {
       context: cand.context,
       phase,
       firstEncounter: !everDrilled,
+      pattern,
     });
   }
 
@@ -722,9 +897,31 @@ export function trainNow(req: Request): Response {
     session.push(...remaining.slice(0, SESSION_SIZE - session.length));
   }
 
-  // Order: blunders first, then deviations, then review
+  // Order: blunders first, then deviations, then review.
+  // Within each source group, cluster by pattern so similar themes are adjacent
+  // (Woodpecker Method: repeated exposure to the same motif in one session aids recognition).
   const sourceOrder = { blunder: 0, deviation: 1, review: 2, repertoire: 3 };
-  session.sort((a, b) => sourceOrder[a.source] - sourceOrder[b.source]);
+  const patternOrder: Record<TacticalPattern, number> = {
+    "back-rank": 0,
+    "fork": 1,
+    "pin": 2,
+    "discovered-attack": 3,
+    "promotion": 4,
+    "endgame": 5,
+    "opening": 6,
+    "middlegame": 7,
+    "other": 8,
+  };
+  session.sort((a, b) => {
+    const srcDiff = sourceOrder[a.source] - sourceOrder[b.source];
+    if (srcDiff !== 0) return srcDiff;
+    const pA = a.pattern ?? "other";
+    const pB = b.pattern ?? "other";
+    return (patternOrder[pA] ?? 8) - (patternOrder[pB] ?? 8);
+  });
 
+  console.log(
+    `[trainNow] returning ${session.length} positions for rep ${repertoireId}`,
+  );
   return Response.json({ positions: session });
 }
