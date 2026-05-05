@@ -125,8 +125,9 @@ Woodpecker Method — group positions by theme (back rank, overloaded piece, etc
 #### P3-2: Lichess game import
 Kevin may play on Lichess. Should be importable. **Decision needed:** Does Kevin actually use Lichess?
 
-#### P3-3: Opponent punishment lines
+#### ~~P3-3: Opponent punishment lines~~ ✅ DONE 2026-05-05
 When Kevin deviates, show what the opponent *should* have played as punishment. Already in v1 as "Play Demo". **Decision needed:** Should this be automatic after each deviation drill?
+**Shipped:** In the `explanation` state for deviation drills (`source === 'deviation'`), a dismissible amber "Opponent could punish" banner appears below the BlunderExplanation card. The banner computes the post-deviation FEN (position after Kevin's deviation `san`), asks Stockfish at depth 12 for the best opponent reply, shows the move in SAN notation with a "Show" button that triggers `triggerCoachLine` to animate the punishment move on the board in purple. Replay button shows after first animation. Banner is dismissible with X. Falls back gracefully if engine is unavailable or `san` is missing.
 
 #### ~~P3-4: Daily challenge / streak goal~~ ✅ DONE 2026-05-05
 A defined daily target (e.g. "do 1 session") with streak tracking. Already has streak in HomeScreen. **Decision needed:** Should there be a notification/reminder?

@@ -9,6 +9,7 @@ import {
   Loader2,
   Timer,
   RotateCcw,
+  Swords,
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { useRepertoireStore } from "@/stores/repertoireStore";
@@ -20,6 +21,8 @@ import { looseSan } from "@/utils/san";
 import { BlunderExplanation } from "./BlunderExplanation";
 import { useSound } from "@/hooks/useSound";
 import { useCoachBoard } from "./useCoachBoard";
+import { StockfishEngine } from "@/services/engine";
+import { useEngineStore } from "@/stores/engineStore";
 import { type TrainingMode, type PhaseFilter } from "./HomeScreen";
 import { useDrillSession, type TrainPosition, type TacticalPattern } from "./useDrillSession";
 
@@ -136,6 +139,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
     coachFen,
     isCoachAnimating,
     triggerReveal,
+    triggerCoachLine,
     clearCoach,
     replayCoach,
     beatReset,
@@ -166,6 +170,15 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
   // Click-to-move (tap-to-move for mobile)
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [moveSquares, setMoveSquares] = useState<Record<string, React.CSSProperties>>({});
+
+  // Opponent punishment line — for deviation drills only
+  const [punishmentSan, setPunishmentSan] = useState<string | null>(null);
+  const [punishmentLoading, setPunishmentLoading] = useState(false);
+  const [punishmentDismissed, setPunishmentDismissed] = useState(false);
+  const [punishmentAnimated, setPunishmentAnimated] = useState(false);
+  // Engine ref for punishment — shares the global engine to avoid spawning extra workers
+  const punishEngineRef = useRef<StockfishEngine | null>(null);
+  const ownsPunishEngineRef = useRef(false);
 
   // Speed mode
   const [speedMode, setSpeedMode] = useState(false);
@@ -209,6 +222,86 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
       clearCoach();
     }
   }, [state, currentIdx]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // When entering explanation for a deviation drill, fetch the opponent punishment move.
+  // We compute the post-deviation FEN (position after Kevin's deviation san) and ask
+  // the engine for its best reply — that's what the opponent "could have punished with".
+  useEffect(() => {
+    if (state !== "explanation" || !currentPosition || currentPosition.source !== "deviation") {
+      // Reset punishment state whenever we leave explanation or change position
+      setPunishmentSan(null);
+      setPunishmentLoading(false);
+      setPunishmentDismissed(false);
+      setPunishmentAnimated(false);
+      return;
+    }
+
+    // Need the deviation san (the move Kevin played in the game) to compute post-deviation FEN
+    const deviationSan = currentPosition.san;
+    if (!deviationSan) {
+      // No recorded deviation move — can't show punishment
+      return;
+    }
+
+    let cancelled = false;
+    async function fetchPunishment() {
+      setPunishmentLoading(true);
+      try {
+        // Compute the FEN after Kevin's deviation
+        const chess = new Chess(currentPosition!.fen);
+        chess.move(deviationSan!);
+        const postDeviationFen = chess.fen();
+
+        // Get the shared engine (prefer the global one to avoid extra workers)
+        if (!punishEngineRef.current) {
+          const shared = useEngineStore.getState().engine;
+          if (shared) {
+            punishEngineRef.current = shared;
+            ownsPunishEngineRef.current = false;
+          } else {
+            punishEngineRef.current = new StockfishEngine();
+            ownsPunishEngineRef.current = true;
+          }
+          await punishEngineRef.current.waitUntilReady();
+        }
+
+        // Shallow search — depth 12 is fast on mobile and sufficient for 1-move punishment
+        const result = await punishEngineRef.current.evaluateOnce(postDeviationFen, 12);
+        if (cancelled) return;
+
+        if (result.bestMove && result.bestMove.length >= 4) {
+          // Convert UCI to SAN
+          const c2 = new Chess(postDeviationFen);
+          const move = c2.move({
+            from: result.bestMove.slice(0, 2),
+            to: result.bestMove.slice(2, 4),
+            promotion: result.bestMove[4] ?? "q",
+          });
+          if (move && !cancelled) {
+            setPunishmentSan(move.san);
+          }
+        }
+      } catch {
+        // Engine unavailable — silently skip punishment banner
+      } finally {
+        if (!cancelled) setPunishmentLoading(false);
+      }
+    }
+
+    fetchPunishment();
+    return () => {
+      cancelled = true;
+    };
+  }, [state, currentIdx]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cleanup punishment engine on unmount if we own it
+  useEffect(() => {
+    return () => {
+      if (ownsPunishEngineRef.current) {
+        punishEngineRef.current?.quit();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (singlePositionFen) {
@@ -492,6 +585,23 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
     triggerReveal(currentPosition.fen, wrongMove, currentPosition.correctSan);
     dispatch({ type: "MANUAL_REVEAL", pos: currentPosition });
     setTimeout(() => dispatch({ type: "ENTER_EXPLANATION" }), 200);
+  }
+
+  function animatePunishment() {
+    if (!currentPosition || !punishmentSan) return;
+    setPunishmentAnimated(true);
+
+    // Compute post-deviation FEN to start the animation from
+    const deviationSan = currentPosition.san;
+    if (!deviationSan) return;
+    try {
+      const chess = new Chess(currentPosition.fen);
+      chess.move(deviationSan);
+      const postDeviationFen = chess.fen();
+      triggerCoachLine(postDeviationFen, [punishmentSan]);
+    } catch {
+      // Ignore animation errors
+    }
   }
 
   function handleTeachingGotIt() {
@@ -900,6 +1010,75 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 }}
               />
             </div>
+
+            {/* Punishment banner — deviation drills only. Shows the opponent's
+                best reply to Kevin's deviation so he understands why the
+                repertoire move matters. Dismissible; animates the punishment
+                move on the board via triggerCoachLine. */}
+            {currentPosition.source === "deviation" && !punishmentDismissed && (
+              <div className="px-4 pb-4 animate-slideUp">
+                <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Swords size={14} className="text-amber-400 shrink-0" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 flex-1">
+                      Opponent could punish
+                    </span>
+                    <button
+                      onClick={() => {
+                        clearCoach();
+                        setPunishmentDismissed(true);
+                      }}
+                      className="p-1 rounded-lg text-slate-600 hover:text-slate-400 transition-all active:scale-90"
+                      aria-label="Dismiss punishment line"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+
+                  {punishmentLoading && (
+                    <div className="flex items-center gap-2 text-slate-500 text-xs">
+                      <Loader2 size={12} className="animate-spin shrink-0" />
+                      <span>Finding punishment line...</span>
+                    </div>
+                  )}
+
+                  {!punishmentLoading && punishmentSan && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-mono font-black text-amber-300">
+                        {punishmentSan}
+                      </span>
+                      <span className="text-xs text-slate-500 flex-1">
+                        After your deviation, the opponent could play this
+                      </span>
+                      <button
+                        onClick={animatePunishment}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all active:scale-95",
+                          punishmentAnimated
+                            ? "bg-forge-border-subtle border border-forge-border-default text-slate-400 hover:text-slate-200 hover:bg-forge-border-default"
+                            : "bg-amber-500/20 border border-amber-500/30 text-amber-300 hover:bg-amber-500/30",
+                        )}
+                      >
+                        {punishmentAnimated ? (
+                          <>
+                            <RotateCcw size={12} />
+                            Replay
+                          </>
+                        ) : (
+                          "Show"
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {!punishmentLoading && !punishmentSan && (
+                    <p className="text-xs text-slate-500">
+                      Engine unavailable — keep your repertoire moves sharp anyway.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
 
