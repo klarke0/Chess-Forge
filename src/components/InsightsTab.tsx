@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Sparkles,
   TrendingUp,
@@ -19,11 +19,15 @@ import {
   Moon,
   Sunrise,
   Shield,
+  GitBranch,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "../utils/cn";
 import { useRepertoireStore } from "../stores/repertoireStore";
 import * as api from "../services/api";
 import type { GameTypeStat } from "../services/api";
+import { normalizeFen } from "../utils/normalizeFen";
 
 interface InsightsTabProps {
   // Unused
@@ -804,6 +808,397 @@ const RepertoireAccuracyPanel: React.FC<{ data: api.RepertoireAccuracyStat[] }> 
   );
 };
 
+// ── Opening Tree Visualization ────────────────────────────────────────────────
+
+type MasteryLevel = "green" | "amber" | "red" | "gray";
+
+function getMastery(
+  fen: string,
+  progressMap: Record<string, api.ProgressEntry>,
+): MasteryLevel {
+  const row = progressMap[normalizeFen(fen)];
+  if (!row || row.total_attempts === 0) return "gray";
+  const acc = row.correct_attempts / row.total_attempts;
+  if (acc >= 0.8) return "green";
+  if (acc >= 0.5) return "amber";
+  return "red";
+}
+
+const MASTERY_DOT: Record<MasteryLevel, string> = {
+  green: "bg-forge-success",
+  amber: "bg-amber-400",
+  red: "bg-forge-danger",
+  gray: "bg-slate-600",
+};
+
+const MASTERY_TEXT: Record<MasteryLevel, string> = {
+  green: "text-forge-success",
+  amber: "text-amber-400",
+  red: "text-forge-danger",
+  gray: "text-slate-500",
+};
+
+interface TreeMoveNode {
+  san: string;
+  fen: string; // nextFen (the FEN *after* the move)
+  mastery: MasteryLevel;
+  children: TreeMoveNode[];
+  /** accuracy 0-100, or null if never drilled */
+  accuracy: number | null;
+}
+
+function buildMoveTree(
+  parentFen: string,
+  positions: api.PositionTree,
+  progressMap: Record<string, api.ProgressEntry>,
+  depth: number,
+  maxDepth: number,
+  visited: Set<string>,
+): TreeMoveNode[] {
+  if (depth >= maxDepth) return [];
+  const moves = positions[normalizeFen(parentFen)] ?? [];
+  return moves.slice(0, 6).map((m) => {
+    const nextFen = normalizeFen(m.nextFen);
+    const mastery = getMastery(nextFen, progressMap);
+    const row = progressMap[nextFen];
+    const accuracy =
+      row && row.total_attempts > 0
+        ? Math.round((row.correct_attempts / row.total_attempts) * 100)
+        : null;
+    // Guard against cycles
+    const childrenFen = nextFen;
+    const children =
+      !visited.has(childrenFen) && depth < maxDepth - 1
+        ? buildMoveTree(
+            m.nextFen,
+            positions,
+            progressMap,
+            depth + 1,
+            maxDepth,
+            new Set([...visited, childrenFen]),
+          )
+        : [];
+    return { san: m.san, fen: nextFen, mastery, children, accuracy };
+  });
+}
+
+const TreeNode: React.FC<{
+  node: TreeMoveNode;
+  depth: number;
+}> = ({ node, depth }) => {
+  const [open, setOpen] = useState(depth < 2);
+  const hasChildren = node.children.length > 0;
+  const indent = Math.min(depth * 10, 60);
+  const moveNumber = Math.floor(depth / 2) + 1;
+  const isBlack = depth % 2 === 1;
+
+  return (
+    <div>
+      <div
+        className="flex items-center gap-2 py-1.5 rounded-lg cursor-pointer hover:bg-forge-surface transition-colors select-none"
+        style={{ paddingLeft: `${8 + indent}px`, paddingRight: "8px" }}
+        onClick={() => hasChildren && setOpen((v) => !v)}
+      >
+        {/* Expand chevron */}
+        <span className="w-3 shrink-0 text-slate-600">
+          {hasChildren ? (
+            open ? (
+              <ChevronDown size={10} />
+            ) : (
+              <ChevronRight size={10} />
+            )
+          ) : null}
+        </span>
+
+        {/* Mastery dot */}
+        <span
+          className={cn("w-2 h-2 rounded-full shrink-0", MASTERY_DOT[node.mastery])}
+        />
+
+        {/* Move number + SAN */}
+        <span className="text-[10px] text-slate-500 font-mono shrink-0 w-7">
+          {isBlack ? `${moveNumber}…` : `${moveNumber}.`}
+        </span>
+        <span
+          className={cn(
+            "text-xs font-bold",
+            MASTERY_TEXT[node.mastery],
+          )}
+        >
+          {node.san}
+        </span>
+
+        {/* Accuracy chip */}
+        {node.accuracy !== null && (
+          <span
+            className={cn(
+              "ml-auto text-[9px] font-black tabular-nums px-1.5 py-0.5 rounded-full",
+              node.mastery === "green"
+                ? "bg-forge-success/10 text-forge-success"
+                : node.mastery === "amber"
+                  ? "bg-amber-500/10 text-amber-400"
+                  : "bg-forge-danger/10 text-forge-danger",
+            )}
+          >
+            {node.accuracy}%
+          </span>
+        )}
+      </div>
+
+      {open && hasChildren && (
+        <div className="border-l border-forge-border-subtle ml-5">
+          {node.children.map((child, i) => (
+            <TreeNode
+              key={i}
+              node={child}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface RepertoireTreeData {
+  id: number;
+  name: string;
+  side: "white" | "black";
+  tree: TreeMoveNode[];
+  totalPositions: number;
+  drilledPositions: number;
+  greenCount: number;
+  amberCount: number;
+  redCount: number;
+}
+
+function countMastery(nodes: TreeMoveNode[]): {
+  drilled: number;
+  green: number;
+  amber: number;
+  red: number;
+} {
+  let drilled = 0, green = 0, amber = 0, red = 0;
+  for (const n of nodes) {
+    if (n.mastery !== "gray") drilled++;
+    if (n.mastery === "green") green++;
+    else if (n.mastery === "amber") amber++;
+    else if (n.mastery === "red") red++;
+    const sub = countMastery(n.children);
+    drilled += sub.drilled;
+    green += sub.green;
+    amber += sub.amber;
+    red += sub.red;
+  }
+  return { drilled, green, amber, red };
+}
+
+function countTotal(nodes: TreeMoveNode[]): number {
+  return nodes.reduce((s, n) => s + 1 + countTotal(n.children), 0);
+}
+
+const RepertoireTreeCard: React.FC<{ data: RepertoireTreeData }> = ({
+  data,
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  const drilledPct =
+    data.totalPositions > 0
+      ? Math.round((data.drilledPositions / data.totalPositions) * 100)
+      : 0;
+
+  const REP_COLOR =
+    data.id === 2
+      ? { accent: "text-sky-400", bar: "bg-sky-500", bg: "bg-sky-500/10" }
+      : { accent: "text-violet-400", bar: "bg-violet-500", bg: "bg-violet-500/10" };
+
+  return (
+    <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl overflow-hidden">
+      {/* Header */}
+      <button
+        className="w-full px-5 py-4 flex items-center gap-3 hover:bg-forge-surface transition-colors"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <div className={cn("p-2 rounded-xl", REP_COLOR.bg)}>
+          <GitBranch size={14} className={REP_COLOR.accent} />
+        </div>
+        <div className="flex-1 text-left min-w-0">
+          <div className="flex items-center gap-2">
+            <span className={cn("text-xs font-black uppercase tracking-wide", REP_COLOR.accent)}>
+              {data.name}
+            </span>
+            <span className="text-[9px] text-forge-text-muted font-bold uppercase">
+              {data.side}
+            </span>
+          </div>
+          {/* Mastery summary bar */}
+          <div className="flex items-center gap-2 mt-2">
+            <div className="flex-1 h-1.5 bg-forge-border-subtle rounded-full overflow-hidden flex">
+              <div
+                className="h-full bg-forge-success transition-all duration-700"
+                style={{
+                  width: `${data.totalPositions > 0 ? (data.greenCount / data.totalPositions) * 100 : 0}%`,
+                }}
+              />
+              <div
+                className="h-full bg-amber-400 transition-all duration-700"
+                style={{
+                  width: `${data.totalPositions > 0 ? (data.amberCount / data.totalPositions) * 100 : 0}%`,
+                }}
+              />
+              <div
+                className="h-full bg-forge-danger transition-all duration-700"
+                style={{
+                  width: `${data.totalPositions > 0 ? (data.redCount / data.totalPositions) * 100 : 0}%`,
+                }}
+              />
+            </div>
+            <span className="text-[9px] text-forge-text-muted font-bold shrink-0">
+              {drilledPct}% drilled
+            </span>
+          </div>
+        </div>
+        <ChevronDown
+          size={14}
+          className={cn(
+            "text-slate-500 shrink-0 transition-transform duration-200",
+            expanded ? "rotate-180" : "",
+          )}
+        />
+      </button>
+
+      {/* Legend */}
+      {expanded && (
+        <div className="px-5 py-2 border-t border-forge-border-subtle bg-forge-surface flex items-center gap-4 flex-wrap">
+          {[
+            { dot: "bg-forge-success", label: `${data.greenCount} mastered (≥80%)` },
+            { dot: "bg-amber-400", label: `${data.amberCount} learning (50–79%)` },
+            { dot: "bg-forge-danger", label: `${data.redCount} weak (<50%)` },
+            { dot: "bg-slate-600", label: "undrilled" },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center gap-1.5">
+              <div className={cn("w-2 h-2 rounded-full shrink-0", item.dot)} />
+              <span className="text-[9px] text-forge-text-muted font-bold">{item.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tree */}
+      {expanded && (
+        <div className="px-3 py-3 border-t border-forge-border-subtle max-h-[50dvh] overflow-y-auto">
+          {data.tree.length === 0 ? (
+            <p className="text-xs text-forge-text-muted text-center py-4 font-semibold">
+              No positions loaded yet.
+            </p>
+          ) : (
+            data.tree.map((node, i) => (
+              <TreeNode
+                key={i}
+                node={node}
+                depth={0}
+              />
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const OpeningTreePanel: React.FC = () => {
+  const availableRepertoires = useRepertoireStore((s) => s.availableRepertoires);
+  const [trees, setTrees] = useState<RepertoireTreeData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadTrees = useCallback(async () => {
+    if (availableRepertoires.length === 0) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const results = await Promise.all(
+        availableRepertoires.map(async (rep) => {
+          const [positions, progress] = await Promise.all([
+            api.getPositions(rep.id),
+            api.getProgress(rep.id),
+          ]);
+          // Build progress lookup keyed by normalized FEN
+          const progressMap: Record<string, api.ProgressEntry> = {};
+          for (const row of progress) {
+            progressMap[normalizeFen(row.fen)] = row;
+          }
+          const STARTING_FEN =
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+          const tree = buildMoveTree(
+            STARTING_FEN,
+            positions,
+            progressMap,
+            0,
+            8,
+            new Set([normalizeFen(STARTING_FEN)]),
+          );
+          const { drilled, green, amber, red } = countMastery(tree);
+          const total = countTotal(tree);
+          return {
+            id: rep.id,
+            name: rep.name,
+            side: rep.side,
+            tree,
+            totalPositions: total,
+            drilledPositions: drilled,
+            greenCount: green,
+            amberCount: amber,
+            redCount: red,
+          } satisfies RepertoireTreeData;
+        }),
+      );
+      setTrees(results);
+    } catch {
+      setTrees([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [availableRepertoires]);
+
+  useEffect(() => {
+    loadTrees();
+  }, [loadTrees]);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <GitBranch size={14} className="text-forge-insight" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-forge-insight">
+            Opening Tree
+          </span>
+        </div>
+        <span className="text-[9px] text-forge-text-muted font-bold uppercase">
+          Tap repertoire to expand
+        </span>
+      </div>
+
+      {loading ? (
+        <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 flex items-center justify-center gap-2">
+          <Loader2 size={16} className="text-forge-insight animate-spin" />
+          <span className="text-[10px] text-forge-text-muted font-bold uppercase tracking-widest">
+            Loading trees…
+          </span>
+        </div>
+      ) : trees.length === 0 ? (
+        <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 text-center">
+          <p className="text-xs text-forge-text-muted font-semibold">
+            No repertoires found. Make sure the backend is running.
+          </p>
+        </div>
+      ) : (
+        trees.map((t) => <RepertoireTreeCard key={t.id} data={t} />)
+      )}
+    </div>
+  );
+};
+
 // ── Insights dashboard loader ─────────────────────────────────────────────────
 
 const InsightsDashboardPanels: React.FC = () => {
@@ -1103,6 +1498,9 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
 
         {/* Time-of-day + Repertoire accuracy */}
         <InsightsDashboardPanels />
+
+        {/* Opening Tree Visualization */}
+        <OpeningTreePanel />
 
         {/* Pattern Recognition */}
         <PatternPanel
