@@ -476,3 +476,30 @@ export interface GameTypeStat {
 export function fetchGameTypeStats(): Promise<{ byType: GameTypeStat[] }> {
   return request<{ byType: GameTypeStat[] }>("/v2/insights/game-type-stats");
 }
+
+// --- Insights dashboard (time-of-day + repertoire accuracy) ---
+
+export interface TimeOfDayBucket {
+  bucket: "morning" | "afternoon" | "evening" | "night";
+  label: string;
+  hourRange: string;
+  sessions: number;
+  accuracy: number;
+}
+
+export interface RepertoireAccuracyStat {
+  id: number;
+  name: string;
+  positions: number;
+  attempts: number;
+  accuracy: number;
+}
+
+export interface InsightsDashboard {
+  timeOfDay: TimeOfDayBucket[];
+  repertoireAccuracy: RepertoireAccuracyStat[];
+}
+
+export function fetchInsightsDashboard(): Promise<InsightsDashboard> {
+  return request<InsightsDashboard>("/v2/insights/dashboard");
+}

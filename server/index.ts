@@ -5,7 +5,6 @@ import {
   getChapters,
   importPgn,
   updateChapterLearnRuns,
-  addPosition,
 } from "./routes/repertoire";
 import {
   getProgress,
@@ -29,14 +28,14 @@ import {
 } from "./routes/games";
 import {
   analyzePosition,
-  generateRepertoireComment,
   explainBlunder,
 } from "./routes/analyze";
 import { getPatternReport, runPatternAnalysis } from "./routes/patterns";
 import { trainNow } from "./routes/v2_train_now";
-import { insightsVelocity } from "./routes/v2_insights";
+import { insightsVelocity, gameTypeStats, insightsDashboard } from "./routes/v2_insights";
 import { dismissPosition } from "./routes/v2_dismiss";
 import { refreshAnalysis } from "./routes/v2_refresh_analysis";
+import { challengeMove } from "./routes/v2_challenge";
 
 const PORT = 3001;
 const DIST_PATH = join(import.meta.dir, "../dist");
@@ -202,18 +201,6 @@ async function route(
     const id = parseId(segments[2]);
     if (id < 0) return Response.json({ error: "Invalid ID" }, { status: 400 });
     return getChapters(id);
-  }
-
-  // POST /api/repertoires/:id/positions
-  if (
-    method === "POST" &&
-    segments[1] === "repertoires" &&
-    segments[3] === "positions" &&
-    segments.length === 4
-  ) {
-    const id = parseId(segments[2]);
-    if (id < 0) return Response.json({ error: "Invalid ID" }, { status: 400 });
-    return addPosition(req, id);
   }
 
   // POST /api/repertoires/import
@@ -430,6 +417,17 @@ async function route(
     return trainNow(req);
   }
 
+  // GET /api/v2/insights/dashboard
+  if (
+    method === "GET" &&
+    segments[1] === "v2" &&
+    segments[2] === "insights" &&
+    segments[3] === "dashboard" &&
+    segments.length === 4
+  ) {
+    return insightsDashboard(req);
+  }
+
   // GET /api/v2/insights/velocity
   if (
     method === "GET" &&
@@ -439,6 +437,17 @@ async function route(
     segments.length === 4
   ) {
     return insightsVelocity(req);
+  }
+
+  // GET /api/v2/insights/game-type-stats
+  if (
+    method === "GET" &&
+    segments[1] === "v2" &&
+    segments[2] === "insights" &&
+    segments[3] === "game-type-stats" &&
+    segments.length === 4
+  ) {
+    return gameTypeStats(req);
   }
 
   // POST /api/v2/backfill-deviations
@@ -471,6 +480,16 @@ async function route(
     return refreshAnalysis(req);
   }
 
+  // POST /api/v2/challenge-move
+  if (
+    method === "POST" &&
+    segments[1] === "v2" &&
+    segments[2] === "challenge-move" &&
+    segments.length === 3
+  ) {
+    return challengeMove(req);
+  }
+
   // POST /api/analyze/blunder
   if (
     method === "POST" &&
@@ -479,16 +498,6 @@ async function route(
     segments.length === 3
   ) {
     return explainBlunder(req);
-  }
-
-  // POST /api/analyze/repertoire-comment
-  if (
-    method === "POST" &&
-    segments[1] === "analyze" &&
-    segments[2] === "repertoire-comment" &&
-    segments.length === 3
-  ) {
-    return generateRepertoireComment(req);
   }
 
   return Response.json({ error: "Not found" }, { status: 404 });

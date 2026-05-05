@@ -137,7 +137,7 @@ A defined daily target (e.g. "do 1 session") with streak tracking. Already has s
 
 ### ⚪ Future (not yet prioritized)
 
-- Full insights dashboard (time management, game shape, opening stats by repertoire)
+- ~~Full insights dashboard (time management, game shape, opening stats by repertoire)~~ ✅ DONE 2026-05-05 — Time-of-day accuracy panel + Opening accuracy by repertoire panel added to InsightsTab. Backend: `GET /api/v2/insights/dashboard` returns both datasets. Pure CSS/Tailwind bars, forge-* tokens, no chart library.
 - Lichess Masters integration in Gemini coach prompts (v1 had design doc)
 - Opening tree visualization (v1 had `RepertoireTree` component)
 - Performance over time charts
