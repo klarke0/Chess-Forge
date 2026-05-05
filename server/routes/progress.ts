@@ -1,10 +1,6 @@
 import db from "../db";
 import { computeSM2 } from "../utils/sm2";
-
-/** Strip halfmove clock + fullmove number so transpositions map to the same key. */
-function normalizeFen(fen: string): string {
-  return fen.split(" ").slice(0, 4).join(" ");
-}
+import { normalizeFen } from "../utils/fen";
 
 export function getProgress(repertoireId: number): Response {
   const rows = db
@@ -139,24 +135,19 @@ export async function recordAttempt(req: Request): Promise<Response> {
         fen,
       );
     } else {
-      // Legacy server-side scheduling
-      let easeFactor = existing.ease_factor;
-      let interval = existing.interval_days;
-
-      if (body.correct) {
-        if (newStreak === 1) interval = 1;
-        else if (newStreak === 2) interval = 6;
-        else interval = Math.round(interval * easeFactor);
-        easeFactor = Math.max(1.3, easeFactor + 0.1); // grade-5 equivalent: reward correct answers
-      } else {
-        interval = 0;
-        easeFactor = Math.max(1.3, easeFactor - 0.2);
-      }
-
-      const nextReview = new Date(
-        Date.now() + interval * 86400000,
-      ).toISOString();
-
+      // Bool-only callers (legacy V1 path): derive a grade from `correct` and
+      // route through the canonical SM-2 implementation so scheduling stays
+      // consistent with the grade-aware paths above. Correct → grade 5
+      // (perfect recall), incorrect → grade 1 (forgot, but did attempt).
+      const derivedGrade = body.correct ? 5 : 1;
+      const sm2 = computeSM2(
+        {
+          easeFactor: existing.ease_factor,
+          intervalDays: existing.interval_days,
+          repetitions: existing.streak,
+        },
+        derivedGrade,
+      );
       db.prepare(
         `UPDATE progress SET
           total_attempts = total_attempts + 1,
@@ -170,9 +161,9 @@ export async function recordAttempt(req: Request): Promise<Response> {
       ).run(
         newCorrect,
         newStreak,
-        easeFactor,
-        interval,
-        nextReview,
+        sm2.nextEaseFactor,
+        sm2.nextIntervalDays,
+        sm2.nextReviewDate,
         now,
         body.repertoireId,
         fen,
@@ -275,20 +266,56 @@ export function getProgressStats(repertoireId: number): Response {
     .get(repertoireId, sevenDaysAgo) as any;
   const weeklyAccuracy: number = weeklyRow?.acc ?? 0;
 
-  const streak = (
-    db
-      .query(
-        "SELECT COUNT(DISTINCT date(last_reviewed)) as c FROM progress WHERE repertoire_id = ? AND last_reviewed >= ?",
-      )
-      .get(repertoireId, sevenDaysAgo) as any
-  ).c as number;
-
   const lastReviewedRow = db
     .query(
       "SELECT MAX(last_reviewed) as lr FROM progress WHERE repertoire_id = ?",
     )
     .get(repertoireId) as any;
   const lastReviewed: string | null = lastReviewedRow?.lr ?? null;
+
+  // Compute consecutive daily streak: count backward from today (or yesterday
+  // if the user hasn't trained yet today) checking each calendar date.
+  const distinctDays = (
+    db
+      .query(
+        `SELECT DISTINCT date(last_reviewed) as d
+         FROM progress
+         WHERE repertoire_id = ?
+         ORDER BY d DESC
+         LIMIT 365`,
+      )
+      .all(repertoireId) as { d: string }[]
+  ).map((r) => r.d);
+
+  // Walk back from today; a gap breaks the streak.
+  const todayStr = new Date().toISOString().slice(0, 10);
+  let streak = 0;
+  let cursor = todayStr;
+  for (const day of distinctDays) {
+    if (day === cursor) {
+      streak++;
+      // Advance cursor to yesterday
+      const prev = new Date(cursor + "T12:00:00Z");
+      prev.setUTCDate(prev.getUTCDate() - 1);
+      cursor = prev.toISOString().slice(0, 10);
+    } else if (day < cursor) {
+      // Gap — streak is broken
+      break;
+    }
+    // day > cursor means we haven't reached today's date yet (shouldn't happen
+    // with ORDER BY d DESC, but skip gracefully)
+  }
+
+  // Daily goal: has the user reviewed at least 1 position today?
+  const todayStart = todayStr + "T00:00:00.000Z";
+  const dailyGoalDone = (
+    db
+      .query(
+        `SELECT COUNT(*) as c FROM progress
+         WHERE repertoire_id = ? AND last_reviewed >= ?`,
+      )
+      .get(repertoireId, todayStart) as any
+  ).c as number > 0;
 
   return Response.json({
     totalTracked,
@@ -297,6 +324,7 @@ export function getProgressStats(repertoireId: number): Response {
     weeklyAccuracy,
     streak,
     lastReviewed,
+    dailyGoalDone,
   });
 }
 

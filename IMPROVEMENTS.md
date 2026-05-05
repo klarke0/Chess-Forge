@@ -35,6 +35,22 @@ A mobile-first chess training app Kevin can pick up at any moment and get genuin
 
 ---
 
+## Codebase Health Pass — ✅ Shipped 2026-05-01
+
+Six-phase audit + cleanup. UI behavior unchanged; quality up. Details in memory `codebase_health_pass_2026_05.md`.
+
+- **Phase 1 (stop the bleeding):** broken CSS vars fixed (BottomNav, AppV2, TrainNowScreen, RepertoireRunScreen); N+1 on `game_positions` eliminated via `server/utils/gamePositions.ts`; BlunderExplanation Challenge borrows shared `engineStore` engine.
+- **Phase 2 (design system):** `BOARD_THEME` constants in tokens; full forge-* sweep across V2 hot files; ESLint rule blocking arbitrary color literals (V1 exempt).
+- **Phase 3 (server type-check):** `npm run typecheck:server` chained into build; `no-explicit-any` → warn; 5 latent errors fixed.
+- **Phase 4 (dedup):** `server/utils/{fen,dateFormat,analysis}.ts` + `src/utils/san.ts`; replaced 5×normalizeFen, 3×looseSan, 2×SHORT_MONTHS, 5× inline `JSON.parse(analysis_json)`.
+- **Phase 5 (architecture):** typed response envelope `server/utils/response.ts`; api.ts raw-fetch migrations; typed `fetchTrainNowSession`; legacy SM-2 branch routes through `computeSM2`.
+- **Phase 6 (hygiene):** 17 one-off scripts → `scripts/archive/`; 15 shipped plans → `docs/plans/archive/`; `@legacy` headers on V1 entry points; Active-vs-Legacy table + Backend Conventions added to CLAUDE.md.
+
+### Follow-up shipped same day
+- [x] `useDrillSession` state-machine extraction from `TrainNowScreen.tsx` (11 session-state useStates → single useReducer). New `src/v2/useDrillSession.ts` owns the state machine with atomic transitions; `TrainNowScreen` keeps timer + UI-input state local. **Needs on-device verification** before claiming victory — build passes but behavior must match original.
+
+---
+
 ## Improvement Queue
 
 Priority order: 🔴 Ready to build → 🟡 Needs design decision → ⚪ Future
@@ -111,8 +127,9 @@ Kevin may play on Lichess. Should be importable. **Decision needed:** Does Kevin
 #### P3-3: Opponent punishment lines
 When Kevin deviates, show what the opponent *should* have played as punishment. Already in v1 as "Play Demo". **Decision needed:** Should this be automatic after each deviation drill?
 
-#### P3-4: Daily challenge / streak goal
+#### ~~P3-4: Daily challenge / streak goal~~ ✅ DONE 2026-05-05
 A defined daily target (e.g. "do 1 session") with streak tracking. Already has streak in HomeScreen. **Decision needed:** Should there be a notification/reminder?
+**Shipped:** `DailyChallenge` card on HomeScreen between the Train card and phase filter. Shows circle → checkmark when goal is done today, flame icon + count for the streak. Backend `getProgressStats` now computes a true consecutive-day streak (walks backward from today, breaks on gap) and returns `dailyGoalDone`. No push notifications — inline UI only.
 
 ---
 

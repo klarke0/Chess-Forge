@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Play, Film, BookOpen, Flame, RefreshCw, Loader2, Target } from "lucide-react";
+import { Play, Film, BookOpen, Flame, RefreshCw, Loader2, Target, CheckCircle2, Circle } from "lucide-react";
 import { Chessboard } from "react-chessboard";
 import { cn } from "@/utils/cn";
 import { useRepertoireStore } from "@/stores/repertoireStore";
 import { useBackgroundStore } from "@/stores/backgroundStore";
 import { BackgroundAnalysisQueue } from "@/services/background_analysis";
 import * as api from "@/services/api";
+import { BOARD_THEME_MUTED } from "@/design/tokens";
 
 export type TrainingMode = "blunder" | "repertoire";
 export type PhaseFilter = "all" | "opening" | "endgame";
@@ -35,6 +36,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const setActiveRepertoire = useRepertoireStore((s) => s.setActiveRepertoire);
   const [count, setCount] = useState<api.TrainNowCounts | null>(null);
   const [streak, setStreak] = useState(0);
+  const [dailyGoalDone, setDailyGoalDone] = useState(false);
   const [lastReviewed, setLastReviewed] = useState<string | null>(null);
   const [weakest, setWeakest] = useState<api.WeakestPosition | null>(null);
   const [loading, setLoading] = useState(true);
@@ -90,6 +92,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         setCount(counts);
         if (stats) {
           setStreak(stats.streak);
+          setDailyGoalDone(stats.dailyGoalDone ?? false);
           setLastReviewed(stats.lastReviewed ?? null);
         }
         setWeakest(weak);
@@ -142,38 +145,42 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className="h-4 w-24 bg-forge-border-subtle rounded-full animate-pulse" />
           </div>
         ) : count && count.total > 0 ? (
-          <p className="text-sm text-slate-400 mb-6 leading-relaxed">
-            {[
-              count.blunders > 0 && (
-                <span key="b" className="text-forge-danger font-semibold">
-                  {count.blunders} blunder{count.blunders !== 1 ? "s" : ""}
-                </span>
-              ),
-              count.deviations > 0 && (
-                <span key="d" className="text-forge-warning font-semibold">
-                  {count.deviations} deviation
-                  {count.deviations !== 1 ? "s" : ""}
-                </span>
-              ),
-              count.review > 0 && (
-                <span key="r" className="text-forge-text-primary font-semibold">
-                  {count.review} review
-                </span>
-              ),
-            ]
-              .filter(Boolean)
-              .reduce<React.ReactNode[]>((acc, el, i) => {
-                if (i > 0)
-                  acc.push(
-                    <span key={`sep-${i}`} className="text-forge-text-muted">
-                      {" "}
-                      &middot;{" "}
-                    </span>,
-                  );
-                acc.push(el);
-                return acc;
-              }, [])}
-          </p>
+          <div className="mb-6">
+            <p className="text-sm font-black text-slate-200 mb-1">12-position session</p>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Pool:{" "}
+              {[
+                count.blunders > 0 && (
+                  <span key="b" className="text-forge-danger">
+                    {count.blunders} blunder{count.blunders !== 1 ? "s" : ""}
+                  </span>
+                ),
+                count.deviations > 0 && (
+                  <span key="d" className="text-forge-warning">
+                    {count.deviations} deviation
+                    {count.deviations !== 1 ? "s" : ""}
+                  </span>
+                ),
+                count.review > 0 && (
+                  <span key="r" className="text-forge-text-primary">
+                    {count.review} review
+                  </span>
+                ),
+              ]
+                .filter(Boolean)
+                .reduce<React.ReactNode[]>((acc, el, i) => {
+                  if (i > 0)
+                    acc.push(
+                      <span key={`sep-${i}`} className="text-forge-text-muted">
+                        {" "}
+                        &middot;{" "}
+                      </span>,
+                    );
+                  acc.push(el);
+                  return acc;
+                }, [])}
+            </p>
+          </div>
         ) : (
           <p className="text-sm text-slate-400 mb-6">
             No positions due — check back after your next game
@@ -195,6 +202,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           Train Now
         </button>
       </div>
+
+      {/* Daily Challenge */}
+      <DailyChallenge
+        streak={streak}
+        done={dailyGoalDone}
+        onTrain={() => onTrainNow("blunder", phase)}
+      />
 
       {/* Phase filter */}
       <div className="flex gap-2 justify-center mb-5">
@@ -230,8 +244,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               arePiecesDraggable={false}
               boardWidth={64}
               animationDuration={0}
-              customDarkSquareStyle={{ backgroundColor: "#1e293b" }}
-              customLightSquareStyle={{ backgroundColor: "#475569" }}
+              {...BOARD_THEME_MUTED}
             />
           </div>
           <div className="flex-1 min-w-0">
@@ -313,6 +326,83 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     </div>
   );
 };
+
+// ---------------------------------------------------------------------------
+// Daily Challenge sub-component
+// ---------------------------------------------------------------------------
+
+interface DailyChallengeProps {
+  streak: number;
+  done: boolean;
+  onTrain: () => void;
+}
+
+function DailyChallenge({ streak, done, onTrain }: DailyChallengeProps) {
+  return (
+    <button
+      onClick={done ? undefined : onTrain}
+      disabled={done}
+      className={cn(
+        "w-full flex items-center gap-4 p-4 mb-5",
+        "border rounded-forge-xl transition-all text-left",
+        done
+          ? "bg-forge-card border-forge-success cursor-default"
+          : "bg-forge-card border-forge-border-subtle active:scale-[0.98] hover:border-indigo-400/30",
+      )}
+    >
+      {/* Icon */}
+      <div
+        className={cn(
+          "w-11 h-11 rounded-full flex items-center justify-center shrink-0",
+          done
+            ? "bg-[var(--forge-accent-success-muted)]"
+            : "bg-forge-elevated",
+        )}
+      >
+        {done ? (
+          <CheckCircle2 size={22} className="text-forge-success" />
+        ) : (
+          <Circle size={22} className="text-slate-500" />
+        )}
+      </div>
+
+      {/* Text */}
+      <div className="flex-1 min-w-0">
+        <p
+          className={cn(
+            "text-sm font-black",
+            done ? "text-forge-success" : "text-slate-200",
+          )}
+        >
+          {done ? "Daily goal complete!" : "Daily goal"}
+        </p>
+        <p className="text-xs text-slate-500 mt-0.5">
+          {done
+            ? "Come back tomorrow to keep the streak going"
+            : "Complete 1 training session today"}
+        </p>
+      </div>
+
+      {/* Streak badge */}
+      {streak > 0 && (
+        <div className="flex flex-col items-center shrink-0">
+          <Flame
+            size={18}
+            className={cn(done ? "text-forge-warm" : "text-slate-600")}
+          />
+          <span
+            className={cn(
+              "text-xs font-black mt-0.5 tabular-nums",
+              done ? "text-forge-warm" : "text-slate-600",
+            )}
+          >
+            {streak}
+          </span>
+        </div>
+      )}
+    </button>
+  );
+}
 
 function getGreeting(): string {
   const hour = new Date().getHours();

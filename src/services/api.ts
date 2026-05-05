@@ -43,6 +43,8 @@ export interface PositionMove {
   san: string;
   nextFen: string;
   comment?: string;
+  isMainLine?: boolean;
+  depth?: number;
 }
 
 export type PositionTree = Record<string, PositionMove[]>;
@@ -61,13 +63,6 @@ export function getChapters(repertoireId: number) {
 
 export function importRepertoire(data: { name: string; chapters?: any[]; positions: Record<string, any[]> }) {
   return request<{ repertoireId: number; positionCount: number }>("/repertoires/import", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-}
-
-export function addRepertoirePosition(repertoireId: number, data: { fen: string; san: string; nextFen: string; comment?: string }) {
-  return request<{ ok: boolean }>(`/repertoires/${repertoireId}/positions`, {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -132,6 +127,10 @@ export interface AttemptRecord {
   easeFactor?: number;
   intervalDays?: number;
   nextReview?: string;
+  /** V2 metadata used to derive initial ease factor for new progress rows. */
+  source?: string;
+  /** V2 cpLoss in pawns — used to bucket initial ease for blunder sources. */
+  cpLoss?: number;
 }
 
 export function recordAttempt(repertoireId: number, record: AttemptRecord) {
@@ -289,6 +288,8 @@ export interface ProgressStats {
   weeklyAccuracy: number;
   streak: number;
   lastReviewed: string | null;
+  /** True when the user has reviewed at least one position today. */
+  dailyGoalDone: boolean;
 }
 
 export interface WeakestPosition {
@@ -298,9 +299,9 @@ export interface WeakestPosition {
 }
 
 export async function getWeakestPosition(repertoireId: number): Promise<WeakestPosition | null> {
-  const res = await fetch(`/api/progress/${repertoireId}/weakest`);
-  if (!res.ok) return null;
-  return res.json();
+  // request<T> throws on non-2xx; fall through to null so the home dashboard
+  // can render even when the endpoint hasn't been seeded yet.
+  return request<WeakestPosition | null>(`/progress/${repertoireId}/weakest`).catch(() => null);
 }
 
 export interface BlunderMove {
@@ -321,15 +322,11 @@ export interface BlunderMove {
 }
 
 export async function getProgressStats(repertoireId: number): Promise<ProgressStats> {
-  const res = await fetch(`/api/progress/${repertoireId}/stats`);
-  if (!res.ok) throw new Error('Failed to fetch progress stats');
-  return res.json();
+  return request<ProgressStats>(`/progress/${repertoireId}/stats`);
 }
 
 export async function getBlunders(limit = 20): Promise<BlunderMove[]> {
-  const res = await fetch(`/api/games/blunders?limit=${limit}`);
-  if (!res.ok) throw new Error('Failed to fetch blunders');
-  return res.json();
+  return request<BlunderMove[]>(`/games/blunders?limit=${limit}`);
 }
 
 export interface PatternAnalysis {
@@ -366,15 +363,11 @@ export interface PatternAnalysis {
 }
 
 export async function getPatternReport(): Promise<PatternAnalysis | null> {
-  const res = await fetch('/api/analyze/patterns');
-  if (!res.ok) throw new Error('Failed to fetch pattern report');
-  return res.json();
+  return request<PatternAnalysis | null>('/analyze/patterns');
 }
 
 export async function runPatternAnalysis(): Promise<PatternAnalysis> {
-  const res = await fetch('/api/analyze/patterns', { method: 'POST' });
-  if (!res.ok) throw new Error('Failed to run pattern analysis');
-  return res.json();
+  return request<PatternAnalysis>('/analyze/patterns', { method: 'POST' });
 }
 
 export interface TrainNowCounts {
@@ -398,6 +391,43 @@ export function getTrainNowCounts(
   return request<TrainNowCounts>(`/v2/train-now?${params.toString()}`);
 }
 
+export interface TrainNowPosition {
+  id: string;
+  fen: string;
+  correctSan: string;
+  san?: string;
+  context?: string;
+  cpLoss?: number;
+  phase?: string;
+  source?: 'blunder' | 'deviation' | 'review' | 'repertoire';
+  firstEncounter?: boolean;
+}
+
+export interface FetchTrainNowOptions {
+  fen?: string;
+  mode?: string;
+  phase?: string;
+}
+
+/**
+ * Fetch a full drill session (positions + scoring metadata) for the given
+ * repertoire. The server caps results at 12 by default; pass `fen` to fetch
+ * a single-position session (used by deviation drilling from GamesTab).
+ */
+export function fetchTrainNowSession(
+  repertoireId: number,
+  opts: FetchTrainNowOptions = {},
+): Promise<{ positions: TrainNowPosition[] }> {
+  const params = new URLSearchParams({ repertoireId: String(repertoireId) });
+  if (opts.fen) params.set('fen', opts.fen);
+  if (opts.mode && opts.mode !== 'blunder') params.set('mode', opts.mode);
+  if (opts.phase && opts.phase !== 'all') params.set('phase', opts.phase);
+  return request<{ positions: TrainNowPosition[] }>(
+    `/v2/train-now?${params.toString()}`,
+  );
+}
+
+
 // --- Velocity / Blunder Trend ---
 
 export interface VelocityWeek {
@@ -415,4 +445,21 @@ export function fetchVelocity(repertoireId?: number): Promise<{ weeks: VelocityW
 
 export function refreshAnalysis(): Promise<{ ok: boolean; queued: number }> {
   return request<{ ok: boolean; queued: number }>("/v2/refresh-analysis", { method: "POST" });
+}
+
+// --- Game type stats ---
+
+export interface GameTypeStat {
+  timeClass: string;
+  games: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  winPct: number;
+  drawPct: number;
+  lossPct: number;
+}
+
+export function fetchGameTypeStats(): Promise<{ byType: GameTypeStat[] }> {
+  return request<{ byType: GameTypeStat[] }>("/v2/insights/game-type-stats");
 }
