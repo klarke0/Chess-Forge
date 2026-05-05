@@ -201,7 +201,10 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
       ? "white"
       : "black";
 
-  // Fire coach reveal animation on teaching state entry
+  // Fire coach reveal animation on teaching state entry.
+  // Safety: clear any stale coach state whenever we enter an interactive or
+  // non-coaching state. This guards against mid-animation dismissals that could
+  // leave coachFen non-null and render the board at a stale position.
   useEffect(() => {
     if (state === "teaching" && currentPosition) {
       const t = setTimeout(() => {
@@ -219,6 +222,8 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
       state === "queued" ||
       state === "complete"
     ) {
+      // Safety reset: cancel all coach timers/FEN so the board always renders
+      // from the current drill position (coachFen ?? fen → fen when coachFen=null).
       clearCoach();
     }
   }, [state, currentIdx]); // eslint-disable-line react-hooks/exhaustive-deps

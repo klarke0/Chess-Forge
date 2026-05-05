@@ -29,9 +29,9 @@ A mobile-first chess training app Kevin can pick up at any moment and get genuin
 - Frontend: React/Vite/Tailwind, mobile-first, dark theme with forge-* design tokens
 
 ### Known Active Bugs
-- [ ] **`bestMove` missing** on 400 older games — drill pool for non-repertoire blunders is thin. Need backfill UI or script trigger from app.
-- [ ] **Drill pool shows fewer than 12** sometimes — session state or filtering issue in `TrainNowScreen`
-- [ ] **Board rendering edge cases** — verify coach animation doesn't leave board in wrong state after dismiss
+- [x] **`bestMove` missing** on 400 older games — 2026-05-05. "Refresh analysis" button on HomeScreen (exists since P0-1). Backend: `POST /api/v2/refresh-analysis`. Already shipped; bug entry just needed marking.
+- [x] **Drill pool shows fewer than 12** — 2026-05-05. Added emergency pad in `v2_train_now.ts`: if session < 12 after normal fill, queries SM-2 progress rows ordered by due-or-overdue first then least-recently-reviewed, ignoring next_review gate, to guarantee 12 positions.
+- [x] **Board rendering edge cases** — 2026-05-05. Audited all exit paths from teaching/explanation states — `clearCoach()` is called explicitly in `handleNext()`, `handleTeachingGotIt()`, and both BlunderExplanation `onClose` callbacks. The `useEffect` already calls `clearCoach()` on every `drilling`/`queued`/`idle`/`complete` state entry as a safety net. Added clarifying comment to make the invariant explicit.
 
 ---
 

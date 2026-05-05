@@ -897,6 +897,76 @@ export function trainNow(req: Request): Response {
     session.push(...remaining.slice(0, SESSION_SIZE - session.length));
   }
 
+  // ---------- Emergency pad: if still < SESSION_SIZE, fill with SM-2 review items ----------
+  // These are repertoire positions already in the progress table, ordered by least-recently
+  // reviewed (due-or-overdue first, then oldest review), ignoring the next_review gate.
+  // This guarantees Kevin always gets a full 12-position session.
+  if (session.length < SESSION_SIZE) {
+    const needed = SESSION_SIZE - session.length;
+    const usedFens = new Set(session.map((p) => normalizeFen(p.fen)));
+
+    const padRows = db
+      .query(
+        `SELECT p.fen, p.total_attempts, p.correct_attempts, p.next_review,
+                p.last_reviewed
+         FROM progress p
+         WHERE p.repertoire_id = ?
+           AND p.total_attempts > 0
+         ORDER BY
+           CASE WHEN p.next_review <= ? THEN 0 ELSE 1 END ASC,
+           p.next_review ASC,
+           p.last_reviewed ASC
+         LIMIT ?`,
+      )
+      .all(repertoireId, now, needed * 5) as any[];
+
+    for (const row of padRows) {
+      if (session.length >= SESSION_SIZE) break;
+      const nFen = normalizeFen(row.fen);
+      if (nFen === STARTING_FEN) continue;
+      if (usedFens.has(nFen)) continue;
+      if (dismissedSet.has(nFen)) continue;
+
+      const repMoves2 =
+        (db
+          .query(
+            "SELECT san FROM positions WHERE repertoire_id = ? AND fen = ? ORDER BY is_main_line DESC, depth ASC, san ASC LIMIT 1",
+          )
+          .get(repertoireId, row.fen) as { san: string } | null) ??
+        (db
+          .query(
+            "SELECT san FROM positions WHERE repertoire_id = ? AND fen = ? ORDER BY is_main_line DESC, depth ASC, san ASC LIMIT 1",
+          )
+          .get(repertoireId, nFen) as { san: string } | null);
+
+      if (!repMoves2?.san) continue;
+
+      const positionFen = ensureFullFen(row.fen);
+      const accuracy =
+        row.total_attempts > 0
+          ? row.correct_attempts / row.total_attempts
+          : 0.5;
+      const pattern = classifyPattern(positionFen, repMoves2.san, undefined);
+
+      session.push({
+        fen: positionFen,
+        san: "",
+        correctSan: repMoves2.san,
+        cpLoss: (1 - accuracy) * 3,
+        score: 0.1,
+        source: "review",
+        phase: "opening",
+        firstEncounter: false,
+        pattern,
+      });
+      usedFens.add(nFen);
+    }
+
+    console.log(
+      `[trainNow] padded session to ${session.length} with SM-2 review items`,
+    );
+  }
+
   // Order: blunders first, then deviations, then review.
   // Within each source group, cluster by pattern so similar themes are adjacent
   // (Woodpecker Method: repeated exposure to the same motif in one session aids recognition).
