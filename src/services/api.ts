@@ -503,3 +503,16 @@ export interface InsightsDashboard {
 export function fetchInsightsDashboard(): Promise<InsightsDashboard> {
   return request<InsightsDashboard>("/v2/insights/dashboard");
 }
+
+// --- Weekly accuracy trend ---
+
+export interface WeeklyAccuracyWeek {
+  label: string;
+  /** 0-100 accuracy percentage, or null when no sessions in that week */
+  accuracy: number | null;
+  attempts: number;
+}
+
+export function fetchWeeklyAccuracy(): Promise<{ weeks: WeeklyAccuracyWeek[] }> {
+  return request<{ weeks: WeeklyAccuracyWeek[] }>("/v2/insights/weekly-accuracy");
+}

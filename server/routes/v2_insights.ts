@@ -246,6 +246,87 @@ export function insightsDashboard(_req: Request): Response {
   return Response.json(dashboard);
 }
 
+// ── Weekly accuracy from progress table ─────────────────────────────────────
+
+export interface WeeklyAccuracyWeek {
+  label: string;
+  /** 0-100 accuracy percentage, or null when no data for that week */
+  accuracy: number | null;
+  attempts: number;
+}
+
+/**
+ * GET /api/v2/insights/weekly-accuracy
+ * Returns last 8 ISO-weeks of SM-2 drill accuracy derived from the progress
+ * table (last_reviewed timestamps × correct_attempts / total_attempts).
+ * Because the progress table stores cumulative counts rather than per-attempt
+ * records, we approximate weekly accuracy by looking at the most-recently-
+ * reviewed rows for each week, grouping by the week of last_reviewed.
+ * This is a best-effort view; it improves in fidelity as more sessions
+ * are played.
+ */
+export function insightsWeeklyAccuracy(_req: Request): Response {
+  const NUM_WEEKS = 8;
+  const now = new Date();
+  const currentWeekStart = weekStart(now);
+
+  // Build week buckets (oldest first in the final response)
+  const weekBuckets: {
+    start: Date;
+    label: string;
+    correct: number;
+    attempts: number;
+  }[] = [];
+  for (let w = NUM_WEEKS - 1; w >= 0; w--) {
+    const start = new Date(currentWeekStart);
+    start.setDate(start.getDate() - w * 7);
+    weekBuckets.push({ start, label: formatWeekLabel(start), correct: 0, attempts: 0 });
+  }
+
+  const cutoff = new Date(currentWeekStart);
+  cutoff.setDate(cutoff.getDate() - (NUM_WEEKS - 1) * 7);
+
+  // Pull all progress rows that were reviewed within the window.
+  // We assign each row's cumulative counts to the week of last_reviewed.
+  // This over-counts for positions reviewed in multiple weeks, but for a
+  // mobile training app with low session count it gives the right trend shape.
+  const rows = db
+    .query(
+      `SELECT
+         last_reviewed,
+         correct_attempts,
+         total_attempts
+       FROM progress
+       WHERE last_reviewed IS NOT NULL
+         AND last_reviewed >= ?
+         AND total_attempts > 0`,
+    )
+    .all(cutoff.toISOString()) as {
+    last_reviewed: string;
+    correct_attempts: number;
+    total_attempts: number;
+  }[];
+
+  for (const row of rows) {
+    const reviewed = new Date(row.last_reviewed);
+    const ws = weekStart(reviewed);
+    const bucket = weekBuckets.find(
+      (b) => b.start.getTime() === ws.getTime(),
+    );
+    if (!bucket) continue;
+    bucket.correct += row.correct_attempts;
+    bucket.attempts += row.total_attempts;
+  }
+
+  const weeks: WeeklyAccuracyWeek[] = weekBuckets.map((b) => ({
+    label: b.label,
+    accuracy: b.attempts > 0 ? Math.round((b.correct / b.attempts) * 100) : null,
+    attempts: b.attempts,
+  }));
+
+  return Response.json({ weeks });
+}
+
 /** GET /api/v2/insights/game-type-stats — win/draw/loss split by time_class */
 export function gameTypeStats(_req: Request): Response {
   const rows = db

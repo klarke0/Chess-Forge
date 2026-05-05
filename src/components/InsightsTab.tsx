@@ -431,6 +431,147 @@ const GameTypePanel: React.FC = () => {
   );
 };
 
+// ── Weekly drill accuracy trend panel ────────────────────────────────────────
+
+const WeeklyAccuracyPanel: React.FC = () => {
+  const [data, setData] = useState<api.WeeklyAccuracyWeek[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api
+      .fetchWeeklyAccuracy()
+      .then((d) => setData(d.weeks))
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 flex items-center justify-center gap-2">
+        <Loader2 size={16} className="text-forge-insight animate-spin" />
+        <span className="text-[10px] text-forge-text-muted font-bold uppercase tracking-widest">
+          Loading accuracy…
+        </span>
+      </div>
+    );
+  }
+
+  const weeks = data ?? [];
+  const hasData = weeks.some((w) => w.accuracy !== null);
+
+  if (!hasData) {
+    return (
+      <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 text-center">
+        <p className="text-xs text-forge-text-muted font-semibold">
+          No drill data yet — complete a session to see your accuracy trend.
+        </p>
+      </div>
+    );
+  }
+
+  const maxAcc = Math.max(...weeks.map((w) => w.accuracy ?? 0), 1);
+  // Average accuracy across weeks that have data
+  const weeksWithData = weeks.filter((w) => w.accuracy !== null);
+  const avgAcc =
+    weeksWithData.length > 0
+      ? Math.round(
+          weeksWithData.reduce((s, w) => s + (w.accuracy ?? 0), 0) /
+            weeksWithData.length,
+        )
+      : null;
+
+  // Detect trend: compare last 4 weeks vs prior 4 weeks
+  const recent = weeks.slice(4).filter((w) => w.accuracy !== null);
+  const older = weeks.slice(0, 4).filter((w) => w.accuracy !== null);
+  const recentAvg =
+    recent.length > 0
+      ? recent.reduce((s, w) => s + (w.accuracy ?? 0), 0) / recent.length
+      : null;
+  const olderAvg =
+    older.length > 0
+      ? older.reduce((s, w) => s + (w.accuracy ?? 0), 0) / older.length
+      : null;
+  const trend =
+    recentAvg !== null && olderAvg !== null
+      ? recentAvg - olderAvg
+      : null;
+
+  return (
+    <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl overflow-hidden">
+      <div className="px-5 py-3 border-b border-forge-border-subtle bg-forge-surface flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <TrendingUp size={14} className="text-forge-insight" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-forge-insight">
+            Accuracy Trend
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {trend !== null && (
+            <span
+              className={cn(
+                "text-[10px] font-black",
+                trend > 2
+                  ? "text-forge-success"
+                  : trend < -2
+                    ? "text-forge-danger"
+                    : "text-forge-text-muted",
+              )}
+            >
+              {trend > 0 ? "+" : ""}
+              {Math.round(trend)}% vs prior 4w
+            </span>
+          )}
+          {avgAcc !== null && (
+            <span className="text-[10px] text-forge-text-muted font-bold">
+              avg {avgAcc}%
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="p-5 space-y-2">
+        {weeks.map((week) => {
+          const acc = week.accuracy;
+          const barWidth = acc !== null ? (acc / maxAcc) * 100 : 0;
+          const barColor =
+            acc === null
+              ? "bg-forge-border-subtle"
+              : acc >= 80
+                ? "bg-forge-success"
+                : acc >= 60
+                  ? "bg-amber-500"
+                  : "bg-forge-danger";
+
+          return (
+            <div key={week.label} className="flex items-center gap-3">
+              <span className="text-[10px] text-forge-text-muted font-bold w-14 shrink-0 text-right tabular-nums">
+                {week.label}
+              </span>
+              <div className="flex-1 h-5 bg-forge-border-subtle rounded-md overflow-hidden relative">
+                {acc !== null && (
+                  <div
+                    className={cn(
+                      "h-full rounded-md transition-all duration-500",
+                      barColor,
+                      "opacity-70",
+                    )}
+                    style={{ width: `${barWidth}%` }}
+                  />
+                )}
+              </div>
+              <span className="text-[11px] font-black w-8 text-right tabular-nums shrink-0 text-forge-text-primary">
+                {acc !== null ? `${acc}%` : "—"}
+              </span>
+            </div>
+          );
+        })}
+        <p className="text-[10px] text-forge-text-muted font-semibold pt-1">
+          Weekly SM-2 drill accuracy from the progress table (last 8 weeks).
+        </p>
+      </div>
+    </div>
+  );
+};
+
 // ── Blunder Trend panel ──────────────────────────────────────────────────────
 const BlunderTrendPanel: React.FC = () => {
   const [data, setData] = useState<api.VelocityWeek[] | null>(null);
@@ -953,6 +1094,9 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
               </div>
             </div>
           )}
+
+        {/* Weekly accuracy trend */}
+        <WeeklyAccuracyPanel />
 
         {/* Blunder Trend */}
         <BlunderTrendPanel />
