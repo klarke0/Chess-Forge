@@ -51,6 +51,25 @@ Six-phase audit + cleanup. UI behavior unchanged; quality up. Details in memory 
 
 ---
 
+## UI/UX Pro Max Pass — ✅ Done 2026-05-10
+
+Polish sweep across all 5 V2 target files. Build passes, no new lint errors.
+
+**HIGH (shipped):**
+- Touch targets: `min-h-[44px]` on all action buttons — reveal/show, back arrow, refresh analysis, phase filter buttons, reset progress, reset confirm sheet, BottomNav tabs
+- `cursor-pointer` added to every `onClick` handler across HomeScreen, TrainNow, Settings, InsightsTab, BottomNav (was missing from ~20 elements)
+- Loading skeletons: `GameTypePanel`, `BlunderTrendPanel`, `OpponentModelPanel`, `WeeklyAccuracyPanel`, `OpeningTreePanel`, `InsightsDashboardPanels` — all now render shimmer skeleton placeholders instead of spinner-only states
+
+**MEDIUM (shipped):**
+- `focus-visible:ring-2 ring-indigo-400` keyboard nav focus rings on all interactive elements; `ring-rose-400` on destructive reset button
+- `transition-colors duration-150` replacing bare `transition-all` throughout for snappier micro-interactions
+- `motion-safe:` prefix on all `animate-spin`, `animate-pulse`, `animate-shake`, `animate-slideUp`, `animate-fadeIn` (prefers-reduced-motion support)
+- Token compliance in InsightsTab: replaced all hardcoded `bg-[#0d1117]`, `bg-[#11151c]`, `border-white/5`, `bg-white/[0.02]`, `bg-[#050507]`, `bg-white/5` with forge-* tokens
+- Fixed non-existent token refs: `text-forge-text-subtle` → `text-forge-text-muted`, `bg-forge-success-muted` → CSS var equivalent
+- BottomNav inactive tabs: added `hover:text-slate-300` for tactile feedback
+
+---
+
 ## Improvement Queue
 
 Priority order: 🔴 Ready to build → 🟡 Needs design decision → ⚪ Future
