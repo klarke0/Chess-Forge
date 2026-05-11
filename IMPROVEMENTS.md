@@ -156,9 +156,9 @@ A defined daily target (e.g. "do 1 session") with streak tracking. Already has s
 
 **New items added to backlog:**
 
-- **F-1: Weekly accuracy uses cumulative SM-2 counters, not per-session records** — `WeeklyAccuracyPanel` computes accuracy from `last_reviewed` timestamps × `correct_attempts / total_attempts`. Because counters are cumulative, a single blunder in week 1 depresses the "week 1" bar forever even after Kevin masters the position. True per-session accuracy would require a `drill_sessions` event log table. Low priority but the current fidelity note is buried in a code comment; surface it visually as a "≈ estimated" label.
-- **F-2: Opening tree depth is hard-coded at 8** — `buildMoveTree` is called with `maxDepth=8` regardless of repertoire size. The Jobava London tree has moves through move 20+. Kevin can't see mastery beyond move 8. Make depth configurable (slider or "+Show more" button on the tree card).
-- **F-3: Opponent punishment banner missing when deviation `san` is null** — when a deviation row has no `san` field (e.g. older deviations before `san` column was added), the banner shows "Engine unavailable" even though the engine is fine. Add a distinct message: "No deviation move recorded — re-sync your games to populate."
+- ~~**F-1: Weekly accuracy uses cumulative SM-2 counters, not per-session records**~~ ✅ DONE 2026-05-10 — Added italic caveat below the chart: "Accuracy reflects all-time performance per position, not individual session results." Surfaces the known fidelity limitation visually.
+- ~~**F-2: Opening tree depth is hard-coded at 8**~~ ✅ DONE 2026-05-10 — `RepertoireTreeCard` now owns `maxDepth` state (starts 8). "Show more depth" button appears when nodes exist beyond cap; each click adds 4 moves up to max 20. Card carries raw positions+progressMap so it rebuilds locally without extra API calls.
+- ~~**F-3: Opponent punishment banner missing when deviation `san` is null**~~ ✅ DONE 2026-05-10 — When san is null, shows "No deviation move recorded — re-sync games to enable punishment preview." without Show/Replay buttons. Engine-unavailable fallback only shows when san exists but engine returns no move.
 
 ---
 
