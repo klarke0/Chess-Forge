@@ -363,3 +363,60 @@ export function gameTypeStats(_req: Request): Response {
 
   return Response.json({ byType });
 }
+
+// ── Opponent model ───────────────────────────────────────────────────────────
+
+export interface TopOpponent {
+  opponent: string;
+  deviationCount: number;
+  games: number;
+  wins: number;
+  draws: number;
+  losses: number;
+}
+
+/**
+ * GET /api/v2/insights/top-opponents
+ * Returns the top 5 opponents Kevin has most frequently deviated against
+ * (player deviations only). Also joins game results so the UI can show
+ * win/draw/loss context.
+ */
+export function topOpponents(_req: Request): Response {
+  const rows = db
+    .query(
+      `SELECT
+         CASE WHEN g.user_color = 'white' THEN g.black_username ELSE g.white_username END AS opponent,
+         COUNT(*) AS deviation_count,
+         SUM(CASE WHEN g.result = 'win'  THEN 1 ELSE 0 END) AS wins,
+         SUM(CASE WHEN g.result = 'draw' THEN 1 ELSE 0 END) AS draws,
+         SUM(CASE WHEN g.result = 'loss' THEN 1 ELSE 0 END) AS losses,
+         COUNT(DISTINCT g.id) AS games
+       FROM deviations d
+       JOIN games g ON g.id = d.game_id
+       WHERE d.notes = 'player'
+         AND (g.white_username IS NOT NULL OR g.black_username IS NOT NULL)
+       GROUP BY opponent
+       HAVING opponent IS NOT NULL AND opponent != ''
+       ORDER BY deviation_count DESC
+       LIMIT 5`,
+    )
+    .all() as {
+    opponent: string;
+    deviation_count: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    games: number;
+  }[];
+
+  const opponents: TopOpponent[] = rows.map((r) => ({
+    opponent: r.opponent,
+    deviationCount: r.deviation_count,
+    games: r.games,
+    wins: r.wins,
+    draws: r.draws,
+    losses: r.losses,
+  }));
+
+  return Response.json({ opponents });
+}

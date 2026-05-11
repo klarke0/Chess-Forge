@@ -139,10 +139,10 @@ A defined daily target (e.g. "do 1 session") with streak tracking. Already has s
 
 - ~~Full insights dashboard (time management, game shape, opening stats by repertoire)~~ ✅ DONE 2026-05-05 — Time-of-day accuracy panel + Opening accuracy by repertoire panel added to InsightsTab. Backend: `GET /api/v2/insights/dashboard` returns both datasets. Pure CSS/Tailwind bars, forge-* tokens, no chart library.
 - ~~Performance over time charts~~ ✅ DONE 2026-05-05 — Weekly SM-2 drill accuracy trend chart added to InsightsTab. Backend: `GET /api/v2/insights/weekly-accuracy` returns last 8 ISO-weeks of accuracy from the progress table. Frontend: `WeeklyAccuracyPanel` with pure CSS bars, forge-* tokens, trend comparison (last 4w vs prior 4w), colour-coded bars (green ≥80%, amber ≥60%, red below). No chart library.
-- Lichess Masters integration in Gemini coach prompts (v1 had design doc)
+- ~~Lichess Masters integration in Gemini coach prompts~~ ✅ DONE 2026-05-10 — `explainBlunder` now fetches Lichess Masters data server-side (4s timeout) before calling Gemini. Top-3 master moves with W/D/L% injected into both the prose prompt and the structured steps prompt. Skipped when <5 master games exist for the position.
 - ~~Opening tree visualization~~ ✅ DONE 2026-05-05 — `OpeningTreePanel` added to InsightsTab. Two collapsible repertoire cards (Caro-Kann, Jobava London), each loads positions + progress on mount and builds a depth-8 move tree. Nodes color-coded: green ≥80%, amber 50–79%, red <50%, gray = undrilled. Mastery summary bar in the header shows green/amber/red distribution at a glance. Mobile-first: collapsed by default, tap to expand branches. Uses forge-* tokens, no chart library.
 - Settings screen for repertoire management (add/remove PGN)
-- Opponent model (track which opponents deviate where)
+- ~~Opponent model~~ ✅ DONE 2026-05-10 — `GET /api/v2/insights/top-opponents` queries deviations+games tables, groups by opponent name, returns top 5 by deviation count with per-opponent win/draw/loss context. `OpponentModelPanel` added to InsightsTab showing ranked bars with W%/D%/L% breakdown. Uses forge-* tokens throughout.
 
 ---
 

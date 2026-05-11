@@ -22,6 +22,7 @@ import {
   GitBranch,
   ChevronRight,
   ChevronDown,
+  Users,
 } from "lucide-react";
 import { cn } from "../utils/cn";
 import { useRepertoireStore } from "../stores/repertoireStore";
@@ -1199,6 +1200,105 @@ const OpeningTreePanel: React.FC = () => {
   );
 };
 
+// ── Opponent model panel ──────────────────────────────────────────────────────
+
+const OpponentModelPanel: React.FC = () => {
+  const [data, setData] = useState<api.TopOpponent[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api
+      .fetchTopOpponents()
+      .then((d) => setData(d.opponents))
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 flex items-center justify-center gap-2">
+        <Loader2 size={16} className="text-forge-insight animate-spin" />
+        <span className="text-[10px] text-forge-text-muted font-bold uppercase tracking-widest">
+          Loading opponents…
+        </span>
+      </div>
+    );
+  }
+
+  const opponents = data ?? [];
+
+  if (opponents.length === 0) {
+    return (
+      <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 text-center">
+        <p className="text-xs text-forge-text-muted font-semibold">
+          No deviation data yet — play some games and run backfill-deviations to populate.
+        </p>
+      </div>
+    );
+  }
+
+  const maxDeviations = Math.max(...opponents.map((o) => o.deviationCount), 1);
+
+  return (
+    <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl overflow-hidden">
+      <div className="px-5 py-3 border-b border-forge-border-subtle bg-forge-surface flex items-center gap-2">
+        <Users size={14} className="text-forge-insight" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-forge-insight">
+          Most Challenging Opponents
+        </span>
+      </div>
+      <div className="p-5 space-y-4">
+        {opponents.map((opp, i) => {
+          const barWidth = (opp.deviationCount / maxDeviations) * 100;
+          const winPct = opp.games > 0 ? Math.round((opp.wins / opp.games) * 100) : 0;
+          const drawPct = opp.games > 0 ? Math.round((opp.draws / opp.games) * 100) : 0;
+          const lossPct = opp.games > 0 ? Math.round((opp.losses / opp.games) * 100) : 0;
+          const rankColor = i === 0 ? "text-amber-400" : i === 1 ? "text-slate-400" : "text-orange-700";
+          return (
+            <div key={opp.opponent}>
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={cn("text-[10px] font-black w-4 shrink-0 tabular-nums", rankColor)}>
+                    #{i + 1}
+                  </span>
+                  <span className="text-xs font-bold text-forge-text-primary truncate">
+                    {opp.opponent}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 text-[10px] font-bold">
+                  <span className="text-forge-danger font-black tabular-nums">
+                    {opp.deviationCount} dev{opp.deviationCount !== 1 ? "s" : ""}
+                  </span>
+                  <span className="text-forge-text-muted">·</span>
+                  <span className="text-forge-text-muted">{opp.games}g</span>
+                </div>
+              </div>
+              <div className="h-2 w-full bg-forge-border-subtle rounded-full overflow-hidden mb-1">
+                <div
+                  className="h-full bg-forge-danger/60 rounded-full transition-all duration-500"
+                  style={{ width: `${barWidth}%` }}
+                />
+              </div>
+              {opp.games > 0 && (
+                <div className="flex items-center gap-1 text-[9px] font-bold">
+                  <span className="text-forge-success">{winPct}%W</span>
+                  <span className="text-forge-text-muted">·</span>
+                  <span className="text-forge-text-secondary">{drawPct}%D</span>
+                  <span className="text-forge-text-muted">·</span>
+                  <span className="text-forge-danger">{lossPct}%L</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        <p className="text-[10px] text-forge-text-muted font-semibold pt-1">
+          Opponents you deviated from your repertoire against most often.
+        </p>
+      </div>
+    </div>
+  );
+};
+
 // ── Insights dashboard loader ─────────────────────────────────────────────────
 
 const InsightsDashboardPanels: React.FC = () => {
@@ -1501,6 +1601,9 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
 
         {/* Opening Tree Visualization */}
         <OpeningTreePanel />
+
+        {/* Opponent Model */}
+        <OpponentModelPanel />
 
         {/* Pattern Recognition */}
         <PatternPanel

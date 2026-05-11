@@ -516,3 +516,18 @@ export interface WeeklyAccuracyWeek {
 export function fetchWeeklyAccuracy(): Promise<{ weeks: WeeklyAccuracyWeek[] }> {
   return request<{ weeks: WeeklyAccuracyWeek[] }>("/v2/insights/weekly-accuracy");
 }
+
+// --- Opponent model ---
+
+export interface TopOpponent {
+  opponent: string;
+  deviationCount: number;
+  games: number;
+  wins: number;
+  draws: number;
+  losses: number;
+}
+
+export function fetchTopOpponents(): Promise<{ opponents: TopOpponent[] }> {
+  return request<{ opponents: TopOpponent[] }>("/v2/insights/top-opponents");
+}

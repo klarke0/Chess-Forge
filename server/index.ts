@@ -32,7 +32,7 @@ import {
 } from "./routes/analyze";
 import { getPatternReport, runPatternAnalysis } from "./routes/patterns";
 import { trainNow } from "./routes/v2_train_now";
-import { insightsVelocity, gameTypeStats, insightsDashboard, insightsWeeklyAccuracy } from "./routes/v2_insights";
+import { insightsVelocity, gameTypeStats, insightsDashboard, insightsWeeklyAccuracy, topOpponents } from "./routes/v2_insights";
 import { dismissPosition } from "./routes/v2_dismiss";
 import { refreshAnalysis } from "./routes/v2_refresh_analysis";
 import { challengeMove } from "./routes/v2_challenge";
@@ -459,6 +459,17 @@ async function route(
     segments.length === 4
   ) {
     return insightsWeeklyAccuracy(req);
+  }
+
+  // GET /api/v2/insights/top-opponents
+  if (
+    method === "GET" &&
+    segments[1] === "v2" &&
+    segments[2] === "insights" &&
+    segments[3] === "top-opponents" &&
+    segments.length === 4
+  ) {
+    return topOpponents(req);
   }
 
   // POST /api/v2/backfill-deviations
