@@ -48,10 +48,14 @@ const StatCard: React.FC<{
   <div
     onClick={onClick}
     className={cn(
-      "bg-[#11151c] border border-white/5 rounded-2xl p-5 relative overflow-hidden group",
-      onClick && "cursor-pointer hover:border-white/10 transition-colors",
+      "bg-forge-card border border-forge-border-subtle rounded-2xl p-5 relative overflow-hidden group",
+      onClick && "cursor-pointer hover:border-forge-border-default transition-colors duration-150",
+      onClick && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
       className,
     )}
+    tabIndex={onClick ? 0 : undefined}
+    role={onClick ? "button" : undefined}
+    onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
   >
     <div
       className={cn(
@@ -142,7 +146,7 @@ const PatternPanel: React.FC<{
 
   if (!cached && !running) {
     return (
-      <div className="bg-[#0d1117] border border-white/5 rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
+      <div className="bg-forge-card border border-forge-border-subtle rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
         <div className="w-12 h-12 bg-violet-500/10 rounded-full flex items-center justify-center">
           <Brain size={24} className="text-violet-400" />
         </div>
@@ -157,7 +161,7 @@ const PatternPanel: React.FC<{
         </div>
         <button
           onClick={run}
-          className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all"
+          className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
         >
           <Sparkles size={14} /> Run Analysis
         </button>
@@ -167,9 +171,9 @@ const PatternPanel: React.FC<{
 
   if (running) {
     return (
-      <div className="bg-[#0d1117] border border-white/5 rounded-2xl p-8 flex flex-col items-center gap-3">
-        <Loader2 size={28} className="text-violet-400 animate-spin" />
-        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest animate-pulse">
+      <div className="bg-forge-card border border-forge-border-subtle rounded-2xl p-8 flex flex-col items-center gap-3">
+        <Loader2 size={28} className="text-violet-400 motion-safe:animate-spin" />
+        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest motion-safe:animate-pulse">
           Analysing patterns…
         </p>
       </div>
@@ -181,8 +185,8 @@ const PatternPanel: React.FC<{
   const timeAgo = cached.createdAt ? formatTimeAgo(cached.createdAt) : null;
 
   return (
-    <div className="bg-[#0d1117] border border-white/5 rounded-2xl overflow-hidden">
-      <div className="px-5 py-3 border-b border-white/5 bg-[#080a0f] flex items-center justify-between">
+    <div className="bg-forge-card border border-forge-border-subtle rounded-2xl overflow-hidden">
+      <div className="px-5 py-3 border-b border-forge-border-subtle bg-forge-surface flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Brain size={14} className="text-violet-400" />
           <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">
@@ -198,10 +202,10 @@ const PatternPanel: React.FC<{
           <button
             onClick={run}
             disabled={running}
-            className="text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-40"
+            className="p-1.5 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-300 cursor-pointer transition-colors duration-150 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
             title="Re-run"
           >
-            <RefreshCw size={12} className={running ? "animate-spin" : ""} />
+            <RefreshCw size={12} className={running ? "motion-safe:animate-spin" : ""} />
           </button>
         </div>
       </div>
@@ -209,7 +213,7 @@ const PatternPanel: React.FC<{
       <div className="p-5 space-y-4">
         {cached.stats && (
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white/[0.02] border border-white/5 rounded-xl p-3 space-y-1.5">
+            <div className="bg-forge-elevated border border-forge-border-subtle rounded-xl p-3 space-y-1.5">
               <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">
                 Win Rates
               </p>
@@ -272,7 +276,7 @@ const PatternPanel: React.FC<{
               ].map(({ label, value, color }) => (
                 <div
                   key={label}
-                  className="bg-white/[0.02] border border-white/5 rounded-lg px-3 flex items-center justify-between"
+                  className="bg-forge-elevated border border-forge-border-subtle rounded-lg px-3 flex items-center justify-between"
                 >
                   <p className="text-[9px] text-slate-600 uppercase tracking-wide font-bold">
                     {label}
@@ -357,18 +361,18 @@ const GameTypePanel: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-[#0d1117] border border-white/5 rounded-2xl p-6 flex items-center justify-center gap-2">
-        <Loader2 size={16} className="text-indigo-400 animate-spin" />
-        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-          Loading...
-        </span>
+      <div className="bg-forge-card border border-forge-border-subtle rounded-2xl p-6 space-y-3">
+        <div className="h-3 w-24 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+        <div className="h-5 bg-forge-elevated rounded-md motion-safe:animate-pulse" />
+        <div className="h-5 bg-forge-elevated rounded-md motion-safe:animate-pulse" />
+        <div className="h-5 bg-forge-elevated rounded-md motion-safe:animate-pulse" />
       </div>
     );
   }
 
   if (!data || data.length === 0) {
     return (
-      <div className="bg-[#0d1117] border border-white/5 rounded-2xl p-6 text-center">
+      <div className="bg-forge-card border border-forge-border-subtle rounded-2xl p-6 text-center">
         <p className="text-xs text-slate-500 font-semibold">No game data yet.</p>
       </div>
     );
@@ -377,8 +381,8 @@ const GameTypePanel: React.FC = () => {
   const totalGames = data.reduce((s, r) => s + r.games, 0);
 
   return (
-    <div className="bg-[#0d1117] border border-white/5 rounded-2xl overflow-hidden">
-      <div className="px-5 py-3 border-b border-white/5 bg-[#080a0f] flex items-center justify-between">
+    <div className="bg-forge-card border border-forge-border-subtle rounded-2xl overflow-hidden">
+      <div className="px-5 py-3 border-b border-forge-border-subtle bg-forge-surface flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Zap size={14} className="text-indigo-400" />
           <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
@@ -407,7 +411,7 @@ const GameTypePanel: React.FC = () => {
                 </div>
               </div>
               {/* Stacked bar: win / draw / loss */}
-              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden flex">
+              <div className="h-2 w-full bg-forge-border-subtle rounded-full overflow-hidden flex">
                 <div
                   className="h-full bg-emerald-600 transition-all duration-700"
                   style={{ width: `${row.winPct}%` }}
@@ -452,11 +456,15 @@ const WeeklyAccuracyPanel: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 flex items-center justify-center gap-2">
-        <Loader2 size={16} className="text-forge-insight animate-spin" />
-        <span className="text-[10px] text-forge-text-muted font-bold uppercase tracking-widest">
-          Loading accuracy…
-        </span>
+      <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 space-y-3">
+        <div className="h-3 w-28 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="flex items-center gap-3">
+            <div className="h-3 w-14 bg-forge-elevated rounded-full motion-safe:animate-pulse shrink-0" />
+            <div className="flex-1 h-5 bg-forge-elevated rounded-md motion-safe:animate-pulse" />
+            <div className="h-3 w-8 bg-forge-elevated rounded-full motion-safe:animate-pulse shrink-0" />
+          </div>
+        ))}
       </div>
     );
   }
@@ -572,7 +580,7 @@ const WeeklyAccuracyPanel: React.FC = () => {
         <p className="text-[10px] text-forge-text-muted font-semibold pt-1">
           Weekly SM-2 drill accuracy from the progress table (last 8 weeks).
         </p>
-        <p className="text-[10px] text-forge-text-subtle italic pt-0.5">
+        <p className="text-[10px] text-forge-text-muted italic pt-0.5">
           Accuracy reflects all-time performance per position, not individual session results.
         </p>
       </div>
@@ -595,18 +603,19 @@ const BlunderTrendPanel: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-[#0d1117] border border-white/5 rounded-2xl p-6 flex items-center justify-center gap-2">
-        <Loader2 size={16} className="text-rose-400 animate-spin" />
-        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-          Loading trend...
-        </span>
+      <div className="bg-forge-card border border-forge-border-subtle rounded-2xl p-6 space-y-3">
+        <div className="h-3 w-24 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+        <div className="h-5 bg-forge-elevated rounded-md motion-safe:animate-pulse" />
+        <div className="h-5 bg-forge-elevated rounded-md motion-safe:animate-pulse" />
+        <div className="h-5 bg-forge-elevated rounded-md motion-safe:animate-pulse" />
+        <div className="h-5 w-3/4 bg-forge-elevated rounded-md motion-safe:animate-pulse" />
       </div>
     );
   }
 
   if (!data || data.length === 0) {
     return (
-      <div className="bg-[#0d1117] border border-white/5 rounded-2xl p-6 text-center">
+      <div className="bg-forge-card border border-forge-border-subtle rounded-2xl p-6 text-center">
         <p className="text-xs text-slate-500 font-semibold">
           No blunder data yet. Play and analyze some games first.
         </p>
@@ -617,8 +626,8 @@ const BlunderTrendPanel: React.FC = () => {
   const maxBlunders = Math.max(...data.map((w) => w.blunders), 1);
 
   return (
-    <div className="bg-[#0d1117] border border-white/5 rounded-2xl overflow-hidden">
-      <div className="px-5 py-3 border-b border-white/5 bg-[#080a0f] flex items-center gap-2">
+    <div className="bg-forge-card border border-forge-border-subtle rounded-2xl overflow-hidden">
+      <div className="px-5 py-3 border-b border-forge-border-subtle bg-forge-surface flex items-center gap-2">
         <Activity size={14} className="text-rose-400" />
         <span className="text-[10px] font-black uppercase tracking-widest text-rose-400">
           Blunder Trend
@@ -630,7 +639,7 @@ const BlunderTrendPanel: React.FC = () => {
             <span className="text-[10px] text-slate-500 font-bold w-16 shrink-0 text-right tabular-nums">
               {week.label}
             </span>
-            <div className="flex-1 h-5 bg-white/[0.03] rounded-md overflow-hidden">
+            <div className="flex-1 h-5 bg-forge-border-subtle rounded-md overflow-hidden">
               <div
                 className="h-full bg-rose-500/40 rounded-md transition-all duration-500"
                 style={{ width: `${(week.blunders / maxBlunders) * 100}%` }}
@@ -690,7 +699,7 @@ const TimeOfDayPanel: React.FC<{ data: api.TimeOfDayBucket[] }> = ({ data }) => 
                     </span>
                   </div>
                   {isBest && (
-                    <span className="text-[8px] font-black uppercase tracking-widest text-forge-success bg-forge-success-muted px-1.5 py-0.5 rounded-full">
+                    <span className="text-[8px] font-black uppercase tracking-widest text-forge-success bg-[var(--forge-accent-success-muted)] px-1.5 py-0.5 rounded-full">
                       Best
                     </span>
                   )}
@@ -1052,7 +1061,7 @@ const RepertoireTreeCard: React.FC<{ data: RepertoireTreeData }> = ({
     <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl overflow-hidden">
       {/* Header */}
       <button
-        className="w-full px-5 py-4 flex items-center gap-3 hover:bg-forge-surface transition-colors"
+        className="w-full px-5 py-4 flex items-center gap-3 cursor-pointer hover:bg-forge-surface transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
         onClick={() => setExpanded((v) => !v)}
       >
         <div className={cn("p-2 rounded-xl", REP_COLOR.bg)}>
@@ -1139,7 +1148,7 @@ const RepertoireTreeCard: React.FC<{ data: RepertoireTreeData }> = ({
               {hasMoreDepth && (
                 <button
                   onClick={() => setMaxDepth((d) => Math.min(d + 4, MAX_TREE_DEPTH))}
-                  className="w-full mt-2 py-2 text-[10px] font-black uppercase tracking-widest text-forge-text-muted hover:text-forge-text-secondary border border-forge-border-subtle hover:border-forge-border-default rounded-xl transition-colors"
+                  className="w-full mt-2 py-2 min-h-[36px] text-[10px] font-black uppercase tracking-widest text-forge-text-muted hover:text-forge-text-secondary border border-forge-border-subtle hover:border-forge-border-default rounded-xl cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                 >
                   Show more depth (move {maxDepth / 2 + 1}+)
                 </button>
@@ -1227,11 +1236,21 @@ const OpeningTreePanel: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 flex items-center justify-center gap-2">
-          <Loader2 size={16} className="text-forge-insight animate-spin" />
-          <span className="text-[10px] text-forge-text-muted font-bold uppercase tracking-widest">
-            Loading trees…
-          </span>
+        <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 bg-forge-elevated rounded-xl motion-safe:animate-pulse shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-32 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+              <div className="h-2 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 bg-forge-elevated rounded-xl motion-safe:animate-pulse shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-28 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+              <div className="h-2 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+            </div>
+          </div>
         </div>
       ) : trees.length === 0 ? (
         <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 text-center">
@@ -1262,11 +1281,16 @@ const OpponentModelPanel: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 flex items-center justify-center gap-2">
-        <Loader2 size={16} className="text-forge-insight animate-spin" />
-        <span className="text-[10px] text-forge-text-muted font-bold uppercase tracking-widest">
-          Loading opponents…
-        </span>
+      <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 space-y-3">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="h-3 w-28 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+              <div className="h-3 w-16 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+            </div>
+            <div className="h-2 bg-forge-elevated rounded-full motion-safe:animate-pulse" style={{ width: `${70 - i * 15}%` }} />
+          </div>
+        ))}
       </div>
     );
   }
@@ -1362,13 +1386,31 @@ const InsightsDashboardPanels: React.FC = () => {
   if (loading) {
     return (
       <>
-        <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 flex items-center justify-center gap-2">
-          <Loader2 size={16} className="text-forge-insight animate-spin" />
-          <span className="text-[10px] text-forge-text-muted font-bold uppercase tracking-widest">Loading…</span>
+        {/* Time of day skeleton */}
+        <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 space-y-4">
+          <div className="h-3 w-32 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="h-3 w-20 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+                <div className="h-3 w-10 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+              </div>
+              <div className="h-2 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+            </div>
+          ))}
         </div>
-        <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 flex items-center justify-center gap-2">
-          <Loader2 size={16} className="text-forge-success animate-spin" />
-          <span className="text-[10px] text-forge-text-muted font-bold uppercase tracking-widest">Loading…</span>
+        {/* Repertoire accuracy skeleton */}
+        <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-6 space-y-4">
+          <div className="h-3 w-36 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="h-3 w-28 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+                <div className="h-3 w-8 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+              </div>
+              <div className="h-3 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+            </div>
+          ))}
         </div>
       </>
     );
@@ -1415,7 +1457,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
     : 0;
 
   return (
-    <div className="absolute inset-0 overflow-y-auto bg-[#050507] custom-scrollbar">
+    <div className="absolute inset-0 overflow-y-auto bg-forge-base custom-scrollbar">
       <div className="max-w-4xl mx-auto p-6 space-y-6 pb-24 md:pb-6">
         {/* Header */}
         <div className="flex items-center justify-between pt-2">
@@ -1476,7 +1518,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
         </div>
 
         {/* Repertoire coverage */}
-        <div className="bg-[#0d1117] border border-white/5 rounded-2xl p-5">
+        <div className="bg-forge-card border border-forge-border-subtle rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <BarChart3 size={14} className="text-indigo-400" />
@@ -1501,7 +1543,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
                       {mastery}%
                     </span>
                   </div>
-                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-1.5 w-full bg-forge-border-subtle rounded-full overflow-hidden">
                     <div
                       className={cn(
                         "h-full rounded-full transition-all duration-700",
@@ -1524,7 +1566,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
         <GameTypePanel />
 
         {patternReport?.openings && patternReport.openings.length > 0 && (
-          <div className="bg-[#0d1117] border border-white/5 rounded-2xl p-5">
+          <div className="bg-forge-card border border-forge-border-subtle rounded-2xl p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <BookOpen size={14} className="text-emerald-400" />
@@ -1550,7 +1592,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
                       <span className="text-slate-600">({op.games}g)</span>
                     </div>
                   </div>
-                  <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden flex">
+                  <div className="h-1 w-full bg-forge-border-subtle rounded-full overflow-hidden flex">
                     <div
                       className="h-full bg-emerald-600"
                       style={{ width: `${op.winPct}%` }}
@@ -1572,7 +1614,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
 
         {patternReport?.stats.shapes &&
           Object.keys(patternReport.stats.shapes).length > 0 && (
-            <div className="bg-[#0d1117] border border-white/5 rounded-2xl p-5">
+            <div className="bg-forge-card border border-forge-border-subtle rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Activity size={14} className="text-amber-400" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
@@ -1621,7 +1663,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
                         "border rounded-xl py-2 px-1 text-center",
                         count > 0
                           ? COLORS[shape]
-                          : "text-slate-700 bg-white/[0.02] border-white/5",
+                          : "text-slate-700 bg-forge-elevated border-forge-border-subtle",
                       )}
                       title={shape}
                     >

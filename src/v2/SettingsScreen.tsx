@@ -234,10 +234,12 @@ function RepertoireCard({ stat, enabled, onToggleEnabled, onResetProgress }: Rep
         <button
           onClick={onToggleEnabled}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all shrink-0",
+            "flex items-center gap-1.5 px-3 py-2 min-h-[36px] rounded-full text-xs font-black uppercase tracking-wider cursor-pointer shrink-0",
+            "transition-colors duration-150",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
             enabled
               ? "bg-forge-elevated text-slate-300 border border-forge-border-default hover:border-indigo-400/30"
-              : "bg-forge-elevated text-slate-500 border border-forge-border-subtle",
+              : "bg-forge-elevated text-slate-500 border border-forge-border-subtle hover:text-slate-400",
           )}
         >
           {enabled ? (
@@ -282,10 +284,11 @@ function RepertoireCard({ stat, enabled, onToggleEnabled, onResetProgress }: Rep
       <button
         onClick={onResetProgress}
         className={cn(
-          "w-full flex items-center justify-between px-4 py-3",
+          "w-full flex items-center justify-between px-4 py-3 min-h-[44px] cursor-pointer",
           "bg-forge-elevated border border-forge-border-subtle rounded-xl",
           "text-xs font-black uppercase tracking-wider text-forge-danger",
-          "hover:border-rose-400/30 active:scale-[0.98] transition-all",
+          "hover:border-rose-400/30 active:scale-[0.98] transition-colors duration-150",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400",
         )}
       >
         <div className="flex items-center gap-2">
@@ -324,12 +327,12 @@ function InfoRow({ icon, text }: { icon: React.ReactNode; text: string }) {
 function SkeletonCard() {
   return (
     <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-5 space-y-3">
-      <div className="h-4 w-36 bg-forge-elevated rounded-full animate-pulse" />
-      <div className="h-3 w-24 bg-forge-elevated rounded-full animate-pulse" />
+      <div className="h-4 w-36 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
+      <div className="h-3 w-24 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
       <div className="grid grid-cols-3 gap-3">
-        <div className="h-14 bg-forge-elevated rounded-xl animate-pulse" />
-        <div className="h-14 bg-forge-elevated rounded-xl animate-pulse" />
-        <div className="h-14 bg-forge-elevated rounded-xl animate-pulse" />
+        <div className="h-14 bg-forge-elevated rounded-xl motion-safe:animate-pulse" />
+        <div className="h-14 bg-forge-elevated rounded-xl motion-safe:animate-pulse" />
+        <div className="h-14 bg-forge-elevated rounded-xl motion-safe:animate-pulse" />
       </div>
     </div>
   );
@@ -393,10 +396,10 @@ function ResetConfirmSheet({ name, loading, msg, onConfirm, onCancel }: ResetCon
             onClick={onCancel}
             disabled={loading}
             className={cn(
-              "flex-1 py-3.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all",
+              "flex-1 py-3.5 min-h-[52px] rounded-xl text-sm font-black uppercase tracking-wider cursor-pointer",
               "bg-forge-elevated text-slate-300 border border-forge-border-subtle",
-              "hover:border-forge-border-default active:scale-[0.98]",
-              "disabled:opacity-40",
+              "hover:border-forge-border-default active:scale-[0.98] transition-colors duration-150",
+              "disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
             )}
           >
             Cancel
@@ -405,14 +408,15 @@ function ResetConfirmSheet({ name, loading, msg, onConfirm, onCancel }: ResetCon
             onClick={onConfirm}
             disabled={loading}
             className={cn(
-              "flex-1 py-3.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all",
+              "flex-1 py-3.5 min-h-[52px] rounded-xl text-sm font-black uppercase tracking-wider cursor-pointer",
               "bg-rose-500/90 text-white border border-rose-400/20",
-              "hover:bg-rose-500 active:scale-[0.98]",
+              "hover:bg-rose-500 active:scale-[0.98] transition-colors duration-150",
               "disabled:opacity-40 flex items-center justify-center gap-2",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400",
             )}
           >
             {loading ? (
-              <><Loader2 size={14} className="animate-spin" /> Clearing…</>
+              <><Loader2 size={14} className="motion-safe:animate-spin" /> Clearing…</>
             ) : (
               "Yes, Reset"
             )}

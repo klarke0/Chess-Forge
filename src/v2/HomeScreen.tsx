@@ -141,8 +141,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <div className="bg-forge-card border border-forge-border-subtle rounded-[2.5rem] p-8 mb-5">
         {loading ? (
           <div className="space-y-3">
-            <div className="h-4 w-40 bg-forge-border-subtle rounded-full animate-pulse" />
-            <div className="h-4 w-24 bg-forge-border-subtle rounded-full animate-pulse" />
+            <div className="h-4 w-40 bg-forge-border-subtle rounded-full motion-safe:animate-pulse" />
+            <div className="h-4 w-24 bg-forge-border-subtle rounded-full motion-safe:animate-pulse" />
           </div>
         ) : count && count.total > 0 ? (
           <div className="mb-6">
@@ -190,12 +190,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <button
           onClick={() => onTrainNow("blunder", phase)}
           className={cn(
-            "w-full flex items-center justify-center gap-3",
+            "w-full flex items-center justify-center gap-3 cursor-pointer",
             "bg-forge-primary hover:bg-forge-primary-hover active:scale-[0.98]",
             "text-white font-black text-lg uppercase tracking-widest",
-            "py-5 rounded-forge-md transition-all",
+            "py-5 rounded-forge-md transition-all duration-150",
             "shadow-xl shadow-[var(--forge-accent-primary-shadow)]",
             "border border-indigo-400/20",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-forge-card",
           )}
         >
           <Play size={22} fill="currentColor" />
@@ -217,10 +218,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             key={v}
             onClick={() => setPhase(v)}
             className={cn(
-              "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide transition-all",
+              "px-4 py-2 min-h-[36px] rounded-full text-xs font-bold uppercase tracking-wide cursor-pointer",
+              "transition-colors duration-150",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
               phase === v
                 ? "bg-forge-primary text-white"
-                : "bg-forge-card text-slate-500 border border-forge-border-subtle hover:text-slate-300",
+                : "bg-forge-card text-slate-500 border border-forge-border-subtle hover:text-slate-300 hover:border-forge-border-default",
             )}
           >
             {v === "opening" ? "Opening/Mid" : v === "endgame" ? "Endgame" : "All"}
@@ -233,9 +236,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <button
           onClick={() => onTrainNow("blunder", "all")}
           className={cn(
-            "w-full flex items-center gap-4 p-4 mb-5",
+            "w-full flex items-center gap-4 p-4 mb-5 cursor-pointer",
             "bg-forge-card border border-forge-border-subtle rounded-forge-xl",
-            "text-left active:scale-[0.98] transition-all",
+            "text-left active:scale-[0.98] transition-all duration-150",
+            "hover:border-forge-border-default",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
           )}
         >
           <div className="w-16 aspect-square rounded-lg overflow-hidden border border-forge-border-subtle shrink-0">
@@ -270,9 +275,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <button
           onClick={onGames}
           className={cn(
-            "flex flex-col items-center justify-center gap-3 p-6",
+            "flex flex-col items-center justify-center gap-3 p-6 min-h-[88px] cursor-pointer",
             "bg-forge-card border border-forge-border-subtle rounded-forge-xl",
-            "text-slate-400 hover:text-slate-200 transition-all active:scale-[0.98]",
+            "text-slate-400 hover:text-slate-200 hover:border-forge-border-default",
+            "transition-colors duration-150 active:scale-[0.98]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
           )}
         >
           <Film size={24} />
@@ -284,9 +291,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <button
           onClick={() => onTrainNow("repertoire", "all")}
           className={cn(
-            "flex flex-col items-center justify-center gap-3 p-6",
+            "flex flex-col items-center justify-center gap-3 p-6 min-h-[88px] cursor-pointer",
             "bg-forge-card border border-forge-border-subtle rounded-forge-xl",
-            "text-slate-400 hover:text-slate-200 transition-all active:scale-[0.98]",
+            "text-slate-400 hover:text-slate-200 hover:border-forge-border-default",
+            "transition-colors duration-150 active:scale-[0.98]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
           )}
         >
           <BookOpen size={24} />
@@ -299,7 +308,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* Analysis status + refresh */}
       {isAnalyzing ? (
         <div className="flex items-center gap-2 px-2 py-2 text-xs text-slate-500">
-          <Loader2 size={12} className="animate-spin text-indigo-400 shrink-0" />
+          <Loader2 size={12} className="motion-safe:animate-spin text-indigo-400 shrink-0" />
           <span className="truncate">
             {activeGameName
               ? `Analyzing ${analyzedCount}/${totalInQueue} — ${activeGameName}`
@@ -311,10 +320,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <button
             onClick={handleRefreshAnalysis}
             disabled={refreshing}
-            className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-400 transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-400 transition-colors duration-150 disabled:opacity-40 cursor-pointer min-h-[44px] px-2"
           >
             {refreshing
-              ? <Loader2 size={11} className="animate-spin" />
+              ? <Loader2 size={11} className="motion-safe:animate-spin" />
               : <RefreshCw size={11} />}
             Refresh analysis
           </button>
@@ -344,10 +353,11 @@ function DailyChallenge({ streak, done, onTrain }: DailyChallengeProps) {
       disabled={done}
       className={cn(
         "w-full flex items-center gap-4 p-4 mb-5",
-        "border rounded-forge-xl transition-all text-left",
+        "border rounded-forge-xl text-left",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
         done
-          ? "bg-forge-card border-forge-success cursor-default"
-          : "bg-forge-card border-forge-border-subtle active:scale-[0.98] hover:border-indigo-400/30",
+          ? "bg-forge-card border-forge-success cursor-default transition-colors duration-150"
+          : "bg-forge-card border-forge-border-subtle cursor-pointer active:scale-[0.98] hover:border-indigo-400/30 transition-all duration-150",
       )}
     >
       {/* Icon */}

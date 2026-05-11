@@ -637,7 +637,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
       <div className="flex items-center gap-3 px-4 py-3 bg-forge-surface border-b border-forge-border-subtle shrink-0">
         <button
           onClick={onBack}
-          className="p-2 -ml-2 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95"
+          className="p-2 -ml-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-white cursor-pointer transition-colors duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
         >
           <ArrowLeft size={20} />
         </button>
@@ -676,8 +676,8 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
         {/* LOADING state */}
         {state === "loading" && (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
-            <Loader2 size={32} className="text-indigo-400 animate-spin" />
-            <p className="text-sm text-slate-400 font-semibold animate-pulse">
+            <Loader2 size={32} className="text-indigo-400 motion-safe:animate-spin" />
+            <p className="text-sm text-slate-400 font-semibold motion-safe:animate-pulse">
               Building your session...
             </p>
           </div>
@@ -685,7 +685,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
 
         {/* QUEUED state */}
         {state === "queued" && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6 animate-fadeIn">
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6 motion-safe:animate-fadeIn">
             <div className="text-center">
               <p className="text-3xl font-black text-slate-100">
                 {positions.length} positions
@@ -753,11 +753,12 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
             <button
               onClick={() => setSpeedMode((s) => !s)}
               className={cn(
-                "flex items-center gap-3 px-5 py-3 rounded-xl transition-all",
-                "border",
+                "flex items-center gap-3 px-5 py-3 min-h-[56px] rounded-xl cursor-pointer",
+                "border transition-colors duration-150",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
                 speedMode
                   ? "bg-indigo-600/20 border-indigo-500/40 text-indigo-300"
-                  : "bg-forge-border-subtle border-forge-border-default text-slate-400",
+                  : "bg-forge-border-subtle border-forge-border-default text-slate-400 hover:border-forge-border-default",
               )}
             >
               <Timer size={18} />
@@ -783,12 +784,13 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
             <button
               onClick={startDrilling}
               className={cn(
-                "w-full max-w-xs flex items-center justify-center gap-3",
+                "w-full max-w-xs flex items-center justify-center gap-3 cursor-pointer",
                 "bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98]",
                 "text-white font-black text-lg uppercase tracking-widest",
-                "py-5 rounded-2xl transition-all",
+                "py-5 rounded-2xl transition-colors duration-150",
                 "shadow-xl shadow-indigo-600/30",
                 "border border-indigo-400/20",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-forge-base",
               )}
             >
               Start
@@ -835,7 +837,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
               key={`board-${currentIdx}`}
               className={cn(
                 "flex-1 flex items-start justify-center px-4 pt-2 pb-2 relative",
-                shaking && "animate-shake",
+                shaking && "motion-safe:animate-shake",
               )}
             >
               <div className="w-full aspect-square rounded-xl overflow-hidden shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] bg-forge-board p-[6px]">
@@ -869,7 +871,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
               )}
               <button
                 onClick={handleReveal}
-                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-all ml-auto"
+                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 cursor-pointer transition-colors duration-150 ml-auto min-h-[44px] px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded-lg"
               >
                 <Eye size={14} />
                 <span className="font-semibold">Show</span>
@@ -913,7 +915,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 Tightened wrapper padding (pt-0 pb-2, px-4) so the WHY card
                 hugs the board on iPhone 12 Pro Max — every removed pixel here
                 surfaces another line of Coach Analysis above the fold. */}
-            <div className="animate-slideUp px-4 pt-0 pb-2">
+            <div className="motion-safe:animate-slideUp px-4 pt-0 pb-2">
               <BlunderExplanation
                 fen={currentPosition.fen}
                 wrongMove={currentPosition.san ?? null}
@@ -983,7 +985,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
               </div>
             )}
 
-            <div className="animate-slideUp">
+            <div className="motion-safe:animate-slideUp">
               <BlunderExplanation
                 fen={currentPosition.fen}
                 /* IMPORTANT: pass the ORIGINAL game blunder
@@ -1024,7 +1026,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 (older deviation rows without a recorded move), shows an
                 informational message without Show/Replay controls. */}
             {currentPosition.source === "deviation" && !punishmentDismissed && (
-              <div className="px-4 pb-4 animate-slideUp">
+              <div className="px-4 pb-4 motion-safe:animate-slideUp">
                 <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Swords size={14} className="text-amber-400 shrink-0" />
@@ -1036,7 +1038,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                         clearCoach();
                         setPunishmentDismissed(true);
                       }}
-                      className="p-1 rounded-lg text-slate-600 hover:text-slate-400 transition-all active:scale-90"
+                      className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-slate-600 hover:text-slate-400 cursor-pointer transition-colors duration-150 active:scale-90"
                       aria-label="Dismiss punishment line"
                     >
                       <X size={14} />
@@ -1052,7 +1054,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
 
                   {currentPosition.san && punishmentLoading && (
                     <div className="flex items-center gap-2 text-slate-500 text-xs">
-                      <Loader2 size={12} className="animate-spin shrink-0" />
+                      <Loader2 size={12} className="motion-safe:animate-spin shrink-0" />
                       <span>Finding punishment line...</span>
                     </div>
                   )}
@@ -1209,11 +1211,12 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
               <button
                 onClick={loadSession}
                 className={cn(
-                  "w-full flex items-center justify-center gap-2 py-4 rounded-2xl",
+                  "w-full flex items-center justify-center gap-2 py-4 rounded-2xl cursor-pointer",
                   "bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98]",
                   "text-white font-black text-base uppercase tracking-widest",
                   "shadow-xl shadow-indigo-600/30 border border-indigo-400/20",
-                  "transition-all",
+                  "transition-colors duration-150",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-forge-base",
                 )}
               >
                 <RotateCcw size={16} />
@@ -1222,10 +1225,11 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
               <button
                 onClick={onBack}
                 className={cn(
-                  "w-full px-8 py-3 rounded-xl",
+                  "w-full px-8 py-3 min-h-[44px] rounded-xl cursor-pointer",
                   "bg-forge-border-subtle border border-forge-border-default",
                   "text-slate-400 font-semibold text-sm",
-                  "hover:bg-forge-border-default transition-all active:scale-[0.98]",
+                  "hover:bg-forge-border-default hover:text-slate-200 transition-colors duration-150 active:scale-[0.98]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
                 )}
               >
                 Back to Home
