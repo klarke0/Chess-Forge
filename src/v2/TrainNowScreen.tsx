@@ -1019,7 +1019,10 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
             {/* Punishment banner — deviation drills only. Shows the opponent's
                 best reply to Kevin's deviation so he understands why the
                 repertoire move matters. Dismissible; animates the punishment
-                move on the board via triggerCoachLine. */}
+                move on the board via triggerCoachLine.
+                Not shown at all when source !== 'deviation'. When san is null
+                (older deviation rows without a recorded move), shows an
+                informational message without Show/Replay controls. */}
             {currentPosition.source === "deviation" && !punishmentDismissed && (
               <div className="px-4 pb-4 animate-slideUp">
                 <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4">
@@ -1040,14 +1043,21 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                     </button>
                   </div>
 
-                  {punishmentLoading && (
+                  {/* No deviation san recorded — informational only, no Show/Replay */}
+                  {!currentPosition.san && (
+                    <p className="text-xs text-slate-500">
+                      No deviation move recorded — re-sync games to enable punishment preview.
+                    </p>
+                  )}
+
+                  {currentPosition.san && punishmentLoading && (
                     <div className="flex items-center gap-2 text-slate-500 text-xs">
                       <Loader2 size={12} className="animate-spin shrink-0" />
                       <span>Finding punishment line...</span>
                     </div>
                   )}
 
-                  {!punishmentLoading && punishmentSan && (
+                  {currentPosition.san && !punishmentLoading && punishmentSan && (
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-mono font-black text-amber-300">
                         {punishmentSan}
@@ -1076,7 +1086,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                     </div>
                   )}
 
-                  {!punishmentLoading && !punishmentSan && (
+                  {currentPosition.san && !punishmentLoading && !punishmentSan && (
                     <p className="text-xs text-slate-500">
                       Engine unavailable — keep your repertoire moves sharp anyway.
                     </p>

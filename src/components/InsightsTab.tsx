@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Sparkles,
   TrendingUp,
@@ -572,6 +572,9 @@ const WeeklyAccuracyPanel: React.FC = () => {
         <p className="text-[10px] text-forge-text-muted font-semibold pt-1">
           Weekly SM-2 drill accuracy from the progress table (last 8 weeks).
         </p>
+        <p className="text-[10px] text-forge-text-subtle italic pt-0.5">
+          Accuracy reflects all-time performance per position, not individual session results.
+        </p>
       </div>
     </div>
   );
@@ -965,6 +968,9 @@ interface RepertoireTreeData {
   id: number;
   name: string;
   side: "white" | "black";
+  /** Raw position map — kept so the card can rebuild tree at different depths */
+  positions: api.PositionTree;
+  progressMap: Record<string, api.ProgressEntry>;
   tree: TreeMoveNode[];
   totalPositions: number;
   drilledPositions: number;
@@ -998,10 +1004,40 @@ function countTotal(nodes: TreeMoveNode[]): number {
   return nodes.reduce((s, n) => s + 1 + countTotal(n.children), 0);
 }
 
+const STARTING_FEN_CONST =
+  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const MAX_TREE_DEPTH = 20;
+
 const RepertoireTreeCard: React.FC<{ data: RepertoireTreeData }> = ({
   data,
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const [maxDepth, setMaxDepth] = useState(8);
+
+  // Rebuild tree whenever maxDepth changes (user clicked "Show more depth")
+  const currentTree = useMemo(() => {
+    if (maxDepth === 8) return data.tree; // use pre-built tree for initial depth
+    return buildMoveTree(
+      STARTING_FEN_CONST,
+      data.positions,
+      data.progressMap,
+      0,
+      maxDepth,
+      new Set([normalizeFen(STARTING_FEN_CONST)]),
+    );
+  }, [maxDepth, data]);
+
+  // Check whether there are positions beyond the current depth cap
+  const hasMoreDepth = useMemo(() => {
+    if (maxDepth >= MAX_TREE_DEPTH) return false;
+    // Probe one level deeper — if that returns nodes, there's more to show
+    function hasNodesAtDepth(nodes: TreeMoveNode[], remaining: number): boolean {
+      if (remaining === 0) return nodes.length > 0;
+      return nodes.some((n) => hasNodesAtDepth(n.children, remaining - 1));
+    }
+    return hasNodesAtDepth(currentTree, 0) && maxDepth < MAX_TREE_DEPTH;
+  }, [currentTree, maxDepth]);
+
   const drilledPct =
     data.totalPositions > 0
       ? Math.round((data.drilledPositions / data.totalPositions) * 100)
@@ -1087,18 +1123,28 @@ const RepertoireTreeCard: React.FC<{ data: RepertoireTreeData }> = ({
       {/* Tree */}
       {expanded && (
         <div className="px-3 py-3 border-t border-forge-border-subtle max-h-[50dvh] overflow-y-auto">
-          {data.tree.length === 0 ? (
+          {currentTree.length === 0 ? (
             <p className="text-xs text-forge-text-muted text-center py-4 font-semibold">
               No positions loaded yet.
             </p>
           ) : (
-            data.tree.map((node, i) => (
-              <TreeNode
-                key={i}
-                node={node}
-                depth={0}
-              />
-            ))
+            <>
+              {currentTree.map((node, i) => (
+                <TreeNode
+                  key={i}
+                  node={node}
+                  depth={0}
+                />
+              ))}
+              {hasMoreDepth && (
+                <button
+                  onClick={() => setMaxDepth((d) => Math.min(d + 4, MAX_TREE_DEPTH))}
+                  className="w-full mt-2 py-2 text-[10px] font-black uppercase tracking-widest text-forge-text-muted hover:text-forge-text-secondary border border-forge-border-subtle hover:border-forge-border-default rounded-xl transition-colors"
+                >
+                  Show more depth (move {maxDepth / 2 + 1}+)
+                </button>
+              )}
+            </>
           )}
         </div>
       )}
@@ -1129,15 +1175,13 @@ const OpeningTreePanel: React.FC = () => {
           for (const row of progress) {
             progressMap[normalizeFen(row.fen)] = row;
           }
-          const STARTING_FEN =
-            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
           const tree = buildMoveTree(
-            STARTING_FEN,
+            STARTING_FEN_CONST,
             positions,
             progressMap,
             0,
             8,
-            new Set([normalizeFen(STARTING_FEN)]),
+            new Set([normalizeFen(STARTING_FEN_CONST)]),
           );
           const { drilled, green, amber, red } = countMastery(tree);
           const total = countTotal(tree);
@@ -1145,6 +1189,8 @@ const OpeningTreePanel: React.FC = () => {
             id: rep.id,
             name: rep.name,
             side: rep.side,
+            positions,
+            progressMap,
             tree,
             totalPositions: total,
             drilledPositions: drilled,
