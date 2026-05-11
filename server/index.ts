@@ -36,6 +36,7 @@ import { insightsVelocity, gameTypeStats, insightsDashboard, insightsWeeklyAccur
 import { dismissPosition } from "./routes/v2_dismiss";
 import { refreshAnalysis } from "./routes/v2_refresh_analysis";
 import { challengeMove } from "./routes/v2_challenge";
+import { deleteRepertoireProgress } from "./routes/v2_repertoire_progress";
 
 const PORT = 3001;
 const DIST_PATH = join(import.meta.dir, "../dist");
@@ -520,6 +521,19 @@ async function route(
     segments.length === 3
   ) {
     return explainBlunder(req);
+  }
+
+  // DELETE /api/v2/repertoire/:id/progress
+  if (
+    method === "DELETE" &&
+    segments[1] === "v2" &&
+    segments[2] === "repertoire" &&
+    segments[4] === "progress" &&
+    segments.length === 5
+  ) {
+    const id = parseId(segments[3]);
+    if (id < 0) return Response.json({ error: "Invalid ID" }, { status: 400 });
+    return deleteRepertoireProgress(id);
   }
 
   return Response.json({ error: "Not found" }, { status: 404 });

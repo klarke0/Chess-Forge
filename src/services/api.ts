@@ -531,3 +531,17 @@ export interface TopOpponent {
 export function fetchTopOpponents(): Promise<{ opponents: TopOpponent[] }> {
   return request<{ opponents: TopOpponent[] }>("/v2/insights/top-opponents");
 }
+
+// --- Repertoire settings ---
+
+export interface DeleteProgressResult {
+  cleared: number;
+  repertoireId: number;
+  name: string;
+}
+
+export function deleteRepertoireProgress(repertoireId: number): Promise<DeleteProgressResult> {
+  return request<DeleteProgressResult>(`/v2/repertoire/${repertoireId}/progress`, {
+    method: "DELETE",
+  });
+}

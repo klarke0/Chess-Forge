@@ -5,6 +5,7 @@ import { TrainNowScreen } from "./TrainNowScreen";
 import { RepertoireRunScreen } from "./RepertoireRunScreen";
 import { GamesTab } from "@/components/GamesTab";
 import { InsightsTab } from "@/components/InsightsTab";
+import { SettingsScreen } from "./SettingsScreen";
 import { useRepertoireStore } from "@/stores/repertoireStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useEngineStore } from "@/stores/engineStore";
@@ -52,9 +53,9 @@ const AppV2: React.FC = () => {
   }
 
   return (
-    <div className="flex items-start justify-center h-[100dvh] bg-[#020204] text-slate-200 font-outfit overflow-hidden">
+    <div className="flex items-start justify-center h-[100dvh] bg-forge-shell text-slate-200 font-outfit overflow-hidden">
       {/* Phone-width container — centered on desktop, full-width on mobile */}
-      <div className="relative flex flex-col h-[100dvh] w-full max-w-[430px] bg-[var(--bg-base)] overflow-hidden shadow-2xl shadow-black/60">
+      <div className="relative flex flex-col h-[100dvh] w-full max-w-[430px] bg-forge-base overflow-hidden shadow-2xl shadow-black/60">
         {/* Main content */}
         <div
           className={`flex-1 min-h-0 flex flex-col overflow-hidden ${drilling || repertoireRun || analyzingGame ? "" : "mb-16"}`}
@@ -89,6 +90,8 @@ const AppV2: React.FC = () => {
               )}
 
               {activeTab === "insights" && <InsightsTab />}
+
+              {activeTab === "settings" && <SettingsScreen />}
             </>
           )}
         </div>
