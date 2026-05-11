@@ -106,16 +106,20 @@ export const SettingsScreen: React.FC = () => {
       setResetMsg(`Progress cleared for ${resetTarget.name}`);
       // Refresh stats so counts go to 0
       await loadStats();
+      // Close dialog after showing success message
       setTimeout(() => {
         setResetMsg(null);
         setResetTarget(null);
       }, 2500);
     } catch {
+      // Show error in-dialog; close after a pause
       setResetMsg("Failed to reset — try again");
-      setTimeout(() => setResetMsg(null), 3000);
+      setTimeout(() => {
+        setResetMsg(null);
+        setResetTarget(null);
+      }, 3000);
     } finally {
       setResetLoading(false);
-      if (!resetMsg) setResetTarget(null);
     }
   }
 

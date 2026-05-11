@@ -144,6 +144,22 @@ A defined daily target (e.g. "do 1 session") with streak tracking. Already has s
 - ~~Settings screen for repertoire management~~ ✅ DONE 2026-05-10 — `SettingsScreen` added as a 4th tab in `BottomNav`. Shows both repertoires as cards with position count, drilled/total, weekly accuracy %, and a progress bar. Enable/Disable toggle (persisted in localStorage) excludes a repertoire from drill sessions. "Reset SM-2 Progress" button triggers a confirm sheet then calls `DELETE /api/v2/repertoire/:id/progress` to clear all progress rows for that repertoire. Backend: `server/routes/v2_repertoire_progress.ts` uses the shared `ok`/`err` response envelope.
 - ~~Opponent model~~ ✅ DONE 2026-05-10 — `GET /api/v2/insights/top-opponents` queries deviations+games tables, groups by opponent name, returns top 5 by deviation count with per-opponent win/draw/loss context. `OpponentModelPanel` added to InsightsTab showing ranked bars with W%/D%/L% breakdown. Uses forge-* tokens throughout.
 
+**Quality audit 2026-05-10** — 0 lint errors restored (was 29 errors). Key fixes:
+- ESLint `argsIgnorePattern: "^_"` added so `_req` function params are allowed without prefix.
+- Archive scripts + `test_sf_mate.ts` added to ESLint ignore — no reason to enforce rules on already-run one-off scripts.
+- `while (true)` stream-read loops in `coachStore.ts` + `analyze.ts` suppressed with inline disable comment (semantically correct, just needs the opt-out).
+- Empty catch blocks: all `catch (e) {}` / `catch {}` with no body now have a brief comment clarifying intent.
+- Inner function declarations inside `try` block in `v2_train_now.ts` converted to `const` arrow functions (satisfies `no-inner-declarations`).
+- `SettingsScreen.tsx` bug: `handleConfirmReset` finally block read stale `resetMsg` state (always null) → dialog closed before user saw error. Fixed by removing the stale-closure read.
+- `UniversalBoard.tsx`: missing `BOARD_THEME` spread (was using raw hex colors); `border-forge-board` / `bg-forge-board` tokens applied.
+- `BlunderExplanation.tsx`: 2 `bg-white/[0.03]` token violations → `bg-forge-elevated`.
+
+**New items added to backlog:**
+
+- **F-1: Weekly accuracy uses cumulative SM-2 counters, not per-session records** — `WeeklyAccuracyPanel` computes accuracy from `last_reviewed` timestamps × `correct_attempts / total_attempts`. Because counters are cumulative, a single blunder in week 1 depresses the "week 1" bar forever even after Kevin masters the position. True per-session accuracy would require a `drill_sessions` event log table. Low priority but the current fidelity note is buried in a code comment; surface it visually as a "≈ estimated" label.
+- **F-2: Opening tree depth is hard-coded at 8** — `buildMoveTree` is called with `maxDepth=8` regardless of repertoire size. The Jobava London tree has moves through move 20+. Kevin can't see mastery beyond move 8. Make depth configurable (slider or "+Show more" button on the tree card).
+- **F-3: Opponent punishment banner missing when deviation `san` is null** — when a deviation row has no `san` field (e.g. older deviations before `san` column was added), the banner shows "Engine unavailable" even though the engine is fine. Add a distinct message: "No deviation move recorded — re-sync your games to populate."
+
 ---
 
 ## Completed (this backlog's scope)

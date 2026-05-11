@@ -1,9 +1,9 @@
-import * as api from './api';
-import { PgnParser } from './pgn_parser';
-import { StockfishEngine } from './engine';
-import { Chess } from 'chess.js';
-import { useBackgroundStore } from '../stores/backgroundStore';
-import { useRepertoireStore } from '../stores/repertoireStore';
+import * as api from "./api";
+import { PgnParser } from "./pgn_parser";
+import { StockfishEngine } from "./engine";
+import { Chess } from "chess.js";
+import { useBackgroundStore } from "../stores/backgroundStore";
+import { useRepertoireStore } from "../stores/repertoireStore";
 
 export class BackgroundAnalysisQueue {
   private static isRunning = false;
@@ -19,16 +19,20 @@ export class BackgroundAnalysisQueue {
       // Every 2 hours is a good balance between fresh data and CPU/API usage
       setInterval(() => this.processQueue(), 7200000);
     }
-    
+
     // Trigger an immediate check
     this.processQueue();
   }
 
   static stop() {
     this.stopRequested = true;
-    // Update UI immediately so the button changes back
     useBackgroundStore.getState().setAnalyzing(false);
     useBackgroundStore.getState().setStatus(null, 0, 0);
+  }
+
+  /** Kick off an immediate analysis pass — call after refresh-analysis clears old games. */
+  static triggerNow() {
+    this.processQueue();
   }
 
   private static async processQueue() {
@@ -40,11 +44,13 @@ export class BackgroundAnalysisQueue {
       // 1. Check for new games on Chess.com first (Auto-Sync)
       const username = useRepertoireStore.getState().chessComUsername;
       if (username && !this.stopRequested) {
-        console.log(`[BackgroundAnalysis] Auto-syncing games for ${username}...`);
+        console.log(
+          `[BackgroundAnalysis] Auto-syncing games for ${username}...`,
+        );
         try {
           await api.syncGamesFromChessCom(username);
         } catch (e) {
-          console.warn('[BackgroundAnalysis] Auto-sync failed:', e);
+          console.warn("[BackgroundAnalysis] Auto-sync failed:", e);
         }
       }
 
@@ -61,30 +67,32 @@ export class BackgroundAnalysisQueue {
         if (!this.stopRequested) {
           useBackgroundStore.getState().setAnalyzing(true);
         }
-        
+
         let count = 0;
         for (const gameInfo of unanalyzed) {
           if (this.stopRequested) break;
 
-          useBackgroundStore.getState().setStatus(
-            `${gameInfo.white_username} vs ${gameInfo.black_username}`,
-            count + 1,
-            unanalyzed.length
-          );
-          
+          useBackgroundStore
+            .getState()
+            .setStatus(
+              `${gameInfo.white_username} vs ${gameInfo.black_username}`,
+              count + 1,
+              unanalyzed.length,
+            );
+
           await this.analyzeSingleGame(gameInfo);
           count++;
 
           // Cool-down: small pause between games
           if (!this.stopRequested) {
-            await new Promise(r => setTimeout(r, 1000));
+            await new Promise((r) => setTimeout(r, 1000));
           }
         }
 
         if (unanalyzed.length < 100) break; // Finished everything
       }
     } catch (e) {
-      console.error('[BackgroundAnalysis] Queue error:', e);
+      console.error("[BackgroundAnalysis] Queue error:", e);
     } finally {
       this.isProcessing = false;
       this.stopRequested = false;
@@ -110,6 +118,7 @@ export class BackgroundAnalysisQueue {
       const results = [];
       const chess = new Chess();
       let prevEval = 20;
+      let prevBestMove = "";
 
       for (const move of parsed.moves) {
         // Check stop flag inside the move loop for instant stopping
@@ -119,35 +128,59 @@ export class BackgroundAnalysisQueue {
         chess.move(move.san);
         const fen = chess.fen();
 
+        // bestMove for this move = what engine recommended BEFORE this move was played
+        const bestMoveForThisMove = prevBestMove;
+
         // Terminal position: skip engine, assign directly
         if (chess.isGameOver()) {
-          const terminalEval = chess.isCheckmate() ? (turn === 'w' ? 2000 : -2000) : 0;
-          results.push({ san: move.san, fen, eval: terminalEval, cpLoss: 0, grade: 'best' });
+          const terminalEval = chess.isCheckmate()
+            ? turn === "w"
+              ? 2000
+              : -2000
+            : 0;
+          results.push({
+            san: move.san,
+            fen,
+            eval: terminalEval,
+            cpLoss: 0,
+            grade: "best",
+            bestMove: bestMoveForThisMove || undefined,
+          });
           prevEval = terminalEval;
+          prevBestMove = "";
           continue;
         }
 
         // Background scan bumped to Depth 12 for high quality without being too slow
         const score = await this.engine.evaluateOnce(fen, 12);
+        prevBestMove = score.bestMove;
 
-        let normalizedEval = chess.turn() === 'w' ? (score.cp ?? 0) : -(score.cp ?? 0);
+        let normalizedEval =
+          chess.turn() === "w" ? (score.cp ?? 0) : -(score.cp ?? 0);
         if (score.mate !== null) {
-           normalizedEval = score.mate > 0
-             ? (chess.turn() === 'w' ? 2000 : -2000)
-             : (chess.turn() === 'w' ? -2000 : 2000);
+          normalizedEval =
+            score.mate > 0
+              ? chess.turn() === "w"
+                ? 2000
+                : -2000
+              : chess.turn() === "w"
+                ? -2000
+                : 2000;
         }
 
         const sideMoved = turn;
-        let cpLoss = sideMoved === 'w'
-          ? Math.max(0, prevEval - normalizedEval)
-          : Math.max(0, normalizedEval - prevEval);
+        const cpLoss =
+          sideMoved === "w"
+            ? Math.max(0, prevEval - normalizedEval)
+            : Math.max(0, normalizedEval - prevEval);
 
         results.push({
           san: move.san,
           fen,
           eval: normalizedEval,
           cpLoss: cpLoss,
-          grade: this.getGrade(prevEval, normalizedEval, sideMoved)
+          grade: this.getGrade(prevEval, normalizedEval, sideMoved),
+          bestMove: bestMoveForThisMove || undefined,
         });
 
         prevEval = normalizedEval;
@@ -155,7 +188,10 @@ export class BackgroundAnalysisQueue {
 
       await api.saveGameAnalysis(gameInfo.id, results);
     } catch (e) {
-      console.error(`[BackgroundAnalysis] Failed to analyze game ${gameInfo.id}:`, e);
+      console.error(
+        `[BackgroundAnalysis] Failed to analyze game ${gameInfo.id}:`,
+        e,
+      );
     }
   }
 
@@ -163,15 +199,20 @@ export class BackgroundAnalysisQueue {
     return 1 / (1 + Math.exp(-cp / 300));
   }
 
-  private static getGrade(prevEval: number, normalizedEval: number, turn: 'w' | 'b'): string {
-    const winDelta = turn === 'w'
-      ? this.winPct(prevEval) - this.winPct(normalizedEval)
-      : this.winPct(normalizedEval) - this.winPct(prevEval);
-    if (winDelta <= 0.015) return 'best';
-    if (winDelta <= 0.025) return 'excellent';
-    if (winDelta <= 0.065) return 'good';
-    if (winDelta <= 0.125) return 'inaccuracy';
-    if (winDelta <= 0.235) return 'mistake';
-    return 'blunder';
+  private static getGrade(
+    prevEval: number,
+    normalizedEval: number,
+    turn: "w" | "b",
+  ): string {
+    const winDelta =
+      turn === "w"
+        ? this.winPct(prevEval) - this.winPct(normalizedEval)
+        : this.winPct(normalizedEval) - this.winPct(prevEval);
+    if (winDelta <= 0.015) return "best";
+    if (winDelta <= 0.025) return "excellent";
+    if (winDelta <= 0.065) return "good";
+    if (winDelta <= 0.125) return "inaccuracy";
+    if (winDelta <= 0.235) return "mistake";
+    return "blunder";
   }
 }

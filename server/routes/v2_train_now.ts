@@ -84,12 +84,12 @@ function classifyPattern(
     }
 
     // Helper: get piece on algebraic square from board array
-    function pieceAt(sq: string): { type: string; color: string } | null {
+    const pieceAt = (sq: string): { type: string; color: string } | null => {
       const file = sq.charCodeAt(0) - 97; // 'a'=0
       const rank = parseInt(sq[1], 10) - 1; // '1'=0
       const boardRank = 7 - rank; // board[0] = rank 8
       return board[boardRank]?.[file] ?? null;
-    }
+    };
 
     // Knight attack offsets
     const KNIGHT_OFFSETS = [
@@ -97,13 +97,13 @@ function classifyPattern(
       [1, 2], [1, -2], [-1, 2], [-1, -2],
     ];
 
-    function knightAttacksSquare(from: string, to: string): boolean {
+    const knightAttacksSquare = (from: string, to: string): boolean => {
       const fc = from.charCodeAt(0) - 97;
       const fr = parseInt(from[1], 10) - 1;
       const tc = to.charCodeAt(0) - 97;
       const tr = parseInt(to[1], 10) - 1;
       return KNIGHT_OFFSETS.some(([dc, dr]) => fc + dc === tc && fr + dr === tr);
-    }
+    };
     void knightAttacksSquare;
 
     // ---- 1. Back-rank mate threat ----

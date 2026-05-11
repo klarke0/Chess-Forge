@@ -519,6 +519,7 @@ export async function analyzePosition(req: Request): Promise<Response> {
         let fullText = "";
 
         try {
+          // eslint-disable-next-line no-constant-condition
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
@@ -539,7 +540,7 @@ export async function analyzePosition(req: Request): Promise<Response> {
                     ),
                   );
                 }
-              } catch {}
+              } catch { /* malformed SSE line — skip */ }
             }
           }
         } finally {
@@ -966,7 +967,7 @@ export async function explainBlunder(req: Request): Promise<Response> {
           refutationFacts = `Opponent (${opponentColor}) has these legal responses (sample): ${sample}.`;
         }
       }
-    } catch {}
+    } catch { /* chess.js can throw on illegal positions — skip refutation */ }
   }
 
   // Fetch Lichess Masters data in parallel with the refutation computation above.
@@ -1080,7 +1081,7 @@ CONCEPT: [A precise chess concept — e.g. "Fork", "Pin", "Discovered attack", "
 
     const conceptMatch = fullText.match(/CONCEPT:\s*(.+)/i);
     if (conceptMatch) {
-      concept = conceptMatch[1].trim().replace(/^["'\[]|["'\]]$/g, "");
+      concept = conceptMatch[1].trim().replace(/^["'[]|["'\]]$/g, "");
     }
 
     // ────────────────────────────────────────────────────────────────────

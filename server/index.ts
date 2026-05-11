@@ -89,7 +89,7 @@ function checkAuth(req: Request): boolean {
     if (type !== "Basic") return false;
 
     const decoded = atob(credentials);
-    const [user, pass] = decoded.split(":");
+    const [_user, pass] = decoded.split(":");
     return pass === REMOTE_PASSWORD;
   } catch {
     return false;
