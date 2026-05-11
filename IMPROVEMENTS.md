@@ -122,8 +122,7 @@ These block the app from being genuinely useful. Fix first.
 Woodpecker Method — group positions by theme (back rank, overloaded piece, etc.) rather than random order. Requires either Gemini classification or heuristic approach. **Decision made:** Heuristic classifier (chess.js only, no Gemini).
 **Shipped:** `classifyPattern()` in `v2_train_now.ts` detects 8 tactical patterns (back-rank, fork, pin, discovered-attack, promotion, endgame, opening, middlegame) at session-build time using chess.js board analysis. `pattern` field added to `TrainPosition` type throughout. Session ordering now sorts within each source group by pattern so similar themes are adjacent. `PatternBadge` component shows colour-coded theme chips in the queued screen (cluster preview) and in the coach hint during drilling.
 
-#### P3-2: Lichess game import
-Kevin may play on Lichess. Should be importable. **Decision needed:** Does Kevin actually use Lichess?
+#### ~~P3-2: Lichess game import~~ ⏸ DEFERRED — Kevin doesn't play Lichess regularly. Revisit if that changes.
 
 #### ~~P3-3: Opponent punishment lines~~ ✅ DONE 2026-05-05
 When Kevin deviates, show what the opponent *should* have played as punishment. Already in v1 as "Play Demo". **Decision needed:** Should this be automatic after each deviation drill?
