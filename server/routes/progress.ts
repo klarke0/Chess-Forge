@@ -90,28 +90,12 @@ export async function recordAttempt(req: Request): Promise<Response> {
     const newStreak = body.correct ? existing.streak + 1 : 0;
     const newCorrect = existing.correct_attempts + (body.correct ? 1 : 0);
 
-    // If frontend sends pre-computed SM-2, trust it; skip server scheduling
-    if (
-      body.grade !== undefined &&
-      body.easeFactor !== undefined &&
-      body.nextReview !== undefined
-    ) {
-      db.prepare(
-        `UPDATE progress SET total_attempts=total_attempts+1, correct_attempts=?,
-          streak=?, ease_factor=?, interval_days=?, next_review=?, last_reviewed=?
-          WHERE repertoire_id=? AND fen=?`,
-      ).run(
-        newCorrect,
-        newStreak,
-        body.easeFactor,
-        body.intervalDays ?? 0,
-        body.nextReview,
-        now,
-        body.repertoireId,
-        fen,
-      );
-    } else if (body.grade !== undefined) {
-      // v2: grade-only path — server computes SM-2 from grade + existing progress
+    // Server always computes scheduling from the grade. Client-sent
+    // easeFactor/intervalDays/nextReview are deliberately ignored: trusting
+    // them bypasses the 30-day interval cap (the client sm2 mirror drifted
+    // uncapped) and reopens the drill-pool starvation documented in
+    // CLAUDE.md "Drill pool freshness".
+    if (body.grade !== undefined) {
       const sm2 = computeSM2(
         {
           easeFactor: existing.ease_factor,

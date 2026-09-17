@@ -40,6 +40,8 @@ function runMigrations(db: Database) {
       san TEXT NOT NULL,
       next_fen TEXT NOT NULL,
       comment TEXT,
+      is_main_line INTEGER NOT NULL DEFAULT 0,
+      depth INTEGER NOT NULL DEFAULT 0,
       UNIQUE(repertoire_id, fen, san)
     )`,
     `CREATE INDEX IF NOT EXISTS idx_positions_fen ON positions(repertoire_id, fen)`,
@@ -130,6 +132,8 @@ function runMigrations(db: Database) {
   addCol("chapters", "learn_runs", "INTEGER NOT NULL DEFAULT 0");
   addCol("games", "termination", "TEXT");
   addCol("games", "game_shape", "TEXT");
+  addCol("positions", "is_main_line", "INTEGER NOT NULL DEFAULT 0");
+  addCol("positions", "depth", "INTEGER NOT NULL DEFAULT 0");
 
   db.query(
     `CREATE TABLE IF NOT EXISTS pattern_reports (

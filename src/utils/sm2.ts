@@ -15,14 +15,14 @@ export interface SM2Output {
  * Canonical SM-2 algorithm.
  * Grade 0-2: reset (interval=0, re-queue in 10 min), EF drops
  * Grade 3-5: advance (rep 0→1day, rep 1→6days, rep 2+→interval*EF), EF adjusts
- * EF formula: EF' = EF + 0.1 - (5-g)*(0.08 + (5-g)*0.02), clamped to 1.3
+ * EF formula: EF' = EF + 0.1 - (5-g)*(0.08 + (5-g)*0.02), clamped to [1.3, 2.5]
  */
 export function computeSM2(input: SM2Input, grade: number): SM2Output {
   const { easeFactor, intervalDays, repetitions } = input;
 
   let nextEaseFactor =
     easeFactor + 0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02);
-  nextEaseFactor = Math.max(1.3, nextEaseFactor);
+  nextEaseFactor = Math.max(1.3, Math.min(2.5, nextEaseFactor));
 
   let nextRepetitions: number;
   let nextIntervalDays: number;
@@ -49,6 +49,9 @@ export function computeSM2(input: SM2Input, grade: number): SM2Output {
   } else {
     nextIntervalDays = Math.round(intervalDays * easeFactor);
   }
+  // Cap at 30 days — mirrors server/utils/sm2.ts; see CLAUDE.md "Drill pool
+  // freshness" before raising.
+  nextIntervalDays = Math.min(30, nextIntervalDays);
 
   const nextReviewDate = new Date(
     Date.now() + nextIntervalDays * 86400 * 1000,
