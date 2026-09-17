@@ -37,6 +37,9 @@ import { dismissPosition } from "./routes/v2_dismiss";
 import { refreshAnalysis } from "./routes/v2_refresh_analysis";
 import { challengeMove } from "./routes/v2_challenge";
 import { deleteRepertoireProgress } from "./routes/v2_repertoire_progress";
+import {
+  auditSweepRoute, auditStatusRoute, auditTiebreakRoute, auditReportRoute,
+} from "./routes/v2_audit";
 
 const PORT = 3001;
 const DIST_PATH = join(import.meta.dir, "../dist");
@@ -511,6 +514,50 @@ async function route(
     segments.length === 3
   ) {
     return challengeMove(req);
+  }
+
+  // POST /api/v2/audit/sweep
+  if (
+    method === "POST" &&
+    segments[1] === "v2" &&
+    segments[2] === "audit" &&
+    segments[3] === "sweep" &&
+    segments.length === 4
+  ) {
+    return auditSweepRoute(req);
+  }
+
+  // GET /api/v2/audit/status
+  if (
+    method === "GET" &&
+    segments[1] === "v2" &&
+    segments[2] === "audit" &&
+    segments[3] === "status" &&
+    segments.length === 4
+  ) {
+    return auditStatusRoute();
+  }
+
+  // POST /api/v2/audit/tiebreak
+  if (
+    method === "POST" &&
+    segments[1] === "v2" &&
+    segments[2] === "audit" &&
+    segments[3] === "tiebreak" &&
+    segments.length === 4
+  ) {
+    return auditTiebreakRoute(req);
+  }
+
+  // GET /api/v2/audit/report
+  if (
+    method === "GET" &&
+    segments[1] === "v2" &&
+    segments[2] === "audit" &&
+    segments[3] === "report" &&
+    segments.length === 4
+  ) {
+    return auditReportRoute(url);
   }
 
   // POST /api/analyze/blunder
