@@ -18,6 +18,17 @@ function pickRandom<T>(arr: T[]): T | undefined {
 }
 
 /**
+ * Anti-repeat key for a line. Uses the full FEN path, not a prefix: every
+ * line in a repertoire shares its opening moves, so a prefix key collides
+ * across all variations and makes the dedup inert. Both the producer
+ * (pickNewLine) and the consumer (selectRandomLine) must derive keys the
+ * same way or nothing ever matches.
+ */
+function lineKey(line: string[]): string {
+  return line.map(normalizeFen).join("|");
+}
+
+/**
  * Pre-select a random complete line through the repertoire tree.
  *
  * A "line" is a sequence of FENs from the starting position to a leaf (a
@@ -33,7 +44,9 @@ function pickRandom<T>(arr: T[]): T | undefined {
 function selectRandomLine(
   positions: Record<string, { san: string; nextFen: string; isMainLine?: boolean; depth?: number }[]>,
   recentLineKeys: Set<string>,
+  side: "white" | "black",
 ): string[] {
+  const kevinsColor = side === "white" ? "w" : "b";
   const MAX_DEPTH = 50;
   const MAX_ATTEMPTS = 20;
 
@@ -52,7 +65,7 @@ function selectRandomLine(
       const sideToMove = currentFen.split(" ")[1]; // 'w' or 'b'
 
       let pick: typeof available[0] | undefined;
-      if (sideToMove !== "w") {
+      if (sideToMove !== kevinsColor) {
         // Opponent turn: prefer mainline moves to avoid refutation-bait lines.
         const mainline = available.filter((m) => m.isMainLine);
         const pool = mainline.length > 0 ? mainline : available;
@@ -75,8 +88,7 @@ function selectRandomLine(
   // Try up to MAX_ATTEMPTS to pick a line we haven't seen recently.
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const line = traceOneLine();
-    const lineKey = line.slice(0, 8).map(normalizeFen).join("|");
-    if (!recentLineKeys.has(lineKey) || attempt === MAX_ATTEMPTS - 1) {
+    if (!recentLineKeys.has(lineKey(line)) || attempt === MAX_ATTEMPTS - 1) {
       return line;
     }
   }
@@ -125,13 +137,9 @@ export const RepertoireRunScreen: React.FC<RepertoireRunScreenProps> = ({ onBack
   const visitedFensRef = useRef<Set<string>>(new Set());
 
   function pickNewLine() {
-    const line = selectRandomLine(positions, recentLineKeys.current);
+    const line = selectRandomLine(positions, recentLineKeys.current, repertoireSide);
     selectedLineRef.current = line;
-    // Use the full line as the key so every distinct variation path is tracked
-    // uniquely — first-8-FEN keys are identical for all Jobava lines since
-    // the opening moves are shared.
-    const key = line.map(normalizeFen).join("|");
-    recentLineKeys.current.add(key);
+    recentLineKeys.current.add(lineKey(line));
     // Keep the recent set bounded to last 30 lines.
     if (recentLineKeys.current.size > 30) {
       const [first] = recentLineKeys.current;
@@ -157,6 +165,14 @@ export const RepertoireRunScreen: React.FC<RepertoireRunScreenProps> = ({ onBack
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
 
   const chessRef = useRef(new Chess());
+
+  // Pending "Show correct" timer. Held in a ref so a restart or unmount can
+  // cancel it — otherwise it fires against a board that has already moved on.
+  const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+  }, []);
 
   // Side to move derived from FEN
   const sideToMove = fen.split(" ")[1] === "w" ? "white" : "black";
@@ -297,7 +313,9 @@ export const RepertoireRunScreen: React.FC<RepertoireRunScreenProps> = ({ onBack
 
   const onDrop = useCallback(
     (source: string, target: string) => {
-      if (state !== "playing" || !isKevinsTurn) return false;
+      // revealMode means a "Show correct" replay is pending — the board must
+      // stay frozen until it lands, or the two writes race over the same FEN.
+      if (state !== "playing" || !isKevinsTurn || revealMode) return false;
 
       const nfen = normalizeFen(fen);
       const available = positions[nfen];
@@ -351,14 +369,19 @@ export const RepertoireRunScreen: React.FC<RepertoireRunScreenProps> = ({ onBack
       setTimeout(() => setShaking(false), 500);
       return false;
     },
-    [state, isKevinsTurn, fen, positions, playSound],
+    [state, isKevinsTurn, revealMode, fen, positions, playSound],
   );
 
   function handleReveal() {
+    if (revealTimerRef.current) return; // already revealing
     setRevealMode(true);
-    const nfen = normalizeFen(fen);
+    const revealFen = fen; // pin the position this reveal belongs to
+    const nfen = normalizeFen(revealFen);
     const available = positions[nfen];
-    if (!available || available.length === 0) return;
+    if (!available || available.length === 0) {
+      setRevealMode(false); // nothing to show — don't leave the board frozen
+      return;
+    }
 
     // Prefer the pre-selected line's move for this position so "Show correct"
     // stays consistent with the line being drilled, not always the first move.
@@ -371,9 +394,10 @@ export const RepertoireRunScreen: React.FC<RepertoireRunScreenProps> = ({ onBack
       if (preSelected) correct = preSelected;
     }
 
-    setTimeout(() => {
+    revealTimerRef.current = setTimeout(() => {
+      revealTimerRef.current = null;
       try {
-        const chess = new Chess(fen);
+        const chess = new Chess(revealFen);
         chess.move(correct.san);
         chessRef.current = chess;
         const newFen = chess.fen();
@@ -389,6 +413,11 @@ export const RepertoireRunScreen: React.FC<RepertoireRunScreenProps> = ({ onBack
   }
 
   function handleRestart() {
+    // Kill any pending reveal so it can't land on the fresh board.
+    if (revealTimerRef.current) {
+      clearTimeout(revealTimerRef.current);
+      revealTimerRef.current = null;
+    }
     // Pick a fresh line so each "Run Again" drills a different variation.
     pickNewLine();
     // Reset the visited-FENs tracker so cycle detection starts fresh.
@@ -487,10 +516,10 @@ export const RepertoireRunScreen: React.FC<RepertoireRunScreenProps> = ({ onBack
                 <div className="w-full h-full rounded-lg overflow-hidden">
                   <Chessboard
                     position={fen}
-                    onPieceDrop={state === "playing" && isKevinsTurn ? onDrop : () => false}
+                    onPieceDrop={state === "playing" && isKevinsTurn && !revealMode ? onDrop : () => false}
                     boardOrientation={boardOrientation}
                     animationDuration={state === "opponent" ? 500 : 150}
-                    arePiecesDraggable={state === "playing" && isKevinsTurn}
+                    arePiecesDraggable={state === "playing" && isKevinsTurn && !revealMode}
                     {...BOARD_THEME}
                   />
                 </div>

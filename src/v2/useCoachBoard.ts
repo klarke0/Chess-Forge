@@ -13,6 +13,11 @@ export function useCoachBoard() {
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const replayRef = useRef<(() => void) | null>(null);
+  // Logical position of the beat walkthrough. beatPlayMove animates the board
+  // on a delay, so reading coachFen back would give a stale base when several
+  // beats are replayed in one tick (step-jump catch-up). This ref advances
+  // synchronously so those calls chain correctly.
+  const beatFenRef = useRef<string | null>(null);
 
   function cancelTimers() {
     timers.current.forEach(clearTimeout);
@@ -43,6 +48,7 @@ export function useCoachBoard() {
     setCoachSquareStyles({});
     setIsCoachAnimating(false);
     replayRef.current = null;
+    beatFenRef.current = null;
   }, []);
 
   const triggerReveal = useCallback(
@@ -204,6 +210,7 @@ export function useCoachBoard() {
   const beatReset = useCallback((toFen: string) => {
     cancelTimers();
     setIsCoachAnimating(true);
+    beatFenRef.current = toFen;
     setCoachFen(toFen);
     setCoachArrows([]);
     setCoachSquareStyles({});
@@ -215,39 +222,37 @@ export function useCoachBoard() {
       san: string,
       highlight?: "red" | "green" | "amber",
     ) => {
-      // Use the current animated FEN if present, else the position FEN passed
-      // by the parent. This makes beats cumulative across a single segment.
-      setCoachFen((curr) => {
-        const baseFen = curr ?? fallbackFen;
-        try {
-          const c = new Chess(baseFen);
-          const move = c.move(san);
-          if (!move) return curr; // illegal — leave board untouched
-          const colorKey = highlight ?? "amber";
-          const arrowColor = ARROW_COLORS[colorKey];
-          const sqColor = HIGHLIGHT_COLORS[colorKey];
-          // Set the arrow + highlight FIRST so the user sees intent, then
-          // animate the piece to its destination on the next paint.
-          setCoachArrows([[move.from, move.to, arrowColor]]);
-          setCoachSquareStyles({
-            [move.from]: { backgroundColor: sqColor },
-            [move.to]: { backgroundColor: sqColor },
-          });
-          // Animate the piece move ~250ms after the arrow appears so the
-          // student's eye has time to track from origin → destination.
-          schedule(() => {
-            setCoachFen(c.fen());
-          }, 250);
-          setIsCoachAnimating(true);
-          // Hold the arrow/highlight for the auto-advance window then settle
-          schedule(() => {
-            setIsCoachAnimating(false);
-          }, 1100);
-          return curr; // we set it via the scheduled call above
-        } catch {
-          return curr;
-        }
-      });
+      // Use the walkthrough's logical FEN if present, else the position FEN
+      // passed by the parent. This makes beats cumulative across a segment.
+      const baseFen = beatFenRef.current ?? fallbackFen;
+      try {
+        const c = new Chess(baseFen);
+        const move = c.move(san);
+        if (!move) return; // illegal — leave board untouched
+        beatFenRef.current = c.fen();
+        const colorKey = highlight ?? "amber";
+        const arrowColor = ARROW_COLORS[colorKey];
+        const sqColor = HIGHLIGHT_COLORS[colorKey];
+        // Set the arrow + highlight FIRST so the user sees intent, then
+        // animate the piece to its destination on the next paint.
+        setCoachArrows([[move.from, move.to, arrowColor]]);
+        setCoachSquareStyles({
+          [move.from]: { backgroundColor: sqColor },
+          [move.to]: { backgroundColor: sqColor },
+        });
+        // Animate the piece move ~250ms after the arrow appears so the
+        // student's eye has time to track from origin → destination.
+        schedule(() => {
+          setCoachFen(c.fen());
+        }, 250);
+        setIsCoachAnimating(true);
+        // Hold the arrow/highlight for the auto-advance window then settle
+        schedule(() => {
+          setIsCoachAnimating(false);
+        }, 1100);
+      } catch {
+        /* illegal SAN for this position — leave the board untouched */
+      }
     },
     [],
   );

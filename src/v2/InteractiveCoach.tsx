@@ -139,24 +139,42 @@ export const InteractiveCoach: React.FC<InteractiveCoachProps> = ({
     return () => clearTimeout(t);
   }, [currentStep, isPaused, autoAdvanceMs, steps.length]);
 
+  /**
+   * Rebuild the board for `idx` instead of dispatching that beat alone.
+   * playMove beats are cumulative, so a beat's SAN is only legal from the
+   * position its predecessors produced — dispatching it against a freshly
+   * reset board silently no-ops and desyncs the caption from the board.
+   * Reset to the start of `idx`'s segment, then replay every playMove beat
+   * up to (but not including) `idx`; the effect above dispatches `idx`.
+   */
+  function rebuildBoardFor(idx: number) {
+    let segmentStart = 0;
+    for (const r of effectiveResets) {
+      if (r <= idx && r > segmentStart) segmentStart = r;
+    }
+    onResetBoard();
+    for (let i = segmentStart; i < idx; i++) {
+      const action = steps[i].action;
+      if (action.type === "playMove") onPlayMove(action.san, action.highlight);
+    }
+    // Clear the guard so the effect dispatches the target beat itself.
+    dispatchedFor.current = -1;
+  }
+
   function handleManualNav(delta: 1 | -1) {
     setIsPaused(true);
-    setCurrentStep((s) => Math.max(0, Math.min(steps.length - 1, s + delta)));
+    const next = Math.max(0, Math.min(steps.length - 1, currentStep + delta));
+    if (next === currentStep) return;
+    // Stepping forward one beat is already cumulative; stepping back needs
+    // the board rebuilt from the segment start.
+    if (delta === -1) rebuildBoardFor(next);
+    setCurrentStep(next);
   }
 
   function handleJumpTo(idx: number) {
     if (idx === currentStep) return;
     setIsPaused(true);
-    // If jumping backward, force a reset so the board returns to the right
-    // state for the new beat (we re-dispatch from there). The simplest
-    // guarantee is to reset and then dispatch the new beat fresh.
-    if (idx < currentStep) {
-      onResetBoard();
-      // Re-walk forward through any beats we need (cumulative playMoves
-      // matter for the second-beat refutation). Mark this as the dispatch
-      // target so the effect above will run for it.
-      dispatchedFor.current = -1;
-    }
+    rebuildBoardFor(idx);
     setCurrentStep(idx);
   }
 
