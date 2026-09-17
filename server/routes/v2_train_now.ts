@@ -581,12 +581,24 @@ export function trainNow(req: Request): Response {
         continue;
 
       const repMove = repMoves[0] ?? null;
+      // Challenge-corrected answer for non-book positions (stored separately
+      // so game FENs never enter the repertoire tree).
+      const correction = repMove
+        ? null
+        : (db
+            .query(
+              "SELECT san FROM drill_corrections WHERE repertoire_id = ? AND fen = ?",
+            )
+            .get(repertoireId, nFen) as { san: string } | null);
       // For positions outside the repertoire the correct move comes from depth-12
-      // engine analysis (bestMove), which is noisy. Require a larger loss to be sure.
-      if (!repMove && cpLossPawns < 2.5) continue;
+      // engine analysis (bestMove), which is noisy. Require a larger loss to be
+      // sure — unless a depth-20 challenge correction pinned the answer.
+      if (!repMove && !correction && cpLossPawns < 2.5) continue;
 
       let correctSan =
-        repMove?.san ?? uciToSan(ensureFullFen(fenBefore), m.bestMove ?? "");
+        repMove?.san ??
+        correction?.san ??
+        uciToSan(ensureFullFen(fenBefore), m.bestMove ?? "");
       if (!correctSan) continue;
 
       // Sanity check: verify the correct move is actually legal from fenBefore

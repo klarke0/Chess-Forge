@@ -87,11 +87,16 @@ function describeBoardFromFen(fen: string): string {
 
 /**
  * Adjust the drill so future training expects `newSan` at this FEN instead of
- * the previously stored answer. Implementation:
- *   1. INSERT the new (fen, san, next_fen) into `positions` for this repertoire
- *      so that v2_train_now's lookup picks it up.
- *   2. Reset the progress row at this FEN so the user re-drills it with fresh
- *      ease/interval (otherwise SM-2 may suppress it for weeks).
+ * the previously stored answer.
+ *   - Book position: promote the new SAN inside `positions` so the canonical
+ *     `ORDER BY is_main_line DESC, depth ASC, san ASC` picks it first. Other
+ *     book replies at the FEN are kept (they stay correct via acceptableSans).
+ *   - Non-book position (game blunder drill): record in `drill_corrections`.
+ *     Never insert game FENs into `positions` — that grafts middlegame
+ *     positions into the repertoire tree, repertoire-mode sessions, and
+ *     deviation detection.
+ *   - Either way, reset the progress row so the new answer is re-drilled
+ *     fresh (otherwise SM-2 may suppress it for weeks).
  */
 function adjustDrill(
   repertoireId: number,
@@ -105,26 +110,55 @@ function adjustDrill(
     const nextFen = chess.fen();
     const nFen = normalizeFen(fen);
 
-    // Add the new SAN as the canonical answer at this FEN. It is stored as
-    // main-line at depth -1 so the drill engine's
-    // `ORDER BY is_main_line DESC, depth ASC, san ASC` picks it first — while
-    // the other book replies at this FEN are kept, because several move orders
-    // can reach the same position and each stored reply is still a legal,
-    // correct book move (they are all graded correct via `acceptableSans`).
-    db.query(
-      `INSERT OR REPLACE INTO positions (repertoire_id, fen, san, next_fen, comment, is_main_line, depth)
-       VALUES (?, ?, ?, ?, ?, 1, -1)`,
-    ).run(repertoireId, nFen, move.san, nextFen, "challenge-corrected");
+    const isBookPosition =
+      (
+        db
+          .query(
+            "SELECT COUNT(*) as c FROM positions WHERE repertoire_id = ? AND fen = ?",
+          )
+          .get(repertoireId, nFen) as { c: number }
+      ).c > 0;
 
-    // Reset progress state so we drill the new answer fresh
-    db.query(
-      `UPDATE progress
-       SET ease_factor = 2.5,
-           interval_days = 0,
-           next_review = datetime('now'),
-           streak = 0
-       WHERE repertoire_id = ? AND fen = ?`,
-    ).run(repertoireId, nFen);
+    const apply = db.transaction(() => {
+      if (isBookPosition) {
+        // Demote earlier challenge corrections at this FEN so two corrections
+        // never tie at (is_main_line=1, depth=-1) and resolve alphabetically.
+        // Genuine imported rows are left untouched.
+        db.query(
+          `UPDATE positions SET is_main_line = 0, depth = 0
+           WHERE repertoire_id = ? AND fen = ? AND san != ?
+             AND comment = 'challenge-corrected'`,
+        ).run(repertoireId, nFen, move.san);
+
+        // Upsert, not INSERT OR REPLACE: when the engine's move is already a
+        // book row, keep its comment/next_fen and only promote its priority.
+        db.query(
+          `INSERT INTO positions (repertoire_id, fen, san, next_fen, comment, is_main_line, depth)
+           VALUES (?, ?, ?, ?, 'challenge-corrected', 1, -1)
+           ON CONFLICT(repertoire_id, fen, san)
+           DO UPDATE SET is_main_line = 1, depth = -1`,
+        ).run(repertoireId, nFen, move.san, nextFen);
+      } else {
+        db.query(
+          `INSERT INTO drill_corrections (repertoire_id, fen, san, next_fen)
+           VALUES (?, ?, ?, ?)
+           ON CONFLICT(repertoire_id, fen) DO UPDATE
+             SET san = excluded.san, next_fen = excluded.next_fen,
+                 created_at = datetime('now')`,
+        ).run(repertoireId, nFen, move.san, nextFen);
+      }
+
+      // Reset progress state so we drill the new answer fresh
+      db.query(
+        `UPDATE progress
+         SET ease_factor = 2.5,
+             interval_days = 0,
+             next_review = datetime('now'),
+             streak = 0
+         WHERE repertoire_id = ? AND fen = ?`,
+      ).run(repertoireId, nFen);
+    });
+    apply();
 
     return true;
   } catch (e) {

@@ -63,9 +63,38 @@ export class StockfishEngine {
     }
   }
 
+  /**
+   * Single-shot requests (evaluateOnce / evaluateMultiPV) temporarily swap the
+   * worker's onmessage handler, so two in flight consume each other's output —
+   * including cross-clobber between screens sharing the engineStore engine.
+   * Serialize them through this promise chain.
+   */
+  private _queue: Promise<unknown> = Promise.resolve();
+
+  private _enqueue<T>(job: () => Promise<T>): Promise<T> {
+    const run = this._queue.then(job, job);
+    this._queue = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
+  }
+
   evaluateOnce(
     fen: string,
     depth: number = 16,
+  ): Promise<{
+    cp: number | null;
+    mate: number | null;
+    pv: string;
+    bestMove: string;
+  }> {
+    return this._enqueue(() => this._evaluateOnce(fen, depth));
+  }
+
+  private _evaluateOnce(
+    fen: string,
+    depth: number,
   ): Promise<{
     cp: number | null;
     mate: number | null;
@@ -81,10 +110,26 @@ export class StockfishEngine {
       let lastMate: number | null = null;
       let lastPv: string = "";
 
-      // Strict timeout: resolve after 5s no matter what to prevent stalls
+      // On overrun, tell the engine to stop — it then emits its final
+      // `bestmove`, which the handler below resolves normally. Detaching
+      // without the stop leaked the abandoned search's output into the next
+      // request (off-by-one evals persisted into analysis_json). The fallback
+      // timer only fires if the worker is wedged.
+      let fallback: ReturnType<typeof setTimeout> | null = null;
       const timeout = setTimeout(() => {
-        if (this.worker) this.worker.onmessage = prevOnMessage;
-        resolve({ cp: lastCp, mate: lastMate, pv: lastPv, bestMove: "" });
+        this.worker?.postMessage("stop");
+        fallback = setTimeout(() => {
+          if (this.worker) {
+            this.worker.onmessage = prevOnMessage;
+            this.worker.postMessage("setoption name MultiPV value 3");
+          }
+          resolve({
+            cp: lastCp,
+            mate: lastMate,
+            pv: lastPv,
+            bestMove: lastPv.split(" ")[0] ?? "",
+          });
+        }, 2000);
       }, 5000);
 
       const prevOnMessage = this.worker.onmessage;
@@ -105,6 +150,7 @@ export class StockfishEngine {
 
         if (data.startsWith("bestmove")) {
           clearTimeout(timeout);
+          if (fallback) clearTimeout(fallback);
           const bestMove = data.split(" ")[1];
           this.worker!.onmessage = prevOnMessage;
           // Restore MultiPV 3 for live analysis after single-shot eval
@@ -127,6 +173,16 @@ export class StockfishEngine {
   ): Promise<
     Array<{ rank: number; cp: number | null; mate: number | null; pv: string }>
   > {
+    return this._enqueue(() => this._evaluateMultiPV(fen, depth, numLines));
+  }
+
+  private _evaluateMultiPV(
+    fen: string,
+    depth: number,
+    numLines: number,
+  ): Promise<
+    Array<{ rank: number; cp: number | null; mate: number | null; pv: string }>
+  > {
     return new Promise((resolve) => {
       if (!this.worker) {
         resolve([]);
@@ -135,19 +191,32 @@ export class StockfishEngine {
 
       const lines = new Map<
         number,
-        { cp: number | null; mate: number | null; pv: string }
+        { depth: number; cp: number | null; mate: number | null; pv: string }
       >();
 
       function buildResult() {
         return Array.from(lines.entries())
-          .map(([rank, line]) => ({ rank, ...line }))
+          .map(([rank, line]) => ({
+            rank,
+            cp: line.cp,
+            mate: line.mate,
+            pv: line.pv,
+          }))
           .sort((a, b) => a.rank - b.rank);
       }
 
+      // On overrun, stop the search and let its final `bestmove` resolve with
+      // whatever depth was reached; the fallback only fires on a wedged worker.
+      let fallback: ReturnType<typeof setTimeout> | null = null;
       const timeout = setTimeout(() => {
-        this.worker!.onmessage = prevOnMessage;
-        this.worker!.postMessage("setoption name MultiPV value 3");
-        resolve(buildResult());
+        this.worker?.postMessage("stop");
+        fallback = setTimeout(() => {
+          if (this.worker) {
+            this.worker.onmessage = prevOnMessage;
+            this.worker.postMessage("setoption name MultiPV value 3");
+          }
+          resolve(buildResult());
+        }, 2000);
       }, 15000);
 
       const prevOnMessage = this.worker.onmessage;
@@ -158,16 +227,21 @@ export class StockfishEngine {
         if (data.startsWith("info depth")) {
           const depthMatch = data.match(/\bdepth (\d+)/);
           const currentDepth = depthMatch ? parseInt(depthMatch[1]) : 0;
-          // Only capture lines near the target depth to avoid partial-search noise
-          if (currentDepth >= depth - 2) {
-            const multipvMatch = data.match(/multipv (\d+)/);
-            const cpMatch = data.match(/score cp (-?\d+)/);
-            const mateMatch = data.match(/score mate (-?\d+)/);
-            const pvMatch = data.match(/ pv (.+)/);
+          const multipvMatch = data.match(/multipv (\d+)/);
+          const cpMatch = data.match(/score cp (-?\d+)/);
+          const mateMatch = data.match(/score mate (-?\d+)/);
+          const pvMatch = data.match(/ pv (.+)/);
 
-            if (multipvMatch && pvMatch) {
-              const rank = parseInt(multipvMatch[1]);
+          if (multipvMatch && pvMatch) {
+            const rank = parseInt(multipvMatch[1]);
+            // Keep the deepest line seen per rank. Searches that end early
+            // (forced moves, quick mates, stopped overruns) never reach the
+            // target depth; a best-effort line beats returning [] and letting
+            // the challenge UI call a valid drill "ambiguous".
+            const prev = lines.get(rank);
+            if (!prev || currentDepth >= prev.depth) {
               lines.set(rank, {
+                depth: currentDepth,
                 cp: cpMatch ? parseInt(cpMatch[1]) : null,
                 mate: mateMatch ? parseInt(mateMatch[1]) : null,
                 pv: pvMatch[1].trim(),
@@ -178,6 +252,7 @@ export class StockfishEngine {
 
         if (data.startsWith("bestmove")) {
           clearTimeout(timeout);
+          if (fallback) clearTimeout(fallback);
           this.worker!.onmessage = prevOnMessage;
           this.worker!.postMessage("setoption name MultiPV value 3");
           resolve(buildResult());

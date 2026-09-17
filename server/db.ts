@@ -144,6 +144,20 @@ function runMigrations(db: Database) {
   )`,
   ).run();
 
+  // Challenge corrections for positions OUTSIDE the repertoire (game blunder
+  // drills). Kept separate from `positions` so middlegame FENs never pollute
+  // the book tree; v2_train_now consults this when a FEN has no book rows.
+  db.query(
+    `CREATE TABLE IF NOT EXISTS drill_corrections (
+    repertoire_id INTEGER NOT NULL,
+    fen TEXT NOT NULL,
+    san TEXT NOT NULL,
+    next_fen TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (repertoire_id, fen)
+  )`,
+  ).run();
+
   db.query(
     `CREATE TABLE IF NOT EXISTS dismissed_positions (
     fen TEXT NOT NULL,
