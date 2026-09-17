@@ -4,6 +4,7 @@ import { batchLoadGamePositions } from "../utils/gamePositions";
 import { normalizeFen } from "../utils/fen";
 import { formatShortDate } from "../utils/dateFormat";
 import { parseAnalysisJson } from "../utils/analysis";
+import { attachAcceptableSans } from "../utils/repertoireMoves";
 
 function uciToSan(fen: string, uci: string): string {
   if (!uci || uci.length < 4) return "";
@@ -44,6 +45,11 @@ interface TrainPosition {
   phase?: "opening" | "middlegame" | "endgame";
   firstEncounter?: boolean;
   pattern?: TacticalPattern;
+  /**
+   * Every stored book reply for this FEN that should be graded correct.
+   * `correctSan` is the one we display; all of these are accepted.
+   */
+  acceptableSans?: string[];
 }
 
 /**
@@ -442,7 +448,9 @@ export function trainNow(req: Request): Response {
       });
     }
 
-    return Response.json({ positions: repSession });
+    return Response.json({
+      positions: attachAcceptableSans(repertoireId, repSession),
+    });
   }
 
   const candidates = new Map<
@@ -993,5 +1001,7 @@ export function trainNow(req: Request): Response {
   console.log(
     `[trainNow] returning ${session.length} positions for rep ${repertoireId}`,
   );
-  return Response.json({ positions: session });
+  return Response.json({
+    positions: attachAcceptableSans(repertoireId, session),
+  });
 }

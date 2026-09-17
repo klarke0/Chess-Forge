@@ -1,4 +1,5 @@
 # Chess Trainer Alpha Polish — Design Document
+
 **Date:** 2026-02-18
 **Scope:** Bring the app to a functional Alpha with all 5 modes working
 
@@ -12,13 +13,13 @@ The core training loop (repertoire drilling, SM-2 review, Stockfish engine, AI c
 
 ## Current State Summary
 
-| Mode | Status | Issue |
-|------|--------|-------|
-| Train | ✅ Solid | Minor: dead `gameStore`, weak-spot button broken |
-| Review | ✅ Solid | Recently implemented SM-2 |
-| Library | 🟡 Broken UX | Opens `ChapterLibrary` as an overlay instead of navigating |
-| Analysis | 🔴 Broken | Games list hardcoded to `[]`; ImportModal does double duty |
-| Game Lab | 🔴 Skeleton | No pipeline; backend endpoints don't exist |
+| Mode     | Status       | Issue                                                      |
+| -------- | ------------ | ---------------------------------------------------------- |
+| Train    | ✅ Solid     | Minor: dead `gameStore`, weak-spot button broken           |
+| Review   | ✅ Solid     | Recently implemented SM-2                                  |
+| Library  | 🟡 Broken UX | Opens `ChapterLibrary` as an overlay instead of navigating |
+| Analysis | 🔴 Broken    | Games list hardcoded to `[]`; ImportModal does double duty |
+| Game Lab | 🔴 Skeleton  | No pipeline; backend endpoints don't exist                 |
 
 ---
 
@@ -45,6 +46,7 @@ The `repertoire` mode name is renamed to `library` in the union for clarity.
 **Problem:** Clicking "Library" opens `ChapterLibrary` as an overlay positioned over the training board, then closes back to training. It's not a mode, it's a modal.
 
 **Fix:** Build `LibraryView` as a proper full-screen component that contains:
+
 - Chapter list (cards with mastery % and start button)
 - Weak positions list (FENs with mistake counts, jump-to-drill button)
 - Repertoire tree toggle
@@ -58,6 +60,7 @@ When a chapter is selected from Library, navigate to Training with that chapter 
 **Problem:** After a Chess.com sync or PGN import, the parsed game is used once (opened in viewer) then lost. GameHub always receives `games: []` so there's nothing to browse. ImportModal is reused for both PGN upload and Chess.com username entry.
 
 **Fix:**
+
 - Add `games: AnalyzedGame[]` to App state. After any import/sync, push the game to this list.
 - GameHub receives the real `games` list and renders clickable game cards.
 - Split the import flow: GameHub has two explicit buttons — "Import PGN" (file/paste) and "Sync from Chess.com" (username entry). Each opens its own small modal, not the shared ImportModal.
@@ -73,6 +76,7 @@ When a chapter is selected from Library, navigate to Training with that chapter 
 **Design:** Implement entirely client-side using the existing Stockfish Web Worker.
 
 **User flow:**
+
 1. Land on Game Lab → prompt to upload a PGN or enter a Chess.com game URL
 2. Parse PGN → extract moves → build FEN sequence
 3. For each position, send to Stockfish at depth 16 → collect best move + centipawn score
@@ -95,6 +99,7 @@ When a chapter is selected from Library, navigate to Training with that chapter 
 ### 5. Training Polish
 
 **Fixes:**
+
 - Remove `gameStore` — it's dead code (training uses a local ref; the store is never read)
 - Fix "Fix Weak Spots" button in `ProgressDashboard` — currently calls `onClose()` only; should navigate to Training with `mode = 'weak'`
 - AI Coach error state — if Gemini fails or API key is missing, show "Coach unavailable" with a subtle retry button instead of silent failure or generic text
@@ -114,20 +119,20 @@ When a chapter is selected from Library, navigate to Training with that chapter 
 
 ## File Impact Summary
 
-| File | Change |
-|------|--------|
-| `src/App.tsx` | Add `games` state, fix mode union, fix Analysis flow |
-| `src/components/Layout.tsx` | Rename `repertoire` → `library` in union |
-| `src/components/LibraryView.tsx` | NEW — full-screen library/chapters view |
-| `src/components/AnalysisImportModal.tsx` | NEW — dedicated PGN import dialog |
-| `src/components/ChessComModal.tsx` | NEW — dedicated Chess.com sync dialog |
-| `src/components/GameHub.tsx` | Fix games list, add import/sync buttons |
-| `src/components/GameAnalysis.tsx` | Fix deviation computation + drill button |
-| `src/components/GameLab.tsx` | Rebuild with real Stockfish pipeline |
-| `src/stores/gameStore.ts` | DELETE |
-| `src/hooks/useGameReview.ts` | NEW — Game Lab analysis pipeline hook |
-| `src/services/ai_coach.ts` | Add proper error return type |
-| `src/components/CoachPanel.tsx` | Handle error state from coach |
+| File                                     | Change                                               |
+| ---------------------------------------- | ---------------------------------------------------- |
+| `src/App.tsx`                            | Add `games` state, fix mode union, fix Analysis flow |
+| `src/components/Layout.tsx`              | Rename `repertoire` → `library` in union             |
+| `src/components/LibraryView.tsx`         | NEW — full-screen library/chapters view              |
+| `src/components/AnalysisImportModal.tsx` | NEW — dedicated PGN import dialog                    |
+| `src/components/ChessComModal.tsx`       | NEW — dedicated Chess.com sync dialog                |
+| `src/components/GameHub.tsx`             | Fix games list, add import/sync buttons              |
+| `src/components/GameAnalysis.tsx`        | Fix deviation computation + drill button             |
+| `src/components/GameLab.tsx`             | Rebuild with real Stockfish pipeline                 |
+| `src/stores/gameStore.ts`                | DELETE                                               |
+| `src/hooks/useGameReview.ts`             | NEW — Game Lab analysis pipeline hook                |
+| `src/services/ai_coach.ts`               | Add proper error return type                         |
+| `src/components/CoachPanel.tsx`          | Handle error state from coach                        |
 
 ---
 

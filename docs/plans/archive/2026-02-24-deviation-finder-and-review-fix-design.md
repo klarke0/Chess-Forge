@@ -24,28 +24,35 @@ Two related improvements that make the existing Games and Review tabs actually u
 ### What Changes
 
 **`GamesTab.tsx`**
+
 - Add `onDrillDeviation: (fen: string) => void` prop
 - In `handleGameSelect`, after parsing the PGN, call:
   ```ts
   const positions = useRepertoireStore.getState().positions;
-  const deviations = computeDeviations(parsed, positions, game.user_color || 'white');
+  const deviations = computeDeviations(
+    parsed,
+    positions,
+    game.user_color || "white",
+  );
   ```
   Pass `deviations` into `AnalyzedGame` instead of `[]`
 - Wire the `onDrillDeviation` prop through to `GameAnalysis`
 
 **`GameAnalysis.tsx` notation table**
+
 - Build a `Set<string>` of deviation FENs from `game.deviations` for O(1) lookup
 - For each move cell, if `move.fenBefore` is in that set, render an amber `⇒` badge in the same badge slot as `??`/`?`
 - No new click handler needed — clicking the move still navigates to that position
 
 **`App.tsx`**
+
 - Expose `jumpToPosition` from `useTraining`
 - Pass to `GamesTab`:
   ```tsx
   <GamesTab
     onDrillDeviation={(fen) => {
       jumpToPosition(fen);
-      setActiveTab('train');
+      setActiveTab("train");
     }}
   />
   ```
@@ -75,6 +82,7 @@ Fix: catch the API failure gracefully. Show a message explaining the backend mus
 The most likely cause: backend not running → API failure → error state. Secondary cause: progress table empty → "All Clear" with no useful positions.
 
 During implementation, verify by checking:
+
 1. Does `getDuePositions` return data when backend is running with recorded attempts?
 2. Is there a structural bug in `onReviewDrop` preventing moves from registering?
 
@@ -82,11 +90,11 @@ During implementation, verify by checking:
 
 ## Files Changed
 
-| File | Change |
-|------|--------|
-| `src/components/GamesTab.tsx` | Add `onDrillDeviation` prop, call `computeDeviations`, import `useRepertoireStore` |
-| `src/components/GameAnalysis.tsx` | Render amber deviation badges in notation, use adaptive board orientation |
-| `src/components/ReviewTab.tsx` | Use `repertoireSide` for board orientation, improve error message |
-| `src/App.tsx` | Expose `jumpToPosition`, pass `onDrillDeviation` to `GamesTab` |
+| File                              | Change                                                                             |
+| --------------------------------- | ---------------------------------------------------------------------------------- |
+| `src/components/GamesTab.tsx`     | Add `onDrillDeviation` prop, call `computeDeviations`, import `useRepertoireStore` |
+| `src/components/GameAnalysis.tsx` | Render amber deviation badges in notation, use adaptive board orientation          |
+| `src/components/ReviewTab.tsx`    | Use `repertoireSide` for board orientation, improve error message                  |
+| `src/App.tsx`                     | Expose `jumpToPosition`, pass `onDrillDeviation` to `GamesTab`                     |
 
 No new files. No backend changes.

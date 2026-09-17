@@ -1,10 +1,13 @@
-import { useSettingsStore } from '../stores/settingsStore';
+import { useSettingsStore } from "../stores/settingsStore";
 
 const SOUNDS = {
-  move:    'https://images.chesscomfiles.com/chess-themes/sounds/_standard/default/move-self.mp3',
-  capture: 'https://images.chesscomfiles.com/chess-themes/sounds/_standard/default/capture.mp3',
-  check:   'https://images.chesscomfiles.com/chess-themes/sounds/_standard/default/check.mp3',
-  wrong:   'https://images.chesscomfiles.com/chess-themes/sounds/_standard/default/illegal.mp3',
+  move: "https://images.chesscomfiles.com/chess-themes/sounds/_standard/default/move-self.mp3",
+  capture:
+    "https://images.chesscomfiles.com/chess-themes/sounds/_standard/default/capture.mp3",
+  check:
+    "https://images.chesscomfiles.com/chess-themes/sounds/_standard/default/check.mp3",
+  wrong:
+    "https://images.chesscomfiles.com/chess-themes/sounds/_standard/default/illegal.mp3",
 } as const;
 
 type SoundType = keyof typeof SOUNDS;
@@ -18,7 +21,7 @@ function getAudio(type: SoundType): HTMLAudioElement {
 }
 
 export function useSound() {
-  const soundEnabled = useSettingsStore(s => s.sound.enabled);
+  const soundEnabled = useSettingsStore((s) => s.sound.enabled);
 
   const playSound = (type: SoundType) => {
     if (!soundEnabled) return;

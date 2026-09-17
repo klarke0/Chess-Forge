@@ -1,5 +1,6 @@
 # Chess Trainer Overhaul — Design Document
-*Approved 2026-02-19*
+
+_Approved 2026-02-19_
 
 ## Goal
 
@@ -20,6 +21,7 @@ Rebuild the component shell and fix backend correctness issues while keeping all
 ```
 
 ### Train Tab
+
 - Full-screen board + right panel (move ledger + status/coach panel)
 - Badge on tab showing count of SRS positions due today
 - Training modes: Full Line, Weak Spots, Quiz (existing ModeSelector)
@@ -27,6 +29,7 @@ Rebuild the component shell and fix backend correctness issues while keeping all
 - End-of-line overlay with 3 options: Replay / Next Chapter / Weakest Position
 
 ### Games Tab
+
 - Segmented control: **Database** | **Analysis**
 - **Database view**: scrollable game list. Each row shows:
   - W/L/D badge (color-coded)
@@ -37,6 +40,7 @@ Rebuild the component shell and fix backend correctness issues while keeping all
 - **Analysis view**: the Game Lab — load a game from the database or paste PGN, step through moves, Lichess-style eval graph, Stockfish annotation per move (blunder/mistake/good)
 
 ### Library Tab
+
 - Import a Lichess study PGN — server parses it, extracts chapters and positions
 - Browse active repertoire: chapter list with real per-chapter accuracy from `progress` table
 - Variation tree browser
@@ -49,6 +53,7 @@ Rebuild the component shell and fix backend correctness issues while keeping all
 One `<UniversalBoard>` component used in all three tabs. Props control context (training / review / analysis).
 
 **Layout:**
+
 ```
 ┌─── Eval Bar ──┬─────────────────────────┐
 │               │                         │
@@ -64,6 +69,7 @@ One `<UniversalBoard>` component used in all three tabs. Props control context (
 ```
 
 **Control strip** (horizontal, below board):
+
 - `↻` Flip board
 - `◈` Vision heatmap toggle
 - `≡` Engine lines toggle — shows/hides the top-3 lines panel below
@@ -78,12 +84,14 @@ One `<UniversalBoard>` component used in all three tabs. Props control context (
 ## UI Design System
 
 ### Colors (unchanged)
+
 - Page backgrounds: `#050507`, `#0a0d14`, `#0d1117`
 - Board dark squares: `#1e293b`, light squares: `#475569`, border: `#161b22`
 - Accents: Indigo (training/correct), Rose (wrong/mistakes), Emerald (success)
 - Text: `slate-200` (primary), `slate-400` (secondary), `slate-600` (muted)
 
 ### Shape Scale (standardized)
+
 - Panels / cards: `rounded-2xl`
 - Primary buttons: `rounded-xl px-6 py-3`
 - Icon buttons: `rounded-xl p-2.5`
@@ -91,6 +99,7 @@ One `<UniversalBoard>` component used in all three tabs. Props control context (
 - **Remove**: `rounded-[3.5rem]`, `rounded-[4rem]`, `rounded-[3rem]` mega-radius
 
 ### Typography
+
 - Section headers: `text-lg font-black uppercase tracking-tighter italic`
 - Tab labels: `text-[10px] font-black uppercase tracking-widest`
 - Body: `text-sm font-medium text-slate-400`
@@ -101,6 +110,7 @@ One `<UniversalBoard>` component used in all three tabs. Props control context (
 ## Backend Changes
 
 ### Fix 1 — Games Schema (Critical)
+
 Current `games` table columns don't match what `games.ts` writes. Add migration:
 
 ```sql
@@ -134,21 +144,26 @@ CREATE INDEX idx_game_positions_fen_before ON game_positions(fen_before);
 ```
 
 Time class derived from time_control:
+
 - `< 180s` total → Bullet
 - `180–599s` → Blitz
 - `600–1799s` → Rapid
 - `>= 1800s` → Classical
 
 ### Fix 2 — `repertoires.side` Column (Critical)
+
 ```sql
 ALTER TABLE repertoires ADD COLUMN side TEXT DEFAULT 'white';
 ```
 
 ### Fix 3 — SM-2 Consolidation
+
 Remove server-side SM-2 calculation from `progress.ts`. The server always trusts client-computed values (`grade`, `easeFactor`, `intervalDays`, `nextReview`). Training loop `recordAttempt` calls in `useTraining.ts` compute SM-2 via `sm2.ts` before sending. One algorithm, one place.
 
 ### Fix 4 — Real PGN Import (Lichess Studies)
+
 Replace the current `importPgn` stub with a real parser:
+
 - Use `chess.js` on the server to walk PGN variation trees
 - Extract all positions (FEN before each move) and moves
 - Parse chapter names from `[Event "..."]` or `[White "..."]` headers
@@ -157,24 +172,25 @@ Replace the current `importPgn` stub with a real parser:
 - Insert chapters with `start_moves` arrays
 
 ### Fix 5 — Chess.com Sync
+
 Fix route to match corrected games schema. Add `time_control`, `time_class`, `white_result`, `black_result` fields from Chess.com API response (`g.white.result`, `g.black.result`, `g.time_control`, `g.time_class`).
 
 ---
 
 ## Cleanup Tasks
 
-| Item | Lines | Action |
-|------|-------|--------|
-| `src/stores/gameStore.ts` | 76 | Delete |
-| `src/components/ImportModal.tsx` | 138 | Delete |
-| `src/components/ActionBar.tsx` | 36 | Delete |
-| `src/components/SessionStats.tsx` | 113 | Delete |
-| `src/components/SessionHistory.tsx` | 92 | Delete |
-| `src/components/RepertoireSelector.tsx` | 96 | Delete |
-| `src/services/engine.ts` `useStockfish()` hook | ~40 | Remove hook, keep StockfishEngine class |
-| `trainingStore` duplicate actions | ~8 | Remove `incrementMistakes`, `resetTraining`, consolidate resets |
-| `repertoireStore` duplicate actions | ~6 | Remove `setChapters`, merge `saveWeakPoint` into `recordMistake` |
-| **Total** | **~605 lines** | |
+| Item                                           | Lines          | Action                                                           |
+| ---------------------------------------------- | -------------- | ---------------------------------------------------------------- |
+| `src/stores/gameStore.ts`                      | 76             | Delete                                                           |
+| `src/components/ImportModal.tsx`               | 138            | Delete                                                           |
+| `src/components/ActionBar.tsx`                 | 36             | Delete                                                           |
+| `src/components/SessionStats.tsx`              | 113            | Delete                                                           |
+| `src/components/SessionHistory.tsx`            | 92             | Delete                                                           |
+| `src/components/RepertoireSelector.tsx`        | 96             | Delete                                                           |
+| `src/services/engine.ts` `useStockfish()` hook | ~40            | Remove hook, keep StockfishEngine class                          |
+| `trainingStore` duplicate actions              | ~8             | Remove `incrementMistakes`, `resetTraining`, consolidate resets  |
+| `repertoireStore` duplicate actions            | ~6             | Remove `setChapters`, merge `saveWeakPoint` into `recordMistake` |
+| **Total**                                      | **~605 lines** |                                                                  |
 
 ---
 

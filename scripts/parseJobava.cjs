@@ -1,160 +1,227 @@
-const { Chess } = require('chess.js');
-const fs = require('fs');
-const path = require('path');
+const { Chess } = require("chess.js");
+const fs = require("fs");
+const path = require("path");
 
-const dirPath = path.join(__dirname, '../bortnyk-and-naroditsky-s-jobava-london/');
-const files = fs.readdirSync(dirPath).filter(f =>
-  f.endsWith('.pgn') &&
-  f !== 'All Lines in One File .pgn' &&
-  f !== 'Typical Ideas for White.pgn'
+/**
+ * Jobava London PGN parser.
+ *
+ * Canonical source: "Jobava London New Version.pgn" — the revised, superset
+ * version of the course. Per-chapter PGNs and "All Lines in One File" are
+ * earlier/duplicate exports of the same content; ingesting them all caused
+ * collisions where the trainer would pick a sub-variation move as the
+ * "correct" answer for a main-line position.
+ *
+ * For each (fen, san) we record:
+ *   - is_main_line: true if EVERY parent move on the path from the chapter
+ *     root to this move was on its own variation's main line (stack depth 1
+ *     throughout). That is the move the author explicitly recommends.
+ *   - depth: the variation depth at which the move was encountered
+ *     (0 = chapter mainline, 1 = first sideline, etc.). Lower is more
+ *     authoritative.
+ *
+ * If the same (fen, san) appears multiple times across chapters/branches we
+ * keep the BEST classification seen (is_main_line wins; smallest depth wins).
+ *
+ * VARIATION HANDLING NOTE:
+ * chess.js v1+ creates boards from a FEN with NO move history, so calling
+ * .undo() on a board created via `new Chess(fen)` is a no-op (returns null).
+ * We therefore track `fenBeforeLastMove` explicitly on each stack frame so
+ * that when a '(' opens a variation we can restore the board to the position
+ * before the last move was played — which is exactly where the variation
+ * begins — without needing undo().
+ */
+
+const dirPath = path.join(
+  __dirname,
+  "../bortnyk-and-naroditsky-s-jobava-london/",
 );
+
+const CANONICAL = "Jobava London New Version.pgn";
 
 const repertoire = {
   chapters: [],
-  positions: {}
+  positions: {},
 };
 
-/**
- * Normalize FEN to 4 fields (board + turn + castling + en-passant),
- * dropping halfmove clock and fullmove number.  Used as position map keys
- * so that transpositions (same position, different clock counters) resolve.
- */
 function normalizeFen(fen) {
-  return fen.split(' ').slice(0, 4).join(' ');
+  return fen.split(" ").slice(0, 4).join(" ");
+}
+
+function upsertMove(normKey, entry) {
+  const list = (repertoire.positions[normKey] ||= []);
+  const existing = list.find((x) => x.san === entry.san);
+  if (!existing) {
+    list.push(entry);
+    return;
+  }
+  if (entry.is_main_line && !existing.is_main_line) {
+    existing.is_main_line = true;
+    existing.depth = Math.min(existing.depth, entry.depth);
+  } else if (entry.depth < existing.depth) {
+    existing.depth = entry.depth;
+  }
+  if (entry.comment && !existing.comment) existing.comment = entry.comment;
 }
 
 function parseGame(pgnContent, chapterName, gameIndex) {
-  // Extract FEN if present (some chapters start mid-game)
   const fenMatch = pgnContent.match(/\[FEN "([^"]+)"\]/);
-  const startFen = fenMatch ? fenMatch[1] : 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+  const startFen = fenMatch
+    ? fenMatch[1]
+    : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
   const name = gameIndex > 0 ? `${chapterName} #${gameIndex + 1}` : chapterName;
 
-  const moveText = pgnContent.replace(/\[.*?\]/g, '').trim();
+  const moveText = pgnContent.replace(/\[.*?\]/g, "").trim();
   const tokens = [];
-  let current = '';
+  let current = "";
   let inComment = false;
-
   for (let i = 0; i < moveText.length; i++) {
     const char = moveText[i];
-    if (char === '{') {
+    if (char === "{") {
       if (current) tokens.push(current);
-      current = '{';
+      current = "{";
       inComment = true;
-    } else if (char === '}') {
-      current += '}';
+    } else if (char === "}") {
+      current += "}";
       tokens.push(current);
-      current = '';
+      current = "";
       inComment = false;
     } else if (inComment) {
       current += char;
-    } else if (char === '(' || char === ')') {
+    } else if (char === "(" || char === ")") {
       if (current) tokens.push(current);
       tokens.push(char);
-      current = '';
+      current = "";
     } else if (/\s/.test(char)) {
       if (current) tokens.push(current);
-      current = '';
+      current = "";
     } else {
       current += char;
     }
   }
   if (current) tokens.push(current);
 
-  const cleanTokens = tokens.filter(t => !/^\d+\.+$/.test(t) && t !== '*');
+  const cleanTokens = tokens.filter((t) => !/^\d+\.+$/.test(t) && t !== "*");
 
-  // Stack of Chess instances: stack[0] = main line position, deeper = variations.
-  const stack = [new Chess(startFen)];
-  let lastMoveSan = null;
+  // mainSoFar: every ancestor frame was on its main line, AND we never
+  // descended into a variation. Once we open a "(", anything inside the
+  // resulting frame is, by definition, NOT main line.
+  //
+  // fenBeforeLastMove: the FEN of the frame's board BEFORE the most recent
+  // move was played. When '(' opens a variation, we restore the board to
+  // this FEN so the variation starts from the right position. We cannot use
+  // chess.undo() because new Chess(fen) creates a board with no history.
+  const stack = [{ chess: new Chess(startFen), mainSoFar: true, fenBeforeLastMove: null }];
+
   let lastFen = null;
-
-  // Track the full ordered main-line move sequence (SANs) so the trainer can
-  // follow the guided line move-by-move for this chapter.
+  let lastMoveSan = null;
   const mainLineMoves = [];
 
   for (let i = 0; i < cleanTokens.length; i++) {
     const token = cleanTokens[i];
-    const chess = stack[stack.length - 1];
+    const top = stack[stack.length - 1];
 
-    if (token === '(') {
-      // Enter variation: create a copy of current position and undo the last move
-      // so variations branch from the correct parent position.
-      const variationChess = new Chess(chess.fen());
-      variationChess.undo();
-      stack.push(variationChess);
-    } else if (token === ')') {
+    if (token === "(") {
+      // A variation opens from the position BEFORE the last move on this frame.
+      // If no move has been played yet on this frame, the variation starts from
+      // the frame's current position (unusual but safe to handle).
+      const variationStartFen = top.fenBeforeLastMove ?? top.chess.fen();
+      stack.push({ chess: new Chess(variationStartFen), mainSoFar: false, fenBeforeLastMove: null });
+    } else if (token === ")") {
       stack.pop();
-      if (stack.length === 0) stack.push(new Chess(startFen));
-      lastFen = stack[stack.length - 1].fen();
-    } else if (token.startsWith('{')) {
-      // Comment: attach to the last move in the positions map
+      if (stack.length === 0)
+        stack.push({ chess: new Chess(startFen), mainSoFar: true, fenBeforeLastMove: null });
+      lastFen = stack[stack.length - 1].chess.fen();
+    } else if (token.startsWith("{")) {
       const comment = token.slice(1, -1).trim();
       if (lastFen && lastMoveSan) {
         const normKey = normalizeFen(lastFen);
         const moves = repertoire.positions[normKey];
         if (moves) {
-          const move = moves.find(m => m.san === lastMoveSan);
-          if (move) {
-            move.comment = move.comment ? move.comment + ' ' + comment : comment;
-          }
+          const move = moves.find((m) => m.san === lastMoveSan);
+          if (move)
+            move.comment = move.comment
+              ? move.comment + " " + comment
+              : comment;
         }
       }
     } else {
-      // Move token
       try {
-        const fenBefore = chess.fen();
+        const fenBefore = top.chess.fen();
         const normKey = normalizeFen(fenBefore);
-        const cleanToken = token.replace(/[!?]+$/, '');
-        const move = chess.move(cleanToken);
+        // Strip trailing move-quality glyphs (!,?,!?,?!) and PGN NAG tokens ($14 etc).
+        // NAG tokens are either standalone ($14) or appended without a space (Nc3$14).
+        // Do NOT strip trailing digits that are part of move notation (Nc3, Qd4, e5).
+        // Note: in a JS regex literal, \$ is an end-of-string anchor; use [$] for a
+        // literal dollar sign character inside a character class.
+        const cleanToken = token
+          .replace(/[$]\d+$/, "")   // strip appended NAG like Nc3$14 → Nc3
+          .replace(/[!?]+$/, "");   // strip trailing !/?
+        if (!cleanToken || /^[$/]/.test(token)) continue; // skip standalone $N tokens
+        const move = top.chess.move(cleanToken);
         if (move) {
-          // Add position to map (normalized key)
-          if (!repertoire.positions[normKey]) repertoire.positions[normKey] = [];
-          if (!repertoire.positions[normKey].some(x => x.san === move.san)) {
-            repertoire.positions[normKey].push({ san: move.san, nextFen: chess.fen() });
-          }
-
-          // Track main-line moves (stack.length === 1 means we're on the main line)
-          if (stack.length === 1) {
-            mainLineMoves.push(move.san);
-          }
-
+          const depth = stack.length - 1;
+          const isMain = top.mainSoFar;
+          upsertMove(normKey, {
+            san: move.san,
+            nextFen: top.chess.fen(),
+            is_main_line: isMain,
+            depth,
+          });
+          if (depth === 0 && isMain) mainLineMoves.push(move.san);
           lastFen = fenBefore;
           lastMoveSan = move.san;
+          // Record where we were before this move so that '(' can roll back.
+          top.fenBeforeLastMove = fenBefore;
         }
       } catch (e) {
-        // Ignore illegal move tokens (result strings like "1-0", "1/2-1/2", etc.)
+        /* ignore illegal/annotation tokens */
       }
     }
   }
 
   repertoire.chapters.push({
-    name: name.replace('.pgn', ''),
-    // Full ordered main-line move sequence for the guided-line feature.
-    // The trainer uses this to know which move to highlight next.
+    name: name.replace(".pgn", ""),
     startMoves: mainLineMoves,
-    // Keep full 6-field FEN so Chess.js can reconstruct the starting position.
     firstFen: startFen,
   });
 }
 
-files.forEach(file => {
-  const content = fs.readFileSync(path.join(dirPath, file), 'utf8');
-  const games = content.split(/\n\n(?=\[Event)/).filter(g => g.trim().length > 0);
+const filePath = path.join(dirPath, CANONICAL);
+let content = fs.readFileSync(filePath, "utf8");
+// Strip BOM, normalize line endings.
+content = content.replace(/^﻿/, "").replace(/\r\n/g, "\n");
+const games = content
+  .split(/\n\n(?=\[Event)/)
+  .filter((g) => g.trim().length > 0);
 
-  if (games.length === 0) {
-    parseGame(content, file, 0);
-  } else {
-    games.forEach((g, i) => parseGame(g, file, i));
-  }
-});
+if (games.length === 0) parseGame(content, CANONICAL, 0);
+else games.forEach((g, i) => parseGame(g, CANONICAL, i));
 
-// Top-level start moves (moves available from the initial position)
-const initialNorm = normalizeFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+const initialNorm = normalizeFen(
+  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+);
 repertoire.start = repertoire.positions[initialNorm] || [];
 
 fs.writeFileSync(
-  path.join(__dirname, '../src/data/jobava_full.json'),
-  JSON.stringify(repertoire, null, 2)
+  path.join(__dirname, "../src/data/jobava_full.json"),
+  JSON.stringify(repertoire, null, 2),
 );
 
-console.log(`Parsed ${repertoire.chapters.length} chapters and ${Object.keys(repertoire.positions).length} positions.`);
+let total = 0,
+  main = 0,
+  alt = 0;
+const histogram = {};
+for (const [, moves] of Object.entries(repertoire.positions)) {
+  histogram[moves.length] = (histogram[moves.length] || 0) + 1;
+  for (const m of moves) {
+    total++;
+    if (m.is_main_line) main++;
+    else alt++;
+  }
+}
+console.log(
+  `Parsed ${repertoire.chapters.length} chapters, ${Object.keys(repertoire.positions).length} unique FENs, ${total} (fen,san) entries.`,
+);
+console.log(`  main_line=${main}  alt/sideline=${alt}`);
+console.log(`  FEN move-count histogram:`, histogram);

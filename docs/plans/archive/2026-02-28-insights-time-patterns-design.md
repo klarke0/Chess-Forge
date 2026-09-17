@@ -19,12 +19,12 @@
 
 Four features, implemented as 11 independent tasks:
 
-| Feature | What it adds |
-|---|---|
-| **Time data** | Parse `%clk` from PGN; show clock + time spent per move in notation panel; flag time pressure |
-| **Game shape** | Algorithmic classification of each game's eval trajectory into 7 shapes |
-| **Persistent Pattern Report** | Stored in SQLite; rich aggregated stats sent to Gemini; cached on page load |
-| **Insights Panel expansion** | Opening breakdown table, time stats, shape distribution, persistent report UI |
+| Feature                       | What it adds                                                                                  |
+| ----------------------------- | --------------------------------------------------------------------------------------------- |
+| **Time data**                 | Parse `%clk` from PGN; show clock + time spent per move in notation panel; flag time pressure |
+| **Game shape**                | Algorithmic classification of each game's eval trajectory into 7 shapes                       |
+| **Persistent Pattern Report** | Stored in SQLite; rich aggregated stats sent to Gemini; cached on page load                   |
+| **Insights Panel expansion**  | Opening breakdown table, time stats, shape distribution, persistent report UI                 |
 
 ---
 
@@ -45,11 +45,13 @@ The `comment` field on each `ParsedMove` already captures this text — it just 
 ### Changes
 
 **`src/services/pgn_parser.ts`**
+
 - Add `clockAfter?: number` (seconds) to `ParsedMove`
 - In `parseRecursive`, after assigning `comment`, parse `%clk H:MM:SS.s` → seconds float
 - Extract `TimeControl` header value (strip increment: `"180+2"` → `180`)
 
 **`src/hooks/useGameReview.ts`**
+
 - Add to `ReviewedMove`: `timeSpent?: number`, `clockRemaining?: number`
 - In `analyzeGame` loop, read `parsedGame.moves[i].clockAfter`:
   - `timeSpent = prevClock - clockAfter`
@@ -59,12 +61,15 @@ The `comment` field on each `ParsedMove` already captures this text — it just 
 - Time pressure flag: `clockAfter < Math.max(30, initialTime * 0.10)`
 
 **`server/db.ts`**
+
 - Add `time_control TEXT` and `termination TEXT` columns to `games` table (migration)
 
 **`server/routes/games.ts`** (sync/upload path)
+
 - Extract `TimeControl` and `Termination` headers when storing games
 
 **`src/components/GameAnalysis.tsx`** — notation panel
+
 - Per move, show: `timeSpent` (e.g. `8s`) and `clockRemaining` (e.g. `2:51`) as small secondary text
 - Time pressure moves: orange clock icon (⏰) when `clockRemaining < threshold`
 - Only rendered when `timeSpent` is defined (games without `%clk` show nothing)
@@ -113,15 +118,15 @@ The shape computation function lives in `server/utils/gameShape.ts` — a pure f
 
 **`src/components/GameAnalysis.tsx`** — shape badge in the game header bar (next to the player names), colour-coded:
 
-| Shape | Colour |
-|---|---|
-| Smooth | emerald |
-| Balanced | slate |
-| Sharp | amber |
-| Wild | rose |
-| Sudden | orange |
-| Giveaway | red |
-| Intense | indigo |
+| Shape    | Colour  |
+| -------- | ------- |
+| Smooth   | emerald |
+| Balanced | slate   |
+| Sharp    | amber   |
+| Wild     | rose    |
+| Sudden   | orange  |
+| Giveaway | red     |
+| Intense  | indigo  |
 
 ---
 
@@ -195,15 +200,21 @@ export interface PatternAnalysis {
   summary: string;
   patterns: string[];
   action: string | null;
-  createdAt: string | null;       // ISO timestamp from DB
+  createdAt: string | null; // ISO timestamp from DB
   stats: {
     totalGames: number;
-    gamesAnalyzed: number;        // games with analysis_json
+    gamesAnalyzed: number; // games with analysis_json
     // Win rates
-    whiteWins: number; whiteDraws: number; whiteLosses: number;
-    blackWins: number; blackDraws: number; blackLosses: number;
+    whiteWins: number;
+    whiteDraws: number;
+    whiteLosses: number;
+    blackWins: number;
+    blackDraws: number;
+    blackLosses: number;
     // Phase
-    opening: number; middlegame: number; endgame: number;
+    opening: number;
+    middlegame: number;
+    endgame: number;
     // Time
     gamesLostOnTime: number;
     blundersUnderPressure: number;
@@ -228,17 +239,21 @@ export interface PatternAnalysis {
 ### New sections added to `InsightsTab.tsx`
 
 **Stat cards row** — add a 5th card (or replace "Weak Points" with a toggle):
+
 - **Time Pressure** — count of blunders/mistakes made with clock < pressure threshold
 
 **Opening Breakdown section** (new, below Repertoire Coverage):
+
 - Table of openings with game count, W%/D%/L% bars, sorted by game count descending
 - Empty state: "Analyse more games to see opening stats"
 
 **Game Shape Distribution section** (new):
+
 - Icon grid showing count per shape, colour-coded
 - Tooltip: definition of each shape on hover
 
 **Pattern Report** (existing, enhanced):
+
 - Loads cached report on mount (no spinner on first open if report exists)
 - Header shows "last run X ago" timestamp
 - Stats row: Win rates (W/B), phase breakdown (O/M/E), shape breakdown
@@ -249,17 +264,17 @@ export interface PatternAnalysis {
 
 ## Files Changed Summary
 
-| File | Change |
-|---|---|
-| `server/db.ts` | Add `time_control`, `termination`, `game_shape` to `games`; add `pattern_reports` table |
-| `server/utils/gameShape.ts` | New — pure shape classification function |
-| `server/routes/games.ts` | Extract time_control/termination on save; compute + store game_shape after analysis saved |
-| `server/routes/patterns.ts` | GET cached / POST run; comprehensive data collection; extended response |
-| `src/services/pgn_parser.ts` | Extract `%clk` → `clockAfter` on `ParsedMove` |
-| `src/hooks/useGameReview.ts` | Compute `timeSpent`, `clockRemaining` in `analyzeGame`; add to `ReviewedMove` |
-| `src/services/api.ts` | Update `PatternAnalysis` interface; add `getPatternReport()` + `runPatternAnalysis()` |
-| `src/components/GameAnalysis.tsx` | Time display in notation panel; game shape badge in header |
-| `src/components/InsightsTab.tsx` | Opening breakdown, shape distribution, persistent pattern report UI |
+| File                              | Change                                                                                    |
+| --------------------------------- | ----------------------------------------------------------------------------------------- |
+| `server/db.ts`                    | Add `time_control`, `termination`, `game_shape` to `games`; add `pattern_reports` table   |
+| `server/utils/gameShape.ts`       | New — pure shape classification function                                                  |
+| `server/routes/games.ts`          | Extract time_control/termination on save; compute + store game_shape after analysis saved |
+| `server/routes/patterns.ts`       | GET cached / POST run; comprehensive data collection; extended response                   |
+| `src/services/pgn_parser.ts`      | Extract `%clk` → `clockAfter` on `ParsedMove`                                             |
+| `src/hooks/useGameReview.ts`      | Compute `timeSpent`, `clockRemaining` in `analyzeGame`; add to `ReviewedMove`             |
+| `src/services/api.ts`             | Update `PatternAnalysis` interface; add `getPatternReport()` + `runPatternAnalysis()`     |
+| `src/components/GameAnalysis.tsx` | Time display in notation panel; game shape badge in header                                |
+| `src/components/InsightsTab.tsx`  | Opening breakdown, shape distribution, persistent pattern report UI                       |
 
 ---
 

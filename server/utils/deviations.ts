@@ -1,12 +1,6 @@
 import db from "../db";
 import { Chess } from "chess.js";
-
-/**
- * Normalize a FEN to 4 fields (board, turn, castling, en-passant).
- */
-function normalizeFen(fen: string): string {
-  return fen.split(" ").slice(0, 4).join(" ");
-}
+import { normalizeFen } from "./fen";
 
 /**
  * After analysis is saved for a game, compute deviations from all repertoires
@@ -17,10 +11,17 @@ function normalizeFen(fen: string): string {
  */
 export function computeAndPersistDeviations(
   gameId: number,
-  analysis: Array<{ san?: string; fen?: string; grade?: string; cpLoss?: number }>,
+  analysis: Array<{
+    san?: string;
+    fen?: string;
+    grade?: string;
+    cpLoss?: number;
+  }>,
 ): void {
   // 1. Load the game to get PGN and user_color
-  const game = db.query("SELECT pgn, user_color FROM games WHERE id = ?").get(gameId) as {
+  const game = db
+    .query("SELECT pgn, user_color FROM games WHERE id = ?")
+    .get(gameId) as {
     pgn: string;
     user_color: string;
   } | null;
@@ -63,9 +64,9 @@ export function computeAndPersistDeviations(
     if (game.user_color !== playerColor) continue;
 
     // Load the position tree for this repertoire
-    const posRows = db.query(
-      "SELECT fen, san, next_fen FROM positions WHERE repertoire_id = ?",
-    ).all(rep.id) as { fen: string; san: string; next_fen: string }[];
+    const posRows = db
+      .query("SELECT fen, san, next_fen FROM positions WHERE repertoire_id = ?")
+      .all(rep.id) as { fen: string; san: string; next_fen: string }[];
 
     // Build a FEN -> moves map
     const positionTree: Record<string, { san: string; nextFen: string }[]> = {};

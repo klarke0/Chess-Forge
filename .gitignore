@@ -52,3 +52,7 @@ backend_manual.log
 
 # Vite temp files
 *.timestamp-*.mjs
+
+# Local safety backups (originals live in git history)
+server/*.db.bak-*
+*.pgn.backup

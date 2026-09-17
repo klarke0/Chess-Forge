@@ -1,7 +1,7 @@
 export interface SM2Input {
-  easeFactor: number;    // starts 2.5, min 1.3; maps to DB ease_factor
-  intervalDays: number;  // maps to DB interval_days
-  repetitions: number;   // maps to DB streak (identical reset logic)
+  easeFactor: number; // starts 2.5, min 1.3; maps to DB ease_factor
+  intervalDays: number; // maps to DB interval_days
+  repetitions: number; // maps to DB streak (identical reset logic)
 }
 
 export interface SM2Output {
@@ -20,7 +20,8 @@ export interface SM2Output {
 export function computeSM2(input: SM2Input, grade: number): SM2Output {
   const { easeFactor, intervalDays, repetitions } = input;
 
-  let nextEaseFactor = easeFactor + 0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02);
+  let nextEaseFactor =
+    easeFactor + 0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02);
   nextEaseFactor = Math.max(1.3, nextEaseFactor);
 
   let nextRepetitions: number;
@@ -31,7 +32,12 @@ export function computeSM2(input: SM2Input, grade: number): SM2Output {
     nextRepetitions = 0;
     nextIntervalDays = 0;
     const nextReviewDate = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    return { nextEaseFactor, nextIntervalDays, nextRepetitions, nextReviewDate };
+    return {
+      nextEaseFactor,
+      nextIntervalDays,
+      nextRepetitions,
+      nextReviewDate,
+    };
   }
 
   // Passed
@@ -44,7 +50,9 @@ export function computeSM2(input: SM2Input, grade: number): SM2Output {
     nextIntervalDays = Math.round(intervalDays * easeFactor);
   }
 
-  const nextReviewDate = new Date(Date.now() + nextIntervalDays * 86400 * 1000).toISOString();
+  const nextReviewDate = new Date(
+    Date.now() + nextIntervalDays * 86400 * 1000,
+  ).toISOString();
   return { nextEaseFactor, nextIntervalDays, nextRepetitions, nextReviewDate };
 }
 

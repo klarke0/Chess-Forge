@@ -414,6 +414,12 @@ export interface TrainNowPosition {
   firstEncounter?: boolean;
   /** Heuristic tactical theme label assigned at session-build time. */
   pattern?: TacticalPattern;
+  /**
+   * Every stored book reply for this FEN. A position reachable by several move
+   * orders can have more than one correct answer; `correctSan` is only the one
+   * we display. Grade against this list.
+   */
+  acceptableSans?: string[];
 }
 
 export interface FetchTrainNowOptions {

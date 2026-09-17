@@ -43,6 +43,7 @@ Desktop (`lg:`) layout is **completely unchanged**.
 ## Components
 
 ### MoveTickerStrip (new shared component)
+
 - `overflow-x-auto` horizontal strip, ~40px tall
 - Move chips: move number shown at start of each pair, e.g. `1. e4  e5  2. Nf3  Nc6`
 - Active move: indigo pill highlight
@@ -51,6 +52,7 @@ Desktop (`lg:`) layout is **completely unchanged**.
 - Used in both `GameAnalysis` and `GameLab`
 
 ### Eval Strip (modified in-place)
+
 - **Collapsed (default):** 32px, same SVG curve as current
 - **Expanded (tap toggle):** animates to 96px via `transition-all duration-300`
 - Expanded state shows colored grade dots on the curve: 🔴 blunder, 🟠 mistake, 🟡 inaccuracy
@@ -58,6 +60,7 @@ Desktop (`lg:`) layout is **completely unchanged**.
 - Click-to-seek behavior preserved
 
 ### BottomDrawer (new shared component)
+
 - Fixed-position panel, anchored above app bottom nav (`bottom-16`)
 - **Closed state:** 28px drag handle + "Coach · Engine" label
 - **Open state:** slides up to ~50vh via `transform: translateY(...)` CSS transition; semi-transparent backdrop
@@ -68,12 +71,12 @@ Desktop (`lg:`) layout is **completely unchanged**.
 
 ## Files to Create/Modify
 
-| File | Change |
-|------|--------|
-| `src/components/MoveTickerStrip.tsx` | New component |
-| `src/components/BottomDrawer.tsx` | New component |
-| `src/components/GameAnalysis.tsx` | Mobile layout restructure: remove page `overflow-y-auto`, add ticker, drawer, expand eval strip |
-| `src/components/GameLab.tsx` | Same mobile layout treatment |
+| File                                 | Change                                                                                          |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `src/components/MoveTickerStrip.tsx` | New component                                                                                   |
+| `src/components/BottomDrawer.tsx`    | New component                                                                                   |
+| `src/components/GameAnalysis.tsx`    | Mobile layout restructure: remove page `overflow-y-auto`, add ticker, drawer, expand eval strip |
+| `src/components/GameLab.tsx`         | Same mobile layout treatment                                                                    |
 
 ---
 

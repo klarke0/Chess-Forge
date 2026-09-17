@@ -125,6 +125,7 @@ export class BackgroundAnalysisQueue {
         if (this.stopRequested) return;
 
         const turn = chess.turn();
+        const fenBefore = chess.fen(); // FEN before the move (used for best-move comparison)
         chess.move(move.san);
         const fen = chess.fen();
 
@@ -174,12 +175,21 @@ export class BackgroundAnalysisQueue {
             ? Math.max(0, prevEval - normalizedEval)
             : Math.max(0, normalizedEval - prevEval);
 
+        // A move that IS the engine's best move can never be a blunder/mistake/inaccuracy.
+        // Eval swings from forced-mate positions to "merely winning" positions cause false
+        // positives (e.g. Qxa1 graded as blunder when it's clearly the best capture).
+        const rawGrade = this.getGrade(prevEval, normalizedEval, sideMoved);
+        const grade =
+          rawGrade !== "best" && this.isPlayedMoveBest(fenBefore, move.san, bestMoveForThisMove)
+            ? "best"
+            : rawGrade;
+
         results.push({
           san: move.san,
           fen,
           eval: normalizedEval,
           cpLoss: cpLoss,
-          grade: this.getGrade(prevEval, normalizedEval, sideMoved),
+          grade,
           bestMove: bestMoveForThisMove || undefined,
         });
 
@@ -192,6 +202,24 @@ export class BackgroundAnalysisQueue {
         `[BackgroundAnalysis] Failed to analyze game ${gameInfo.id}:`,
         e,
       );
+    }
+  }
+
+  // Returns true if the played move (SAN) matches the engine's best move (UCI)
+  // for the position before the move. A move that IS the engine's best move can
+  // never be a blunder/mistake/inaccuracy.
+  private static isPlayedMoveBest(fenBefore: string, playedSan: string, bestMoveUci: string): boolean {
+    if (!bestMoveUci) return false;
+    try {
+      const g = new Chess(fenBefore);
+      const bestM = g.move({
+        from: bestMoveUci.slice(0, 2),
+        to: bestMoveUci.slice(2, 4),
+        promotion: bestMoveUci.length === 5 ? bestMoveUci[4] : undefined,
+      });
+      return bestM?.san === playedSan;
+    } catch {
+      return false;
     }
   }
 

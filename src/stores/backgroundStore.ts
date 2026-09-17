@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface BackgroundState {
   isAnalyzing: boolean;
@@ -17,5 +17,6 @@ export const useBackgroundStore = create<BackgroundState>((set) => ({
   totalInQueue: 0,
 
   setAnalyzing: (val) => set({ isAnalyzing: val }),
-  setStatus: (activeGameName, analyzedCount, totalInQueue) => set({ activeGameName, analyzedCount, totalInQueue }),
+  setStatus: (activeGameName, analyzedCount, totalInQueue) =>
+    set({ activeGameName, analyzedCount, totalInQueue }),
 }));

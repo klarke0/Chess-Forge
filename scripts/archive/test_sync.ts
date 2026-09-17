@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3001/api/games/sync';
+const API_URL = "http://localhost:3001/api/games/sync";
 
 async function testSync() {
   console.log("Testing Sync with username 'Klarke'...");
@@ -7,12 +7,12 @@ async function testSync() {
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'Klarke' }),
-      signal: controller.signal
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: "Klarke" }),
+      signal: controller.signal,
     });
-    
+
     clearTimeout(timeoutId);
 
     if (response.ok) {

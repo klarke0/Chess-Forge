@@ -23,6 +23,7 @@
 **Step 2: In `runMigrations`, add a schema check before the games tables**
 
 Before the `for (const sql of statements)` loop, add:
+
 - Use `db.query("PRAGMA table_info(games)").all()` to get column names
 - If the result does not include a column named `uuid`, drop `deviations`, `game_positions`, and `games` tables
 
@@ -75,17 +76,21 @@ CREATE TABLE IF NOT EXISTS deviations (
 **Step 3: Add `side` column migration for `repertoires`**
 
 After the `statements` loop, add a try/catch that runs:
+
 ```sql
 ALTER TABLE repertoires ADD COLUMN side TEXT DEFAULT 'white'
 ```
+
 (SQLite will error if column already exists; catch and ignore the error.)
 
 **Step 4: Verify**
 
 Start the server and confirm no crash:
+
 ```bash
 cd "/Users/kevin/Chess Trainer/server" && bun run index.ts
 ```
+
 Expected: starts without "no such column" errors.
 
 ---
@@ -101,19 +106,20 @@ Expected: starts without "no such column" errors.
 
 ```typescript
 function deriveTimeClass(timeControl: string): string {
-  const base = parseInt(timeControl?.split('+')[0] || '0', 10);
-  const increment = parseInt(timeControl?.split('+')[1] || '0', 10);
+  const base = parseInt(timeControl?.split("+")[0] || "0", 10);
+  const increment = parseInt(timeControl?.split("+")[1] || "0", 10);
   const total = base + 40 * increment;
-  if (total < 180) return 'bullet';
-  if (total < 600) return 'blitz';
-  if (total < 1800) return 'rapid';
-  return 'classical';
+  if (total < 180) return "bullet";
+  if (total < 600) return "blitz";
+  if (total < 1800) return "rapid";
+  return "classical";
 }
 ```
 
 **Step 2: Rewrite `syncGames` transaction**
 
 Key changes:
+
 - INSERT columns: `uuid, white_username, black_username, user_color, result, white_result, black_result, time_control, time_class, pgn, opening_class, date`
 - Use `g.white.result` / `g.black.result` for `white_result` / `black_result`
 - Use `g.time_control` / `g.time_class || deriveTimeClass(g.time_control)`
@@ -131,14 +137,18 @@ Same column names, same insert-order fix.
 ```typescript
 export function listGames(req: Request): Response {
   const url = new URL(req.url);
-  const limit = parseInt(url.searchParams.get('limit') || '50', 10);
-  const offset = parseInt(url.searchParams.get('offset') || '0', 10);
-  const rows = db.query(`
+  const limit = parseInt(url.searchParams.get("limit") || "50", 10);
+  const offset = parseInt(url.searchParams.get("offset") || "0", 10);
+  const rows = db
+    .query(
+      `
     SELECT id, uuid, white_username, black_username, user_color, result,
            white_result, black_result, time_control, time_class,
            opening_class, date, imported_at
     FROM games ORDER BY date DESC, imported_at DESC LIMIT ? OFFSET ?
-  `).all(limit, offset);
+  `,
+    )
+    .all(limit, offset);
   return Response.json(rows);
 }
 ```
@@ -155,6 +165,7 @@ curl -s -X POST http://localhost:3001/api/games/upload \
   -H 'Content-Type: application/json' \
   -d '{"pgn":"[Event \"Test\"]\n[White \"TestUser\"]\n[Black \"Opponent\"]\n[Result \"1-0\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bb5 1-0","username":"TestUser"}'
 ```
+
 Expected: `{"imported":1}`
 
 ---
@@ -171,12 +182,12 @@ export interface GameRecord {
   uuid: string | null;
   white_username: string | null;
   black_username: string | null;
-  user_color: 'white' | 'black' | null;
-  result: 'win' | 'loss' | 'draw' | null;
+  user_color: "white" | "black" | null;
+  result: "win" | "loss" | "draw" | null;
   white_result: string | null;
   black_result: string | null;
   time_control: string | null;
-  time_class: 'bullet' | 'blitz' | 'rapid' | 'classical' | null;
+  time_class: "bullet" | "blitz" | "rapid" | "classical" | null;
   opening_class: string | null;
   date: string | null;
   imported_at: string;
@@ -204,6 +215,7 @@ cd "/Users/kevin/Chess Trainer" && npx tsc --noEmit 2>&1 | head -30
 ### Task 4: Delete Dead Code
 
 **Files to DELETE:**
+
 - `src/components/ImportModal.tsx`
 - `src/components/ActionBar.tsx`
 - `src/components/SessionStats.tsx`
@@ -214,10 +226,12 @@ cd "/Users/kevin/Chess Trainer" && npx tsc --noEmit 2>&1 | head -30
 **Step 1: Confirm none are imported**
 
 Search for any import of these names in `src/`:
+
 ```bash
 grep -r "ImportModal\|ActionBar\|SessionStats\|SessionHistory\|RepertoireSelector\|gameStore" \
   "/Users/kevin/Chess Trainer/src" --include="*.tsx" --include="*.ts" -l
 ```
+
 Expected: only the files themselves (no importers).
 
 **Step 2: Delete all 6 files**
@@ -225,10 +239,12 @@ Expected: only the files themselves (no importers).
 **Step 3: Remove duplicate store actions**
 
 In `src/stores/trainingStore.ts`:
+
 - Remove `incrementMistakes` (duplicate of `incrementMistake`)
 - Remove `resetTraining` (duplicate of `reset`)
 
 In `src/stores/repertoireStore.ts`:
+
 - Remove `setChapters` (duplicate of `setShowChapters`)
 - Remove `saveWeakPoint` (duplicate of `recordMistake`)
 
@@ -253,6 +269,7 @@ cd "/Users/kevin/Chess Trainer" && npx tsc --noEmit 2>&1 | head -30
 ```bash
 grep -r "useStockfish" "/Users/kevin/Chess Trainer/src" --include="*.ts" --include="*.tsx"
 ```
+
 Expected: no results.
 
 ---
@@ -266,6 +283,7 @@ Expected: no results.
 This replaces `ChessBoardPanel`. It is used in all tabs.
 
 **Layout:**
+
 - Board container (same vmin sizing as current: `w-[min(85vmin,800px)]`)
 - Eval bar: absolute, `-left-6 lg:-left-10`, hidden on mobile; horizontal bar `-top-6` on mobile
 - Vision overlay (conditional)
@@ -276,19 +294,21 @@ This replaces `ChessBoardPanel`. It is used in all tabs.
 - **Engine lines panel**: Below control strip, shown when `showLines === true`. Shows top 3 lines from `topLines` with score + PV moves.
 
 **Props:**
+
 ```typescript
 interface UniversalBoardProps {
   fen: string;
   onDrop?: (source: string, target: string) => boolean;
   onProceed?: () => void;
-  orientation?: 'white' | 'black';  // overrides auto-detect
-  showProceedOverlay?: boolean;       // overrides awaitingNext
+  orientation?: "white" | "black"; // overrides auto-detect
+  showProceedOverlay?: boolean; // overrides awaitingNext
   arrows?: [string, string, string?][];
   readonly?: boolean;
 }
 ```
 
 **Key implementation notes:**
+
 - `orientation` state initialized from `orientationProp ?? repertoireSide`; synced via `useEffect`
 - Control strip buttons use `rounded-xl p-2.5 bg-[#0d1117] border border-white/10` as base; active variant adds color tint
 - Coach popup: `absolute bottom-12 right-0 w-72 bg-[#0d1117] border border-white/10 rounded-2xl p-4 shadow-2xl z-50`
@@ -299,6 +319,7 @@ interface UniversalBoardProps {
 ```bash
 cd "/Users/kevin/Chess Trainer" && npx tsc --noEmit 2>&1 | grep UniversalBoard
 ```
+
 Expected: no errors.
 
 ---
@@ -312,13 +333,13 @@ Expected: no errors.
 Replace current 5-tab layout. New interface:
 
 ```typescript
-type TabMode = 'train' | 'games' | 'library';
+type TabMode = "train" | "games" | "library";
 
 interface LayoutProps {
   children: React.ReactNode;
   activeMode: TabMode;
   onNavigate: (mode: TabMode) => void;
-  dueBadge?: number;  // count of SRS positions due today; shown as rose chip on Train tab
+  dueBadge?: number; // count of SRS positions due today; shown as rose chip on Train tab
 }
 ```
 
@@ -346,6 +367,7 @@ interface LayoutProps {
 This wraps the current training-mode layout.
 
 **Props:**
+
 ```typescript
 interface TrainTabProps {
   fen: string;
@@ -361,6 +383,7 @@ interface TrainTabProps {
 ```
 
 **Layout:** Same `flex-col lg:flex-row` split as current App.tsx training mode:
+
 - Left: `<UniversalBoard>` + floating `<ModeSelector>` top-right
 - Right: `w-full lg:w-[420px]` sidebar with `<TacticalMonitor>` + `<MoveLedger>` + `<CoachPanel>`
 
@@ -377,6 +400,7 @@ interface TrainTabProps {
 **Segmented control:** Two options — `Database` | `Analysis`. Rendered as pill buttons in a header bar.
 
 **Database view:**
+
 - `useEffect` on mount: call `api.listGames()` → store in local state
 - Loading: centered spinner text
 - Empty: `Database` icon + "No games yet. Sync from Chess.com or upload a PGN." text
@@ -399,11 +423,13 @@ interface TrainTabProps {
 **Files:** Create `src/components/LibraryTab.tsx`
 
 **Layout:**
+
 - Header bar: `BookOpen` icon + "Library" title + "Import PGN" button (`Upload` icon, amber style)
 - Below: `<ChapterLibrary onSelectChapter={onSelectChapter} onClose={() => {}} />`
 - Import PGN button opens `<PgnImportModal>` which on import calls `api.importRepertoire` then `loadFromApi()`
 
 **Props:**
+
 ```typescript
 interface LibraryTabProps {
   onSelectChapter: (idx: number) => void;
@@ -417,6 +443,7 @@ interface LibraryTabProps {
 **Files:** Modify `src/App.tsx`
 
 **Key changes from current:**
+
 1. `activeMode` union: `'train' | 'games' | 'library'` (was 5 modes)
 2. Load `dueBadge` via `api.getDuePositions(repertoireId)` in `useEffect` on mount
 3. Remove all the `storedGames`, `selectedAnalyzedGame`, `lastGame`, `showPgnModal`, `showChessComModal`, `isSyncing` state (these move into GamesTab)
@@ -433,6 +460,7 @@ interface LibraryTabProps {
 ```bash
 cd "/Users/kevin/Chess Trainer" && npm run build 2>&1 | tail -20
 ```
+
 Expected: Clean build, 0 TS errors.
 
 ---
@@ -467,26 +495,27 @@ Pass `useRepertoireStore.getState().repertoireName` as `repertoireName` argument
 ```bash
 cd "/Users/kevin/Chess Trainer" && npm run build && npm run lint 2>&1 | tail -20
 ```
+
 Expected: Clean.
 
 ---
 
 ## Execution Order Summary
 
-| # | Task | Phase | Risk |
-|---|------|-------|------|
-| 1 | Fix games DB schema | Backend | Medium — drops old table |
-| 2 | Fix Chess.com sync route | Backend | Low |
-| 3 | Add `listGames` to API service | Backend | Low |
-| 4 | Delete dead code | Cleanup | Low |
-| 5 | Remove `useStockfish()` hook | Cleanup | Low |
-| 6 | Create `UniversalBoard` | New component | Low (additive) |
-| 7 | New 3-tab `Layout` | Shell | Medium |
-| 8 | `TrainTab` component | Shell | Medium |
-| 9 | `GamesTab` component | Shell | Low (new) |
-| 10 | `LibraryTab` component | Shell | Low (new) |
-| 11 | Rewrite `App.tsx` | Shell | High (replaces root) |
-| 12 | Design pass + AI coach fix | Polish | Low |
+| #   | Task                           | Phase         | Risk                     |
+| --- | ------------------------------ | ------------- | ------------------------ |
+| 1   | Fix games DB schema            | Backend       | Medium — drops old table |
+| 2   | Fix Chess.com sync route       | Backend       | Low                      |
+| 3   | Add `listGames` to API service | Backend       | Low                      |
+| 4   | Delete dead code               | Cleanup       | Low                      |
+| 5   | Remove `useStockfish()` hook   | Cleanup       | Low                      |
+| 6   | Create `UniversalBoard`        | New component | Low (additive)           |
+| 7   | New 3-tab `Layout`             | Shell         | Medium                   |
+| 8   | `TrainTab` component           | Shell         | Medium                   |
+| 9   | `GamesTab` component           | Shell         | Low (new)                |
+| 10  | `LibraryTab` component         | Shell         | Low (new)                |
+| 11  | Rewrite `App.tsx`              | Shell         | High (replaces root)     |
+| 12  | Design pass + AI coach fix     | Polish        | Low                      |
 
 **Batch 1 (Backend):** Tasks 1–3
 **Batch 2 (Cleanup):** Tasks 4–5

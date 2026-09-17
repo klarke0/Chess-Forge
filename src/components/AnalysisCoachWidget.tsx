@@ -1,8 +1,8 @@
-import React from 'react';
-import { Bot, Activity, Cpu, PlayCircle } from 'lucide-react';
-import { useCoachStore } from '../stores/coachStore';
-import { useEngineStore } from '../stores/engineStore';
-import { cn } from '../utils/cn';
+import React from "react";
+import { Bot, Activity, Cpu, PlayCircle } from "lucide-react";
+import { useCoachStore } from "../stores/coachStore";
+import { useEngineStore } from "../stores/engineStore";
+import { cn } from "../utils/cn";
 
 interface AnalysisCoachWidgetProps {
   coachActive: boolean;
@@ -11,7 +11,8 @@ interface AnalysisCoachWidgetProps {
   onDemoEngineLine?: (pv: string) => void;
   onHighlightEngineLine?: (pv: string) => void;
   onStopHighlight?: () => void;
-  userColor?: 'white' | 'black';
+  onStepThrough?: () => void;
+  userColor?: "white" | "black";
 }
 
 export const AnalysisCoachWidget: React.FC<AnalysisCoachWidgetProps> = ({
@@ -21,8 +22,9 @@ export const AnalysisCoachWidget: React.FC<AnalysisCoachWidgetProps> = ({
   onDemoEngineLine,
   onHighlightEngineLine,
   onStopHighlight,
+  onStepThrough,
 }) => {
-  const { currentInsight, isAnalyzing } = useCoachStore();
+  const { currentInsight, demoLine, isAnalyzing } = useCoachStore();
   const { topLines, showLines } = useEngineStore();
 
   // We rely on the parent GameAnalysis to trigger handleAnalysisRequest via its own useEffect
@@ -35,19 +37,23 @@ export const AnalysisCoachWidget: React.FC<AnalysisCoachWidgetProps> = ({
   };
 
   return (
-    <div className={cn(
-      'flex flex-col border-t transition-all duration-500 shrink-0 bg-[#0a0d14]',
-      coachActive ? 'border-violet-500/20 bg-violet-500/5' : 'border-white/5'
-    )}>
+    <div
+      className={cn(
+        "flex flex-col border-t transition-all duration-500 shrink-0 bg-[#0a0d14]",
+        coachActive ? "border-violet-500/20 bg-violet-500/5" : "border-white/5",
+      )}
+    >
       <div className="flex items-start gap-3 px-4 py-3">
         {/* Avatar */}
         <button
           onClick={handleAvatarTap}
           className={cn(
-            'w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg shrink-0 mt-0.5',
-            'transition-all duration-500 active:scale-95',
-            coachActive ? 'bg-violet-600 shadow-violet-600/30' : 'bg-slate-700 shadow-black/20',
-            isAnalyzing && coachActive && 'animate-pulse',
+            "w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg shrink-0 mt-0.5",
+            "transition-all duration-500 active:scale-95",
+            coachActive
+              ? "bg-violet-600 shadow-violet-600/30"
+              : "bg-slate-700 shadow-black/20",
+            isAnalyzing && coachActive && "animate-pulse",
           )}
         >
           <Bot size={18} className="text-white" />
@@ -70,19 +76,22 @@ export const AnalysisCoachWidget: React.FC<AnalysisCoachWidgetProps> = ({
                 {isAnalyzing && (
                   <div className="flex items-center gap-1.5 text-violet-400">
                     <Activity size={10} className="animate-spin" />
-                    <span className="text-[8px] font-black uppercase tracking-widest">Thinking...</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest">
+                      Thinking...
+                    </span>
                   </div>
                 )}
               </div>
-              
+
               <p className="text-sm font-semibold text-white leading-snug">
-                {isAnalyzing 
-                  ? 'The Wizard is contemplating the position...' 
-                  : (currentInsight || 'I am ready. Move the pieces or tap the button below for a deep dive.')}
+                {isAnalyzing
+                  ? "The Wizard is contemplating the position..."
+                  : currentInsight ||
+                    "I am ready. Move the pieces or tap the button below for a deep dive."}
               </p>
 
               {!currentInsight && !isAnalyzing && (
-                <button 
+                <button
                   onClick={() => onDeepAnalysis(true)}
                   className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg"
                 >
@@ -90,15 +99,29 @@ export const AnalysisCoachWidget: React.FC<AnalysisCoachWidgetProps> = ({
                 </button>
               )}
 
+              {/* Coach demo line step-through button */}
+              {currentInsight &&
+                !isAnalyzing &&
+                demoLine.length > 0 &&
+                onStepThrough && (
+                  <button
+                    onClick={onStepThrough}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-800/40 hover:bg-violet-700/50 text-violet-300 text-[9px] font-black uppercase tracking-widest rounded-xl border border-violet-500/20 transition-all active:scale-95"
+                  >
+                    <PlayCircle size={10} /> Step Through Line
+                  </button>
+                )}
+
               {/* Engine Lines in the widget on mobile when active */}
               {showLines && topLines.length > 0 && (
                 <div className="pt-2 border-t border-white/5 space-y-1">
-                   {topLines.slice(0, 2).map((line, i) => {
-                    const scoreStr = line.mate !== null
-                      ? `M${Math.abs(line.mate)}`
-                      : line.cp !== null
-                        ? `${line.cp > 0 ? '+' : ''}${(line.cp / 100).toFixed(1)}`
-                        : '—';
+                  {topLines.slice(0, 2).map((line, i) => {
+                    const scoreStr =
+                      line.mate !== null
+                        ? `M${Math.abs(line.mate)}`
+                        : line.cp !== null
+                          ? `${line.cp > 0 ? "+" : ""}${(line.cp / 100).toFixed(1)}`
+                          : "—";
                     return (
                       <button
                         key={i}
@@ -108,8 +131,12 @@ export const AnalysisCoachWidget: React.FC<AnalysisCoachWidgetProps> = ({
                         className="w-full flex items-center gap-2 text-left px-2 py-1 rounded-lg bg-white/5 border border-white/5 active:scale-95 transition-all"
                       >
                         <Cpu size={10} className="text-indigo-400" />
-                        <span className="text-[10px] font-mono text-indigo-400 w-8 shrink-0 text-right">{scoreStr}</span>
-                        <span className="text-[10px] font-mono text-slate-400 truncate flex-1">{line.pv.split(' ').slice(0, 4).join(' ')}</span>
+                        <span className="text-[10px] font-mono text-indigo-400 w-8 shrink-0 text-right">
+                          {scoreStr}
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-400 truncate flex-1">
+                          {line.pv.split(" ").slice(0, 4).join(" ")}
+                        </span>
                         <PlayCircle size={10} className="text-slate-600" />
                       </button>
                     );

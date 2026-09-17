@@ -41,14 +41,14 @@ Fetch is direct from frontend to `explorer.lichess.ovh` (CORS allowed, no proxy 
 
 ## Files
 
-| File | Change |
-|------|--------|
-| `src/services/api.ts` | Add `fetchLichessMasters(fen)` |
-| `src/hooks/useLichessMasters.ts` | New hook — debounce, fetch, loading state |
-| `src/stores/coachStore.ts` | Add `mastersData` field + `setMastersData` action |
-| `src/components/CoachPanel.tsx` | Use hook, render widget, wire to store |
-| `server/routes/analyze.ts` | Accept `mastersData` in body, inject into prompt |
-| `src/services/ai_coach.ts` | Pass `mastersData` through to API call |
+| File                             | Change                                            |
+| -------------------------------- | ------------------------------------------------- |
+| `src/services/api.ts`            | Add `fetchLichessMasters(fen)`                    |
+| `src/hooks/useLichessMasters.ts` | New hook — debounce, fetch, loading state         |
+| `src/stores/coachStore.ts`       | Add `mastersData` field + `setMastersData` action |
+| `src/components/CoachPanel.tsx`  | Use hook, render widget, wire to store            |
+| `server/routes/analyze.ts`       | Accept `mastersData` in body, inject into prompt  |
+| `src/services/ai_coach.ts`       | Pass `mastersData` through to API call            |
 
 ---
 
@@ -80,6 +80,7 @@ GET https://explorer.lichess.ovh/masters?fen=<encoded>&moves=12&topGames=0
 ```
 
 Response shape used:
+
 ```ts
 interface MastersMove {
   san: string;

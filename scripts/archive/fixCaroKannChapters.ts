@@ -33,8 +33,8 @@ const db = new Database(dbFile);
 /** Strip trailing chess annotation symbols and move numbers from a token. */
 function stripAnnotations(token: string): string {
   return token
-    .replace(/\d+\.+/g, "")       // "12." "12..."
-    .replace(/[!?+#]+$/g, "")      // "!?", "!", "?", "+", "#"
+    .replace(/\d+\.+/g, "") // "12." "12..."
+    .replace(/[!?+#]+$/g, "") // "!?", "!", "?", "+", "#"
     .trim();
 }
 
@@ -99,13 +99,15 @@ function parseMoves(tokens: string[]): { moves: string[]; fen: string } {
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 const chapters = db
-  .query("SELECT id, name FROM chapters WHERE repertoire_id = ? ORDER BY sort_order")
+  .query(
+    "SELECT id, name FROM chapters WHERE repertoire_id = ? ORDER BY sort_order",
+  )
   .all(REPERTOIRE_ID) as { id: number; name: string }[];
 
 console.log(`Found ${chapters.length} chapters to process.\n`);
 
 const updateStmt = db.prepare(
-  "UPDATE chapters SET start_moves = ?, first_fen = ? WHERE id = ?"
+  "UPDATE chapters SET start_moves = ?, first_fen = ? WHERE id = ?",
 );
 
 const results = { updated: 0, skipped: 0 };
@@ -119,7 +121,9 @@ db.transaction(() => {
 
     // Need at least 2 moves (e.g. "e4 c6") to be meaningful
     if (moves.length < 2) {
-      skipped.push(`${chapter.id}: "${chapter.name}" → only ${moves.length} valid moves`);
+      skipped.push(
+        `${chapter.id}: "${chapter.name}" → only ${moves.length} valid moves`,
+      );
       results.skipped++;
       continue;
     }

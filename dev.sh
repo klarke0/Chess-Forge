@@ -53,13 +53,26 @@ status() {
   fi
 }
 
+kill_pid_file() {
+  local pidfile="$LOG_DIR/$1.pid"
+  if [ -f "$pidfile" ]; then
+    local pid
+    pid=$(cat "$pidfile")
+    kill "$pid" 2>/dev/null || true
+    rm -f "$pidfile"
+  fi
+}
+
 stop_all() {
   echo "Stopping servers..."
+  # Kill by saved PID first — avoids touching other projects' processes
+  kill_pid_file "backend"
+  kill_pid_file "frontend"
+  # Port fallback in case PID file is stale
   kill_port "$BACKEND_PORT"
   kill_port "$FRONTEND_PORT"
-  # Also kill by name in case they moved ports
-  pkill -f "bun.*server/index" 2>/dev/null || true
-  pkill -f "vite"              2>/dev/null || true
+  # Narrow bun match to this project's server path only
+  pkill -f "bun.*Chess Forge.*server/index" 2>/dev/null || true
   pkill -x "ngrok"             2>/dev/null || true
   sleep 0.5
   echo "All servers stopped."
@@ -74,6 +87,7 @@ start_backend() {
   fi
   bun run "$SCRIPT_DIR/server/index.ts" \
     >> "$LOG_DIR/backend.log" 2>&1 &
+  echo $! > "$LOG_DIR/backend.pid"
   wait_for_port "$BACKEND_PORT" "backend"
 }
 
@@ -82,6 +96,7 @@ start_frontend() {
   # Run vite directly (not via npm) so the saved PID is the actual Vite process
   cd "$SCRIPT_DIR" && npx vite --host \
     >> "$LOG_DIR/frontend.log" 2>&1 &
+  echo $! > "$LOG_DIR/frontend.pid"
   wait_for_port "$FRONTEND_PORT" "frontend"
 }
 

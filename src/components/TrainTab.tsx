@@ -1,23 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
-  ChevronLeft, ChevronRight, RotateCw,
-  GraduationCap, BookOpen, Play, Target, Brain,
-  Layers, BarChart2, Cpu, Wand2, Compass,
-} from 'lucide-react';
-import { UniversalBoard } from './UniversalBoard';
-import { TacticalMonitor } from './TacticalMonitor';
-import { MoveLedger } from './MoveLedger';
-import { CoachPanel } from './CoachPanel';
-import { ExplorePanel } from './ExplorePanel';
-import { ModeSelector } from './ModeSelector';
-import { TrainingCoachWidget } from './TrainingCoachWidget';
-import { useTrainingStore } from '../stores/trainingStore';
-import { useRepertoireStore } from '../stores/repertoireStore';
-import { useEngineStore } from '../stores/engineStore';
-import { useSettingsStore } from '../stores/settingsStore';
-import { cn } from '../utils/cn';
+  ChevronLeft,
+  ChevronRight,
+  RotateCw,
+  GraduationCap,
+  BookOpen,
+  Play,
+  Target,
+  Brain,
+  Layers,
+  BarChart2,
+  Cpu,
+  Wand2,
+  Compass,
+} from "lucide-react";
+import { UniversalBoard } from "./UniversalBoard";
+import { TacticalMonitor } from "./TacticalMonitor";
+import { MoveLedger } from "./MoveLedger";
+import { CoachPanel } from "./CoachPanel";
+import { ExplorePanel } from "./ExplorePanel";
+import { ModeSelector } from "./ModeSelector";
+import { TrainingCoachWidget } from "./TrainingCoachWidget";
+import { useTrainingStore } from "../stores/trainingStore";
+import { useRepertoireStore } from "../stores/repertoireStore";
+import { useEngineStore } from "../stores/engineStore";
+import { useSettingsStore } from "../stores/settingsStore";
+import { cn } from "../utils/cn";
 
-type TrainingMode = 'study' | 'learn' | 'full' | 'weak' | 'quiz' | 'explore';
+type TrainingMode = "study" | "learn" | "full" | "weak" | "quiz" | "explore";
 
 interface TrainTabProps {
   fen: string;
@@ -38,13 +48,17 @@ interface TrainTabProps {
   onStopHighlight: () => void;
 }
 
-const MOBILE_MODES: { id: TrainingMode; label: string; icon: React.ElementType }[] = [
-  { id: 'study',   label: 'Study',   icon: GraduationCap },
-  { id: 'learn',   label: 'Learn',   icon: BookOpen },
-  { id: 'full',    label: 'Full',    icon: Play },
-  { id: 'weak',    label: 'Weak',    icon: Target },
-  { id: 'quiz',    label: 'Quiz',    icon: Brain },
-  { id: 'explore', label: 'Explore', icon: Compass },
+const MOBILE_MODES: {
+  id: TrainingMode;
+  label: string;
+  icon: React.ElementType;
+}[] = [
+  { id: "study", label: "Study", icon: GraduationCap },
+  { id: "learn", label: "Learn", icon: BookOpen },
+  { id: "full", label: "Full", icon: Play },
+  { id: "weak", label: "Weak", icon: Target },
+  { id: "quiz", label: "Quiz", icon: Brain },
+  { id: "explore", label: "Explore", icon: Compass },
 ];
 
 export const TrainTab: React.FC<TrainTabProps> = ({
@@ -65,23 +79,25 @@ export const TrainTab: React.FC<TrainTabProps> = ({
   onHighlightEngineLine,
   onStopHighlight,
 }) => {
-  const ledger = useTrainingStore(s => s.ledger);
-  const moveHistory = useTrainingStore(s => s.moveHistory);
-  const mode = useTrainingStore(s => s.mode);
-  const setMode = useTrainingStore(s => s.setMode);
-  const status = useTrainingStore(s => s.status);
-  const awaitingNext = useTrainingStore(s => s.awaitingNext);
+  const ledger = useTrainingStore((s) => s.ledger);
+  const moveHistory = useTrainingStore((s) => s.moveHistory);
+  const mode = useTrainingStore((s) => s.mode);
+  const setMode = useTrainingStore((s) => s.setMode);
+  const status = useTrainingStore((s) => s.status);
+  const awaitingNext = useTrainingStore((s) => s.awaitingNext);
 
-  const repertoireSide = useRepertoireStore(s => s.repertoireSide);
-  const selectedChapterIdx = useRepertoireStore(s => s.selectedChapter);
-  const chapters = useRepertoireStore(s => s.chapters);
-  const studyStep = useTrainingStore(s => s.studyStep);
+  const repertoireSide = useRepertoireStore((s) => s.repertoireSide);
+  const selectedChapterIdx = useRepertoireStore((s) => s.selectedChapter);
+  const chapters = useRepertoireStore((s) => s.chapters);
+  const studyStep = useTrainingStore((s) => s.studyStep);
 
-  const currentChapter = selectedChapterIdx !== null ? chapters[selectedChapterIdx] : null;
+  const currentChapter =
+    selectedChapterIdx !== null ? chapters[selectedChapterIdx] : null;
   const totalStudySteps = currentChapter?.startMoves?.length ?? 0;
 
   const { training, toggleTrainingVision } = useSettingsStore();
-  const { showLines, toggleLines, showEvalBar, toggleEvalBar } = useEngineStore();
+  const { showLines, toggleLines, showEvalBar, toggleEvalBar } =
+    useEngineStore();
 
   // Mobile-only: local board flip (doesn't affect desktop orientation in UniversalBoard)
   const [mobileFlipped, setMobileFlipped] = useState(false);
@@ -91,7 +107,12 @@ export const TrainTab: React.FC<TrainTabProps> = ({
 
   // Auto-analyze when coach is active and FEN changes
   React.useEffect(() => {
-    if (coachActive && !analyzedFensRef.current.has(fen) && status !== 'idle' && status !== 'demo') {
+    if (
+      coachActive &&
+      !analyzedFensRef.current.has(fen) &&
+      status !== "idle" &&
+      status !== "demo"
+    ) {
       const timer = setTimeout(() => {
         onDeepAnalysis();
         analyzedFensRef.current.add(fen);
@@ -102,30 +123,36 @@ export const TrainTab: React.FC<TrainTabProps> = ({
     }
   }, [fen, coachActive, onDeepAnalysis, status]);
 
-  const mobileOrientation: 'white' | 'black' = mobileFlipped
-    ? (repertoireSide === 'white' ? 'black' : 'white')
+  const mobileOrientation: "white" | "black" = mobileFlipped
+    ? repertoireSide === "white"
+      ? "black"
+      : "white"
     : repertoireSide;
 
   return (
     <div className="flex flex-col lg:flex-row h-full w-full overflow-hidden">
-
       {/* ── MOBILE ONLY: Compact Mode Strip ───────────────────────────────── */}
       <div className="lg:hidden flex shrink-0 border-b border-white/5 bg-[#0a0d14]">
         {MOBILE_MODES.map((m) => (
           <button
             key={m.id}
-            disabled={status === 'demo'}
-            onClick={() => { setMode(m.id as any); onStartTraining(); }}
+            disabled={status === "demo"}
+            onClick={() => {
+              setMode(m.id as any);
+              onStartTraining();
+            }}
             className={cn(
-              'flex-1 flex flex-col items-center gap-0.5 py-2 transition-all',
+              "flex-1 flex flex-col items-center gap-0.5 py-2 transition-all",
               mode === m.id
-                ? 'text-indigo-400 bg-indigo-500/10 border-b-2 border-indigo-500'
-                : 'text-slate-600 hover:text-slate-400',
-              status === 'demo' && 'opacity-40 cursor-not-allowed',
+                ? "text-indigo-400 bg-indigo-500/10 border-b-2 border-indigo-500"
+                : "text-slate-600 hover:text-slate-400",
+              status === "demo" && "opacity-40 cursor-not-allowed",
             )}
           >
             <m.icon size={14} />
-            <span className="text-[8px] font-black uppercase tracking-wider">{m.label}</span>
+            <span className="text-[8px] font-black uppercase tracking-wider">
+              {m.label}
+            </span>
           </button>
         ))}
       </div>
@@ -165,12 +192,16 @@ export const TrainTab: React.FC<TrainTabProps> = ({
         </button>
         <button
           onClick={onProceed}
-          disabled={mode === 'study' ? (studyStep >= totalStudySteps && !awaitingNext) : (status === 'idle' && !awaitingNext)}
+          disabled={
+            mode === "study"
+              ? studyStep >= totalStudySteps && !awaitingNext
+              : status === "idle" && !awaitingNext
+          }
           className={cn(
-            'p-2 rounded-xl border transition-all active:scale-95',
+            "p-2 rounded-xl border transition-all active:scale-95",
             awaitingNext
-              ? 'bg-indigo-600 border-indigo-500/50 text-white shadow-lg shadow-indigo-600/30'
-              : 'bg-[#0d1117] border-white/10 text-slate-400 hover:text-white disabled:opacity-20',
+              ? "bg-indigo-600 border-indigo-500/50 text-white shadow-lg shadow-indigo-600/30"
+              : "bg-[#0d1117] border-white/10 text-slate-400 hover:text-white disabled:opacity-20",
           )}
           aria-label="Proceed"
         >
@@ -181,12 +212,12 @@ export const TrainTab: React.FC<TrainTabProps> = ({
 
         {/* Board flip */}
         <button
-          onClick={() => setMobileFlipped(f => !f)}
+          onClick={() => setMobileFlipped((f) => !f)}
           className={cn(
-            'p-2 rounded-xl border transition-all active:scale-95',
+            "p-2 rounded-xl border transition-all active:scale-95",
             mobileFlipped
-              ? 'bg-slate-600/20 text-slate-300 border-slate-500/30'
-              : 'bg-[#0d1117] border-white/10 text-slate-400 hover:text-white',
+              ? "bg-slate-600/20 text-slate-300 border-slate-500/30"
+              : "bg-[#0d1117] border-white/10 text-slate-400 hover:text-white",
           )}
           aria-label="Flip Board"
         >
@@ -197,10 +228,10 @@ export const TrainTab: React.FC<TrainTabProps> = ({
         <button
           onClick={toggleTrainingVision}
           className={cn(
-            'p-2 rounded-xl border transition-all active:scale-95',
+            "p-2 rounded-xl border transition-all active:scale-95",
             training.showVision
-              ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30'
-              : 'bg-[#0d1117] border-white/10 text-slate-400 hover:text-white',
+              ? "bg-emerald-600/20 text-emerald-400 border-emerald-500/30"
+              : "bg-[#0d1117] border-white/10 text-slate-400 hover:text-white",
           )}
           aria-label="Vision Heatmap"
         >
@@ -211,10 +242,10 @@ export const TrainTab: React.FC<TrainTabProps> = ({
         <button
           onClick={toggleEvalBar}
           className={cn(
-            'p-2 rounded-xl border transition-all active:scale-95',
+            "p-2 rounded-xl border transition-all active:scale-95",
             showEvalBar
-              ? 'bg-amber-600/20 text-amber-400 border-amber-500/30'
-              : 'bg-[#0d1117] border-white/10 text-slate-400 hover:text-white',
+              ? "bg-amber-600/20 text-amber-400 border-amber-500/30"
+              : "bg-[#0d1117] border-white/10 text-slate-400 hover:text-white",
           )}
           aria-label="Eval Bar"
         >
@@ -225,10 +256,10 @@ export const TrainTab: React.FC<TrainTabProps> = ({
         <button
           onClick={toggleLines}
           className={cn(
-            'p-2 rounded-xl border transition-all active:scale-95',
+            "p-2 rounded-xl border transition-all active:scale-95",
             showLines
-              ? 'bg-indigo-600/20 text-indigo-400 border-indigo-500/30'
-              : 'bg-[#0d1117] border-white/10 text-slate-400 hover:text-white',
+              ? "bg-indigo-600/20 text-indigo-400 border-indigo-500/30"
+              : "bg-[#0d1117] border-white/10 text-slate-400 hover:text-white",
           )}
           aria-label="Engine Lines"
         >
@@ -243,10 +274,10 @@ export const TrainTab: React.FC<TrainTabProps> = ({
             if (next) onDeepAnalysis();
           }}
           className={cn(
-            'p-2 rounded-xl border transition-all active:scale-95 ml-auto',
+            "p-2 rounded-xl border transition-all active:scale-95 ml-auto",
             coachActive
-              ? 'bg-violet-600/20 text-violet-400 border-violet-500/30'
-              : 'bg-[#0d1117] border-white/10 text-slate-400 hover:text-violet-400',
+              ? "bg-violet-600/20 text-violet-400 border-violet-500/30"
+              : "bg-[#0d1117] border-white/10 text-slate-400 hover:text-violet-400",
           )}
           aria-label="Coach Analysis"
         >
@@ -276,7 +307,7 @@ export const TrainTab: React.FC<TrainTabProps> = ({
         <div className="p-3 lg:p-6 border-b border-white/5 bg-white/[0.02]">
           <ModeSelector onSelect={() => onStartTraining()} />
         </div>
-        {mode !== 'explore' && <TacticalMonitor />}
+        {mode !== "explore" && <TacticalMonitor />}
         <div className="flex-1 min-h-0 relative">
           <div className="absolute inset-0 overflow-y-auto custom-scrollbar">
             <MoveLedger
@@ -286,7 +317,7 @@ export const TrainTab: React.FC<TrainTabProps> = ({
             />
           </div>
         </div>
-        {mode === 'explore' ? (
+        {mode === "explore" ? (
           <ExplorePanel
             fen={fen}
             onPlayMove={onPlayRepertoireMove}
@@ -305,7 +336,6 @@ export const TrainTab: React.FC<TrainTabProps> = ({
           />
         )}
       </div>
-
     </div>
   );
 };

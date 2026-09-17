@@ -111,7 +111,7 @@ function runMigrations(db: Database) {
   const addCol = (table: string, col: string, type: string) => {
     try {
       const info = db.query(`PRAGMA table_info(${table})`).all() as any[];
-      if (!info.some(c => c.name === col)) {
+      if (!info.some((c) => c.name === col)) {
         db.query(`ALTER TABLE ${table} ADD COLUMN ${col} ${type}`).run();
         console.log(`Migrated: Added ${col} to ${table}`);
       }
@@ -131,38 +131,70 @@ function runMigrations(db: Database) {
   addCol("games", "termination", "TEXT");
   addCol("games", "game_shape", "TEXT");
 
-  db.query(`CREATE TABLE IF NOT EXISTS pattern_reports (
+  db.query(
+    `CREATE TABLE IF NOT EXISTS pattern_reports (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,
     created_at TEXT DEFAULT (datetime('now')),
     games_hash TEXT,
     report_json TEXT NOT NULL
-  )`).run();
+  )`,
+  ).run();
+
+  db.query(
+    `CREATE TABLE IF NOT EXISTS dismissed_positions (
+    fen TEXT NOT NULL,
+    repertoire_id INTEGER NOT NULL,
+    dismissed_at TEXT NOT NULL DEFAULT (datetime('now')),
+    reason TEXT,
+    PRIMARY KEY (fen, repertoire_id)
+  )`,
+  ).run();
 }
 
 export function seedJobavaLondon(db: Database) {
   // Check if already seeded
-  const existing = db.query("SELECT id FROM repertoires WHERE name = ?").get("Jobava London");
+  const existing = db
+    .query("SELECT id FROM repertoires WHERE name = ?")
+    .get("Jobava London");
   if (existing) return;
 
-  const dataPath = join(import.meta.dir, "..", "src", "data", "jobava_full.json");
+  const dataPath = join(
+    import.meta.dir,
+    "..",
+    "src",
+    "data",
+    "jobava_full.json",
+  );
   const raw = readFileSync(dataPath, "utf-8");
   const data = JSON.parse(raw) as {
     chapters: Array<{ name: string; startMoves: string[]; firstFen: string }>;
-    positions: Record<string, Array<{ san: string; nextFen: string; comment?: string }>>;
+    positions: Record<
+      string,
+      Array<{
+        san: string;
+        nextFen: string;
+        comment?: string;
+        is_main_line?: boolean;
+        depth?: number;
+      }>
+    >;
   };
 
   const insertRepertoire = db.prepare(
-    "INSERT INTO repertoires (name, description) VALUES (?, ?)"
+    "INSERT INTO repertoires (name, description) VALUES (?, ?)",
   );
   const insertChapter = db.prepare(
-    "INSERT INTO chapters (repertoire_id, name, sort_order, start_moves, first_fen) VALUES (?, ?, ?, ?, ?)"
+    "INSERT INTO chapters (repertoire_id, name, sort_order, start_moves, first_fen) VALUES (?, ?, ?, ?, ?)",
   );
   const insertPosition = db.prepare(
-    "INSERT OR IGNORE INTO positions (repertoire_id, fen, san, next_fen, comment) VALUES (?, ?, ?, ?, ?)"
+    "INSERT OR IGNORE INTO positions (repertoire_id, fen, san, next_fen, comment, is_main_line, depth) VALUES (?, ?, ?, ?, ?, ?, ?)",
   );
 
   db.transaction(() => {
-    const result = insertRepertoire.run("Jobava London", "Bortnyk & Naroditsky's Jobava London System");
+    const result = insertRepertoire.run(
+      "Jobava London",
+      "Bortnyk & Naroditsky's Jobava London System",
+    );
     const repertoireId = Number(result.lastInsertRowid);
 
     for (let i = 0; i < data.chapters.length; i++) {
@@ -172,13 +204,21 @@ export function seedJobavaLondon(db: Database) {
         ch.name,
         i,
         JSON.stringify(ch.startMoves),
-        ch.firstFen
+        ch.firstFen,
       );
     }
 
     for (const [fen, moves] of Object.entries(data.positions)) {
       for (const move of moves) {
-        insertPosition.run(repertoireId, fen, move.san, move.nextFen, move.comment ?? null);
+        insertPosition.run(
+          repertoireId,
+          fen,
+          move.san,
+          move.nextFen,
+          move.comment ?? null,
+          move.is_main_line ? 1 : 0,
+          typeof move.depth === "number" ? move.depth : 0,
+        );
       }
     }
   })();

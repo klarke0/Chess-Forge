@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Chessboard } from 'react-chessboard';
-import { Film, Loader2, AlertTriangle } from 'lucide-react';
-import { cn } from '../utils/cn';
-import { StockfishEngine } from '../services/engine';
-import { Chess } from 'chess.js';
+import React, { useState, useEffect } from "react";
+import { Chessboard } from "react-chessboard";
+import { Film, Loader2, AlertTriangle } from "lucide-react";
+import { cn } from "../utils/cn";
+import { StockfishEngine } from "../services/engine";
+import { Chess } from "chess.js";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,14 +34,18 @@ export interface MistakeReplayProps {
 function formatDate(dateStr: string): string {
   try {
     const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   } catch {
     return dateStr;
   }
 }
 
 function formatCpLoss(cp: number): string {
-  if (cp >= 800) return '−∞';
+  if (cp >= 800) return "−∞";
   return `−${(cp / 100).toFixed(1)}`;
 }
 
@@ -51,39 +55,76 @@ let hoverEngine: StockfishEngine | null = null;
 
 // ── Components ────────────────────────────────────────────────────────────────
 
-const EvalSparkline: React.FC<{ evals: number[]; blunderIdx: number }> = ({ evals, blunderIdx }) => {
+const EvalSparkline: React.FC<{ evals: number[]; blunderIdx: number }> = ({
+  evals,
+  blunderIdx,
+}) => {
   if (!evals || !evals.length) return null;
-  const W = 300; const H = 40;
+  const W = 300;
+  const H = 40;
   const clamp = (v: number) => Math.max(-800, Math.min(800, v));
-  const points = evals.map((e, i) => {
-    const x = (i / (evals.length - 1)) * W;
-    const y = H / 2 - (clamp(e) / 800) * (H / 2 - 2);
-    return `${x},${y}`;
-  }).join(' ');
+  const points = evals
+    .map((e, i) => {
+      const x = (i / (evals.length - 1)) * W;
+      const y = H / 2 - (clamp(e) / 800) * (H / 2 - 2);
+      return `${x},${y}`;
+    })
+    .join(" ");
   const blunderX = evals.length > 1 ? (blunderIdx / (evals.length - 1)) * W : 0;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-10" preserveAspectRatio="none">
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full h-10"
+      preserveAspectRatio="none"
+    >
       {/* zero line */}
-      <line x1="0" y1={H/2} x2={W} y2={H/2} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+      <line
+        x1="0"
+        y1={H / 2}
+        x2={W}
+        y2={H / 2}
+        stroke="rgba(255,255,255,0.06)"
+        strokeWidth="1"
+      />
       {/* eval curve */}
-      <polyline points={points} fill="none" stroke="rgba(148,163,184,0.4)" strokeWidth="1.5" strokeLinejoin="round" />
+      <polyline
+        points={points}
+        fill="none"
+        stroke="rgba(148,163,184,0.4)"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
       {/* blunder marker */}
-      <line x1={blunderX} y1="0" x2={blunderX} y2={H} stroke="rgba(244,63,94,0.7)" strokeWidth="1.5" />
+      <line
+        x1={blunderX}
+        y1="0"
+        x2={blunderX}
+        y2={H}
+        stroke="rgba(244,63,94,0.7)"
+        strokeWidth="1.5"
+      />
     </svg>
   );
 };
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export const MistakeReplay: React.FC<MistakeReplayProps> = ({ onViewGame, onClose }) => {
+export const MistakeReplay: React.FC<MistakeReplayProps> = ({
+  onViewGame,
+  onClose,
+}) => {
   const [blunders, setBlunders] = useState<BlunderMove[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  const [sortBy, setSortBy] = useState<'date' | 'severity'>('date');
-  const [filterGrade, setFilterGrade] = useState<'all' | 'blunder' | 'mistake'>('all');
-  const [filterPhase, setFilterPhase] = useState<'all' | 'opening' | 'middlegame' | 'endgame'>('all');
+
+  const [sortBy, setSortBy] = useState<"date" | "severity">("date");
+  const [filterGrade, setFilterGrade] = useState<"all" | "blunder" | "mistake">(
+    "all",
+  );
+  const [filterPhase, setFilterPhase] = useState<
+    "all" | "opening" | "middlegame" | "endgame"
+  >("all");
 
   useEffect(() => {
     let cancelled = false;
@@ -92,42 +133,48 @@ export const MistakeReplay: React.FC<MistakeReplayProps> = ({ onViewGame, onClos
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('/api/games/blunders?limit=40');
+        const res = await fetch("/api/games/blunders?limit=40");
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string }).error ?? `API error ${res.status}`);
+          throw new Error(
+            (body as { error?: string }).error ?? `API error ${res.status}`,
+          );
         }
         const data: BlunderMove[] = await res.json();
         if (!cancelled) setBlunders(data);
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Unknown error');
+        if (!cancelled)
+          setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
     fetchBlunders();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // ── Derived stats & Sort ───────────────────────────────────────────────────
 
-  const filtered = blunders.filter(b => {
-    if (filterGrade !== 'all' && b.grade !== filterGrade) return false;
+  const filtered = blunders.filter((b) => {
+    if (filterGrade !== "all" && b.grade !== filterGrade) return false;
     const moveNum = Math.floor(b.moveIndex / 2) + 1;
-    if (filterPhase === 'opening' && moveNum > 15) return false;
-    if (filterPhase === 'middlegame' && (moveNum <= 15 || moveNum > 30)) return false;
-    if (filterPhase === 'endgame' && moveNum <= 30) return false;
+    if (filterPhase === "opening" && moveNum > 15) return false;
+    if (filterPhase === "middlegame" && (moveNum <= 15 || moveNum > 30))
+      return false;
+    if (filterPhase === "endgame" && moveNum <= 30) return false;
     return true;
   });
 
   const sortedBlunders = [...filtered].sort((a, b) => {
-    if (sortBy === 'severity') return b.cpLoss - a.cpLoss;
+    if (sortBy === "severity") return b.cpLoss - a.cpLoss;
     return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
 
-  const blunderCount = blunders.filter(b => b.grade === 'blunder').length;
-  const mistakeCount = blunders.filter(b => b.grade === 'mistake').length;
+  const blunderCount = blunders.filter((b) => b.grade === "blunder").length;
+  const mistakeCount = blunders.filter((b) => b.grade === "mistake").length;
 
   // ── Loading ────────────────────────────────────────────────────────────────
 
@@ -149,7 +196,9 @@ export const MistakeReplay: React.FC<MistakeReplayProps> = ({ onViewGame, onClos
       <div className="flex-1 bg-[#050507] flex flex-col items-center justify-center gap-6 text-center px-6">
         <AlertTriangle className="text-rose-400" size={48} />
         <div>
-          <p className="text-slate-300 text-lg font-bold">Failed to load blunders</p>
+          <p className="text-slate-300 text-lg font-bold">
+            Failed to load blunders
+          </p>
           <p className="text-slate-500 text-sm mt-1 max-w-xs">{error}</p>
         </div>
         <button
@@ -190,24 +239,24 @@ export const MistakeReplay: React.FC<MistakeReplayProps> = ({ onViewGame, onClos
               Analyzing your costliest mistakes
             </p>
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-4">
             {/* Filters */}
             <div className="flex bg-black/40 p-1 rounded-xl border border-white/5 gap-1">
-              <select 
+              <select
                 className="bg-transparent text-[10px] font-bold uppercase tracking-widest text-slate-300 px-2 py-1 outline-none cursor-pointer"
-                value={filterGrade} 
-                onChange={e => setFilterGrade(e.target.value as any)}
+                value={filterGrade}
+                onChange={(e) => setFilterGrade(e.target.value as any)}
               >
                 <option value="all">All Grades</option>
                 <option value="blunder">Blunders</option>
                 <option value="mistake">Mistakes</option>
               </select>
               <div className="w-px bg-white/10 my-1"></div>
-              <select 
+              <select
                 className="bg-transparent text-[10px] font-bold uppercase tracking-widest text-slate-300 px-2 py-1 outline-none cursor-pointer"
-                value={filterPhase} 
-                onChange={e => setFilterPhase(e.target.value as any)}
+                value={filterPhase}
+                onChange={(e) => setFilterPhase(e.target.value as any)}
               >
                 <option value="all">All Phases</option>
                 <option value="opening">Opening</option>
@@ -219,30 +268,34 @@ export const MistakeReplay: React.FC<MistakeReplayProps> = ({ onViewGame, onClos
             {/* Sort Toggles */}
             <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
               <button
-                onClick={() => setSortBy('date')}
+                onClick={() => setSortBy("date")}
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
-                  sortBy === 'date' ? "bg-white/10 text-white shadow-xl" : "text-slate-500 hover:text-slate-300"
+                  sortBy === "date"
+                    ? "bg-white/10 text-white shadow-xl"
+                    : "text-slate-500 hover:text-slate-300",
                 )}
               >
                 Recent
               </button>
               <button
-                onClick={() => setSortBy('severity')}
+                onClick={() => setSortBy("severity")}
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
-                  sortBy === 'severity' ? "bg-white/10 text-white shadow-xl" : "text-slate-500 hover:text-slate-300"
+                  sortBy === "severity"
+                    ? "bg-white/10 text-white shadow-xl"
+                    : "text-slate-500 hover:text-slate-300",
                 )}
               >
                 Severity
               </button>
             </div>
-            
+
             <p className="text-slate-500 text-xs hidden xl:block">
               <span className="text-rose-400 font-black">{blunderCount}</span>
-              {' blunders · '}
+              {" blunders · "}
               <span className="text-orange-400 font-black">{mistakeCount}</span>
-              {' mistakes'}
+              {" mistakes"}
             </p>
           </div>
         </div>
@@ -274,38 +327,50 @@ interface BlunderCardProps {
 const BlunderCard: React.FC<BlunderCardProps> = ({ item, onViewGame }) => {
   const [arrows, setArrows] = useState<[string, string, string][]>([]);
 
-  const isBlunder = item.grade === 'blunder';
-  const boardOrientation = item.userColor === 'black' ? 'black' : 'white';
-  
+  const isBlunder = item.grade === "blunder";
+  const boardOrientation = item.userColor === "black" ? "black" : "white";
+
   const moveNumber = Math.floor(item.moveIndex / 2) + 1;
   const isOpening = moveNumber <= 15;
-  const phaseLabel = isOpening ? 'Opening' : moveNumber <= 30 ? 'Middlegame' : 'Endgame';
+  const phaseLabel = isOpening
+    ? "Opening"
+    : moveNumber <= 30
+      ? "Middlegame"
+      : "Endgame";
   const tagLabel = item.gameShape ?? phaseLabel;
 
   const opponent =
-    item.userColor === 'white'
+    item.userColor === "white"
       ? item.black
-      : item.userColor === 'black'
-      ? item.white
-      : item.black;
+      : item.userColor === "black"
+        ? item.white
+        : item.black;
 
   const badgeClasses = isBlunder
-    ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-    : 'bg-orange-500/20 text-orange-400 border-orange-500/30';
+    ? "bg-rose-500/20 text-rose-400 border-rose-500/30"
+    : "bg-orange-500/20 text-orange-400 border-orange-500/30";
 
   const handleMouseEnter = async () => {
     // Parse mistake arrow immediately from SAN + fen
     try {
       const chess = new Chess(item.fen);
       const move = chess.move(item.san);
-      const mistakeArrow: [string, string, string] = [move.from, move.to, 'rgba(220,38,38,0.7)'];
+      const mistakeArrow: [string, string, string] = [
+        move.from,
+        move.to,
+        "rgba(220,38,38,0.7)",
+      ];
       setArrows([mistakeArrow]);
 
       // Get best move (cached or from engine)
       if (bestMoveCache.has(item.fen)) {
         const uci = bestMoveCache.get(item.fen)!;
         if (uci && uci.length >= 4) {
-          const bestArrow: [string, string, string] = [uci.slice(0,2), uci.slice(2,4), 'rgba(34,197,94,0.8)'];
+          const bestArrow: [string, string, string] = [
+            uci.slice(0, 2),
+            uci.slice(2, 4),
+            "rgba(34,197,94,0.8)",
+          ];
           setArrows([mistakeArrow, bestArrow]);
         }
       } else {
@@ -318,8 +383,14 @@ const BlunderCard: React.FC<BlunderCardProps> = ({ item, onViewGame }) => {
           bestMoveCache.set(item.fen, result.bestMove);
           const uci = result.bestMove;
           if (uci && uci.length >= 4) {
-            const bestArrow: [string, string, string] = [uci.slice(0,2), uci.slice(2,4), 'rgba(34,197,94,0.8)'];
-            setArrows(prev => prev.length > 0 ? [mistakeArrow, bestArrow] : []);
+            const bestArrow: [string, string, string] = [
+              uci.slice(0, 2),
+              uci.slice(2, 4),
+              "rgba(34,197,94,0.8)",
+            ];
+            setArrows((prev) =>
+              prev.length > 0 ? [mistakeArrow, bestArrow] : [],
+            );
           }
         }
       }
@@ -333,8 +404,8 @@ const BlunderCard: React.FC<BlunderCardProps> = ({ item, onViewGame }) => {
   };
 
   return (
-    <div 
-      onMouseEnter={handleMouseEnter} 
+    <div
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={() => onViewGame(item.gameId, item.moveIndex)}
       className="bg-[#0d1117] border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-indigo-500/30 transition-all group cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/10 active:scale-[0.98] flex flex-col"
@@ -347,14 +418,18 @@ const BlunderCard: React.FC<BlunderCardProps> = ({ item, onViewGame }) => {
           animationDuration={0}
           boardOrientation={boardOrientation}
           customArrows={arrows as any}
-          customDarkSquareStyle={{ backgroundColor: '#1e293b' }}
-          customLightSquareStyle={{ backgroundColor: '#475569' }}
+          customDarkSquareStyle={{ backgroundColor: "#1e293b" }}
+          customLightSquareStyle={{ backgroundColor: "#475569" }}
         />
         {/* Phase / Shape tag */}
-        <div className={cn(
-          "absolute top-4 right-4 px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest backdrop-blur-md border shadow-2xl",
-          isOpening ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-indigo-500/20 text-indigo-400 border-indigo-500/30"
-        )}>
+        <div
+          className={cn(
+            "absolute top-4 right-4 px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest backdrop-blur-md border shadow-2xl",
+            isOpening
+              ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+              : "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
+          )}
+        >
           {tagLabel}
         </div>
       </div>
@@ -367,10 +442,17 @@ const BlunderCard: React.FC<BlunderCardProps> = ({ item, onViewGame }) => {
       {/* Info section */}
       <div className="p-5 flex flex-col gap-2 flex-1 justify-center">
         <div className="flex items-center gap-2">
-          <span className={cn('text-[8px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0', badgeClasses)}>
-            {isBlunder ? 'blunder' : 'mistake'}
+          <span
+            className={cn(
+              "text-[8px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0",
+              badgeClasses,
+            )}
+          >
+            {isBlunder ? "blunder" : "mistake"}
           </span>
-          <span className="text-xl font-black text-white leading-none">{item.san}</span>
+          <span className="text-xl font-black text-white leading-none">
+            {item.san}
+          </span>
           <span className="text-rose-400 text-sm font-mono ml-auto shrink-0 font-bold">
             {formatCpLoss(item.cpLoss)}
           </span>
@@ -382,7 +464,7 @@ const BlunderCard: React.FC<BlunderCardProps> = ({ item, onViewGame }) => {
 
         <div className="flex flex-col gap-0.5">
           <span className="text-slate-300 text-xs font-bold truncate">
-            vs {opponent || 'Unknown'}
+            vs {opponent || "Unknown"}
           </span>
           <span className="text-slate-600 text-[10px] font-bold uppercase tracking-tight">
             {formatDate(item.date)}

@@ -1,8 +1,27 @@
-import { create } from 'zustand';
-import { Square } from 'chess.js';
+/**
+ * @legacy V1 training store. Backs `useTraining` and the V1 tab flow only.
+ * V2 keeps its drill state in `TrainNowScreen` component-local state. Do
+ * not extend for V2 features.
+ */
+import { create } from "zustand";
+import { Square } from "chess.js";
 
-export type TrainingMode = 'full' | 'weak' | 'quiz' | 'learn' | 'study' | 'explore';
-export type TrainingStatus = 'idle' | 'training' | 'correct' | 'wrong' | 'complete' | 'demo' | 'novelty' | 'simulating';
+export type TrainingMode =
+  | "full"
+  | "weak"
+  | "quiz"
+  | "learn"
+  | "study"
+  | "explore";
+export type TrainingStatus =
+  | "idle"
+  | "training"
+  | "correct"
+  | "wrong"
+  | "complete"
+  | "demo"
+  | "novelty"
+  | "simulating";
 
 type Arrow = [Square, Square, string?];
 
@@ -51,9 +70,9 @@ interface TrainingState {
 }
 
 const initialState = {
-  mode: 'full' as TrainingMode,
-  status: 'idle' as TrainingStatus,
-  message: 'Select a line and start drilling.',
+  mode: "full" as TrainingMode,
+  status: "idle" as TrainingStatus,
+  message: "Select a line and start drilling.",
   hint: null as string | null,
   mistakeCount: 0,
   awaitingNext: false,
@@ -86,19 +105,39 @@ export const useTrainingStore = create<TrainingState>((set) => ({
   updateLedgerBlack: (entry) =>
     set((s) => ({
       ledger: s.ledger.map((row, i) =>
-        i === s.ledger.length - 1 ? { ...row, black: entry } : row
+        i === s.ledger.length - 1 ? { ...row, black: entry } : row,
       ),
     })),
 
   addToLedger: (entry) =>
     set((s) =>
-      entry.side === 'white'
-        ? { ledger: [...s.ledger, { white: { san: entry.san, eval: entry.eval, comment: entry.comment } }] }
+      entry.side === "white"
+        ? {
+            ledger: [
+              ...s.ledger,
+              {
+                white: {
+                  san: entry.san,
+                  eval: entry.eval,
+                  comment: entry.comment,
+                },
+              },
+            ],
+          }
         : {
             ledger: s.ledger.map((r, i) =>
-              i === s.ledger.length - 1 ? { ...r, black: { san: entry.san, eval: entry.eval, comment: entry.comment } } : r
+              i === s.ledger.length - 1
+                ? {
+                    ...r,
+                    black: {
+                      san: entry.san,
+                      eval: entry.eval,
+                      comment: entry.comment,
+                    },
+                  }
+                : r,
             ),
-          }
+          },
     ),
 
   popMoves: () =>
@@ -108,30 +147,34 @@ export const useTrainingStore = create<TrainingState>((set) => ({
       mistakeCount: 0,
     })),
 
-  undo: () => set((s) => {
-    if (s.moveHistory.length === 0) return s;
-    const isEven = s.moveHistory.length % 2 === 0;
-    return {
-      moveHistory: s.moveHistory.slice(0, -1),
-      ledger: isEven 
-        ? s.ledger.map((row, i) => i === s.ledger.length - 1 ? { ...row, black: undefined } : row)
-        : s.ledger.slice(0, -1),
-      studyStep: Math.max(0, s.studyStep - 1),
-      status: 'training',
-      awaitingNext: false,
-      arrows: [],
-    };
-  }),
+  undo: () =>
+    set((s) => {
+      if (s.moveHistory.length === 0) return s;
+      const isEven = s.moveHistory.length % 2 === 0;
+      return {
+        moveHistory: s.moveHistory.slice(0, -1),
+        ledger: isEven
+          ? s.ledger.map((row, i) =>
+              i === s.ledger.length - 1 ? { ...row, black: undefined } : row,
+            )
+          : s.ledger.slice(0, -1),
+        studyStep: Math.max(0, s.studyStep - 1),
+        status: "training",
+        awaitingNext: false,
+        arrows: [],
+      };
+    }),
 
   reset: () => set({ ...initialState }),
-  resetSession: () => set({
-    status: 'idle',
-    message: 'Starting new session...',
-    hint: null,
-    mistakeCount: 0,
-    awaitingNext: false,
-    ledger: [],
-    moveHistory: [],
-    arrows: [],
-  }),
+  resetSession: () =>
+    set({
+      status: "idle",
+      message: "Starting new session...",
+      hint: null,
+      mistakeCount: 0,
+      awaitingNext: false,
+      ledger: [],
+      moveHistory: [],
+      arrows: [],
+    }),
 }));

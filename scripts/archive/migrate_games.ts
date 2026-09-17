@@ -25,7 +25,9 @@ db.run(`
 `);
 
 db.run(`CREATE INDEX IF NOT EXISTS idx_games_user_color ON games(user_color)`);
-db.run(`CREATE INDEX IF NOT EXISTS idx_games_opening_class ON games(opening_class)`);
+db.run(
+  `CREATE INDEX IF NOT EXISTS idx_games_opening_class ON games(opening_class)`,
+);
 db.run(`CREATE INDEX IF NOT EXISTS idx_games_result ON games(result)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_games_date ON games(date)`);
 

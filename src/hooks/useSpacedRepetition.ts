@@ -1,9 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Chess } from 'chess.js';
-import * as api from '../services/api';
-import { computeSM2, gradeFromOutcome } from '../utils/sm2';
+import { useState, useEffect, useCallback } from "react";
+import { Chess } from "chess.js";
+import * as api from "../services/api";
+import { computeSM2, gradeFromOutcome } from "../utils/sm2";
 
-export type ReviewStatus = 'awaiting_move' | 'wrong' | 'awaiting_next' | 'given_up';
+export type ReviewStatus =
+  | "awaiting_move"
+  | "wrong"
+  | "awaiting_next"
+  | "given_up";
 
 export interface ReviewState {
   duePositions: api.ProgressEntry[];
@@ -28,10 +32,13 @@ export function useSpacedRepetition(): ReviewState {
   const [duePositions, setDuePositions] = useState<api.ProgressEntry[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [reviewFen, setReviewFen] = useState<string | null>(null);
-  const [reviewStatus, setReviewStatus] = useState<ReviewStatus>('awaiting_move');
+  const [reviewStatus, setReviewStatus] =
+    useState<ReviewStatus>("awaiting_move");
   const [reviewMistakeCount, setReviewMistakeCount] = useState(0);
   const [reviewHint, setReviewHint] = useState<string | null>(null);
-  const [reviewArrows, setReviewArrows] = useState<[string, string, string][]>([]);
+  const [reviewArrows, setReviewArrows] = useState<[string, string, string][]>(
+    [],
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
@@ -39,16 +46,17 @@ export function useSpacedRepetition(): ReviewState {
     setIsLoading(true);
     setIsError(false);
     try {
-      const positions = await api.getDuePositions('all');
-      
+      const positions = await api.getDuePositions("all");
+
       // Filter out the absolute starting position and any FENs that are not the player's turn
-      const filtered = positions.filter(p => {
-        if (p.fen.startsWith('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR')) return false;
-        
-        const isWhiteTurn = p.fen.includes(' w ');
-        if (p.side === 'white' && !isWhiteTurn) return false;
-        if (p.side === 'black' && isWhiteTurn) return false;
-        
+      const filtered = positions.filter((p) => {
+        if (p.fen.startsWith("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"))
+          return false;
+
+        const isWhiteTurn = p.fen.includes(" w ");
+        if (p.side === "white" && !isWhiteTurn) return false;
+        if (p.side === "black" && isWhiteTurn) return false;
+
         return true;
       });
 
@@ -77,14 +85,19 @@ export function useSpacedRepetition(): ReviewState {
 
     setReviewFen(fen);
 
-    setReviewStatus('awaiting_move');
+    setReviewStatus("awaiting_move");
     setReviewMistakeCount(0);
     setReviewHint(null);
     setReviewArrows([]);
   }, [currentIndex, duePositions]);
 
   const submitGrade = useCallback(
-    (position: api.ProgressEntry, correct: boolean, mistakeCount: number, wasGivenUp: boolean) => {
+    (
+      position: api.ProgressEntry,
+      correct: boolean,
+      mistakeCount: number,
+      wasGivenUp: boolean,
+    ) => {
       const grade = gradeFromOutcome(correct, mistakeCount, wasGivenUp);
       const sm2Result = computeSM2(
         {
@@ -97,14 +110,16 @@ export function useSpacedRepetition(): ReviewState {
 
       const repId = position.repertoire_id ?? 0;
       if (repId > 0) {
-        api.recordAttempt(repId, {
-          fen: position.fen,
-          correct,
-          grade,
-          easeFactor: sm2Result.nextEaseFactor,
-          intervalDays: sm2Result.nextIntervalDays,
-          nextReview: sm2Result.nextReviewDate,
-        }).catch(() => {});
+        api
+          .recordAttempt(repId, {
+            fen: position.fen,
+            correct,
+            grade,
+            easeFactor: sm2Result.nextEaseFactor,
+            intervalDays: sm2Result.nextIntervalDays,
+            nextReview: sm2Result.nextReviewDate,
+          })
+          .catch(() => {});
       }
     },
     [],
@@ -113,14 +128,19 @@ export function useSpacedRepetition(): ReviewState {
   const onReviewDrop = useCallback(
     (source: string, target: string): boolean => {
       // Allow retries while wrong; block only after correct or give-up
-      if (reviewStatus === 'awaiting_next' || reviewStatus === 'given_up' || !reviewFen) return false;
+      if (
+        reviewStatus === "awaiting_next" ||
+        reviewStatus === "given_up" ||
+        !reviewFen
+      )
+        return false;
 
       const position = duePositions[currentIndex];
       if (!position) return false;
 
       try {
         const chess = new Chess(reviewFen);
-        const move = chess.move({ from: source, to: target, promotion: 'q' });
+        const move = chess.move({ from: source, to: target, promotion: "q" });
         if (!move) return false;
 
         const expectedMoves = position.expected_moves || [];
@@ -128,14 +148,14 @@ export function useSpacedRepetition(): ReviewState {
 
         if (isCorrect) {
           submitGrade(position, true, reviewMistakeCount, false);
-          setReviewStatus('awaiting_next');
+          setReviewStatus("awaiting_next");
           setReviewHint(null);
           setReviewFen(chess.fen()); // Keep piece at destination
           return true;
         } else {
           const newMistakeCount = reviewMistakeCount + 1;
           setReviewMistakeCount(newMistakeCount);
-          setReviewStatus('wrong');
+          setReviewStatus("wrong");
 
           // Progressive hints — reveal more with each failure
           if (newMistakeCount >= 3 && expectedMoves.length > 0) {
@@ -143,9 +163,16 @@ export function useSpacedRepetition(): ReviewState {
           } else if (newMistakeCount === 2 && expectedMoves.length > 0) {
             const san = expectedMoves[0];
             const pieceNames: Record<string, string> = {
-              N: 'knight', B: 'bishop', R: 'rook', Q: 'queen', K: 'king',
+              N: "knight",
+              B: "bishop",
+              R: "rook",
+              Q: "queen",
+              K: "king",
             };
-            const piece = san[0] === 'O' ? 'king (castling)' : (pieceNames[san[0]] ?? 'pawn');
+            const piece =
+              san[0] === "O"
+                ? "king (castling)"
+                : (pieceNames[san[0]] ?? "pawn");
             setReviewHint(`Hint: move a ${piece}`);
           } else {
             setReviewHint(null); // no hint on first mistake
@@ -157,7 +184,14 @@ export function useSpacedRepetition(): ReviewState {
         return false;
       }
     },
-    [reviewStatus, reviewFen, duePositions, currentIndex, reviewMistakeCount, submitGrade],
+    [
+      reviewStatus,
+      reviewFen,
+      duePositions,
+      currentIndex,
+      reviewMistakeCount,
+      submitGrade,
+    ],
   );
 
   const giveUpReview = useCallback(() => {
@@ -176,13 +210,15 @@ export function useSpacedRepetition(): ReviewState {
         const m = chess.move(correctSan);
         if (m) {
           setReviewFen(chess.fen());
-          setReviewArrows([[m.from, m.to, 'rgba(245, 158, 11, 0.75)']]);
+          setReviewArrows([[m.from, m.to, "rgba(245, 158, 11, 0.75)"]]);
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     submitGrade(position, false, reviewMistakeCount, true);
-    setReviewStatus('given_up');
+    setReviewStatus("given_up");
   }, [reviewFen, duePositions, currentIndex, reviewMistakeCount, submitGrade]);
 
   const advanceToNext = useCallback(() => {
@@ -191,14 +227,15 @@ export function useSpacedRepetition(): ReviewState {
 
   const reDrillAll = useCallback(() => {
     // Reset per-position state immediately so there's no stale-status frame
-    setReviewStatus('awaiting_move');
+    setReviewStatus("awaiting_move");
     setReviewMistakeCount(0);
     setReviewHint(null);
     setReviewArrows([]);
     setCurrentIndex(0);
   }, []);
 
-  const doneToday = !isLoading && !isError && currentIndex >= duePositions.length;
+  const doneToday =
+    !isLoading && !isError && currentIndex >= duePositions.length;
   const currentPosition = duePositions[currentIndex] ?? null;
 
   return {

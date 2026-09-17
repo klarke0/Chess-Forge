@@ -13,27 +13,31 @@
 ## Task 1: Create MoveTickerStrip component
 
 **Files:**
+
 - Create: `src/components/MoveTickerStrip.tsx`
 
 ### Step 1: Create the file
 
 ```tsx
 // src/components/MoveTickerStrip.tsx
-import React, { useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn } from '../utils/cn';
+import React, { useEffect, useRef } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "../utils/cn";
 
 const GRADE_TEXT: Record<string, string> = {
-  blunder:    'text-rose-400',
-  mistake:    'text-orange-400',
-  inaccuracy: 'text-amber-300',
-  excellent:  'text-emerald-400',
-  good:       'text-slate-300',
-  standard:   'text-slate-400',
+  blunder: "text-rose-400",
+  mistake: "text-orange-400",
+  inaccuracy: "text-amber-300",
+  excellent: "text-emerald-400",
+  good: "text-slate-300",
+  standard: "text-slate-400",
 };
 
 const GRADE_LABEL: Record<string, string> = {
-  blunder: '??', mistake: '?', inaccuracy: '?!', excellent: '!',
+  blunder: "??",
+  mistake: "?",
+  inaccuracy: "?!",
+  excellent: "!",
 };
 
 export interface TickerMove {
@@ -59,7 +63,7 @@ export const MoveTickerStrip: React.FC<MoveTickerStripProps> = ({
   onSelect,
   onPrev,
   onNext,
-  accentColor = 'bg-indigo-500/30 ring-indigo-500/50 text-white',
+  accentColor = "bg-indigo-500/30 ring-indigo-500/50 text-white",
 }) => {
   const activeRef = useRef<HTMLButtonElement>(null);
   const stripRef = useRef<HTMLDivElement>(null);
@@ -71,7 +75,7 @@ export const MoveTickerStrip: React.FC<MoveTickerStripProps> = ({
       const active = activeRef.current;
       const targetLeft =
         active.offsetLeft - strip.clientWidth / 2 + active.clientWidth / 2;
-      strip.scrollTo({ left: targetLeft, behavior: 'smooth' });
+      strip.scrollTo({ left: targetLeft, behavior: "smooth" });
     }
   }, [currentIdx]);
 
@@ -90,15 +94,17 @@ export const MoveTickerStrip: React.FC<MoveTickerStripProps> = ({
       <div
         ref={stripRef}
         className="flex-1 overflow-x-auto flex items-center gap-0.5 scrollbar-none"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {moves.length === 0 ? (
-          <span className="text-[11px] text-slate-600 px-2 italic">No moves yet</span>
+          <span className="text-[11px] text-slate-600 px-2 italic">
+            No moves yet
+          </span>
         ) : (
           moves.map((m) => {
             const isActive = currentIdx === m.idx;
-            const gradeText = GRADE_TEXT[m.grade ?? ''] ?? 'text-slate-300';
-            const gradeLabel = GRADE_LABEL[m.grade ?? ''] ?? '';
+            const gradeText = GRADE_TEXT[m.grade ?? ""] ?? "text-slate-300";
+            const gradeLabel = GRADE_LABEL[m.grade ?? ""] ?? "";
             return (
               <React.Fragment key={m.idx}>
                 {m.isWhite && (
@@ -110,15 +116,17 @@ export const MoveTickerStrip: React.FC<MoveTickerStripProps> = ({
                   ref={isActive ? activeRef : undefined}
                   onClick={() => onSelect(m.idx)}
                   className={cn(
-                    'shrink-0 px-1.5 py-0.5 rounded text-[12px] font-medium transition-all whitespace-nowrap',
+                    "shrink-0 px-1.5 py-0.5 rounded text-[12px] font-medium transition-all whitespace-nowrap",
                     isActive
-                      ? cn('ring-1 font-bold', accentColor)
-                      : cn('hover:bg-white/5', gradeText),
+                      ? cn("ring-1 font-bold", accentColor)
+                      : cn("hover:bg-white/5", gradeText),
                   )}
                 >
                   {m.san}
                   {gradeLabel && (
-                    <span className="text-[8px] font-black opacity-80 ml-0.5">{gradeLabel}</span>
+                    <span className="text-[8px] font-black opacity-80 ml-0.5">
+                      {gradeLabel}
+                    </span>
                   )}
                 </button>
               </React.Fragment>
@@ -145,6 +153,7 @@ export const MoveTickerStrip: React.FC<MoveTickerStripProps> = ({
 ```bash
 cd "/Users/kevin/Chess Trainer" && npx tsc --noEmit 2>&1 | head -30
 ```
+
 Expected: no errors referencing `MoveTickerStrip.tsx`.
 
 ### Step 3: Commit
@@ -160,15 +169,16 @@ git commit -m "feat: add MoveTickerStrip mobile component"
 ## Task 2: Create BottomDrawer component
 
 **Files:**
+
 - Create: `src/components/BottomDrawer.tsx`
 
 ### Step 1: Create the file
 
 ```tsx
 // src/components/BottomDrawer.tsx
-import React, { useState } from 'react';
-import { ChevronUp, ChevronDown } from 'lucide-react';
-import { cn } from '../utils/cn';
+import React, { useState } from "react";
+import { ChevronUp, ChevronDown } from "lucide-react";
+import { cn } from "../utils/cn";
 
 interface BottomDrawerProps {
   children: React.ReactNode;
@@ -184,19 +194,19 @@ export const BottomDrawer: React.FC<BottomDrawerProps> = ({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="lg:hidden shrink-0 flex flex-col-reverse overflow-hidden transition-[max-height] duration-300 ease-in-out"
-         style={{ maxHeight: isOpen ? '55vh' : '1.75rem' }}>
+    <div
+      className="lg:hidden shrink-0 flex flex-col-reverse overflow-hidden transition-[max-height] duration-300 ease-in-out"
+      style={{ maxHeight: isOpen ? "55vh" : "1.75rem" }}
+    >
       {/* Handle — always visible at bottom, rendered first in DOM for flex-col-reverse */}
       <button
-        onClick={() => setIsOpen(o => !o)}
+        onClick={() => setIsOpen((o) => !o)}
         className="shrink-0 h-7 w-full flex items-center justify-center gap-2 bg-[#0a0d14] border-t border-white/10 text-slate-500 hover:text-white transition-colors"
       >
         {isOpen ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
         <span className="text-[10px] font-black uppercase tracking-widest">
           {label}
-          {secondaryLabel && (
-            <span className="text-slate-600 mx-1.5">·</span>
-          )}
+          {secondaryLabel && <span className="text-slate-600 mx-1.5">·</span>}
           {secondaryLabel && secondaryLabel}
         </span>
       </button>
@@ -215,6 +225,7 @@ export const BottomDrawer: React.FC<BottomDrawerProps> = ({
 ```bash
 cd "/Users/kevin/Chess Trainer" && npx tsc --noEmit 2>&1 | head -30
 ```
+
 Expected: no errors.
 
 ### Step 3: Commit
@@ -230,6 +241,7 @@ git commit -m "feat: add BottomDrawer mobile slide-up panel component"
 ## Task 3: Update GameAnalysis.tsx — mobile layout
 
 **Files:**
+
 - Modify: `src/components/GameAnalysis.tsx`
 
 This task has several sub-steps. Work through them sequentially.
@@ -237,6 +249,7 @@ This task has several sub-steps. Work through them sequentially.
 ### Context: What changes on mobile vs desktop
 
 **On mobile (default, no `lg:` prefix):**
+
 - Outer container: remove `overflow-y-auto`, use `overflow-hidden` so page never scrolls
 - Board area: no change to board itself
 - Eval strip: add `evalExpanded` state — toggled by chevron button in top-right of strip
@@ -246,6 +259,7 @@ This task has several sub-steps. Work through them sequentially.
 - Below board area (mobile only): add `<MoveTickerStrip>` and `<BottomDrawer>`
 
 **On desktop (`lg:`):**
+
 - Everything unchanged — all existing `lg:` classes remain
 
 ### Step 1: Add imports
@@ -253,8 +267,8 @@ This task has several sub-steps. Work through them sequentially.
 At the top of `GameAnalysis.tsx`, add these two imports alongside existing component imports:
 
 ```tsx
-import { MoveTickerStrip, TickerMove } from './MoveTickerStrip';
-import { BottomDrawer } from './BottomDrawer';
+import { MoveTickerStrip, TickerMove } from "./MoveTickerStrip";
+import { BottomDrawer } from "./BottomDrawer";
 ```
 
 Also add `ChevronDown, ChevronUp` to the lucide-react import line (they may already be there; check first).
@@ -286,11 +300,13 @@ const tickerMoves = useMemo((): TickerMove[] => {
 ### Step 4: Fix the outer container — remove mobile overflow-y-auto
 
 Find this line (around line 375):
+
 ```tsx
 <div className="flex-1 flex overflow-y-auto lg:overflow-hidden flex-col lg:flex-row pb-24 lg:pb-0">
 ```
 
 Replace with:
+
 ```tsx
 <div className="flex-1 flex overflow-hidden flex-col lg:flex-row">
 ```
@@ -300,6 +316,7 @@ Replace with:
 ### Step 5: Update eval strip — expandable with grade dots
 
 Find the eval chart section (around line 416-433):
+
 ```tsx
 {/* Eval Chart */}
 {reviewedMoves.length > 0 && (
@@ -313,74 +330,126 @@ Find the eval chart section (around line 416-433):
 ```
 
 Replace the entire block with:
+
 ```tsx
-{/* Eval Chart — tap chevron to expand on mobile */}
-{reviewedMoves.length > 0 && (
-  <div
-    className={cn(
-      'w-full max-w-2xl relative rounded-lg overflow-hidden border border-white/5 bg-black/40 shrink-0 select-none transition-[height] duration-300',
-      evalExpanded ? 'h-24' : 'h-8 lg:h-[36px]',
-    )}
-  >
-    <svg viewBox="0 0 1000 100" preserveAspectRatio="none" className="w-full h-full">
-      <rect x="0" y="0" width="1000" height="50" fill="rgba(255,255,255,0.03)" />
-      <rect x="0" y="50" width="1000" height="50" fill="rgba(0,0,0,0.2)" />
-      <line x1="0" y1="50" x2="1000" y2="50" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
-      {graphPoints && (
-        <polygon points={graphPoints} fill="rgba(129, 140, 248, 0.4)" className="transition-all duration-500" />
-      )}
-      {/* Grade dots — only in expanded state */}
-      {evalExpanded && reviewedMoves.map((m, i) => {
-        const dotColor =
-          m.grade === 'blunder'    ? '#f43f5e' :
-          m.grade === 'mistake'    ? '#fb923c' :
-          m.grade === 'inaccuracy' ? '#fcd34d' :
-          m.grade === 'excellent'  ? '#34d399' : null;
-        if (!dotColor) return null;
-        const cx = ((i + 0.5) / reviewedMoves.length) * 1000;
-        const cy = 50 * (1 - Math.tanh((m as any).eval / 600));
-        return (
-          <circle key={i} cx={cx} cy={cy} r="14" fill={dotColor} fillOpacity="0.85" />
-        );
-      })}
-      {currentMoveIdx >= 0 && (
-        <line
-          x1={((currentMoveIdx + 0.5) / reviewedMoves.length) * 1000} y1="0"
-          x2={((currentMoveIdx + 0.5) / reviewedMoves.length) * 1000} y2="100"
-          stroke="#818cf8" strokeWidth="3"
-        />
-      )}
-    </svg>
-    {/* Seek overlay (whole strip except chevron) */}
+{
+  /* Eval Chart — tap chevron to expand on mobile */
+}
+{
+  reviewedMoves.length > 0 && (
     <div
-      className="absolute inset-0"
-      style={{ right: '28px' }}
-      onClick={(e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const pct = (e.clientX - rect.left) / rect.width;
-        setCurrentMoveIdx(Math.max(0, Math.min(reviewedMoves.length - 1, Math.floor(pct * reviewedMoves.length))));
-      }}
-    />
-    {/* Expand/collapse chevron — mobile only */}
-    <button
-      className="lg:hidden absolute top-0 right-0 bottom-0 w-7 flex items-center justify-center text-slate-500 hover:text-white transition-colors"
-      onClick={() => setEvalExpanded(e => !e)}
-      aria-label={evalExpanded ? 'Collapse eval' : 'Expand eval'}
+      className={cn(
+        "w-full max-w-2xl relative rounded-lg overflow-hidden border border-white/5 bg-black/40 shrink-0 select-none transition-[height] duration-300",
+        evalExpanded ? "h-24" : "h-8 lg:h-[36px]",
+      )}
     >
-      {evalExpanded ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
-    </button>
-  </div>
-)}
+      <svg
+        viewBox="0 0 1000 100"
+        preserveAspectRatio="none"
+        className="w-full h-full"
+      >
+        <rect
+          x="0"
+          y="0"
+          width="1000"
+          height="50"
+          fill="rgba(255,255,255,0.03)"
+        />
+        <rect x="0" y="50" width="1000" height="50" fill="rgba(0,0,0,0.2)" />
+        <line
+          x1="0"
+          y1="50"
+          x2="1000"
+          y2="50"
+          stroke="rgba(255,255,255,0.1)"
+          strokeWidth="1"
+        />
+        {graphPoints && (
+          <polygon
+            points={graphPoints}
+            fill="rgba(129, 140, 248, 0.4)"
+            className="transition-all duration-500"
+          />
+        )}
+        {/* Grade dots — only in expanded state */}
+        {evalExpanded &&
+          reviewedMoves.map((m, i) => {
+            const dotColor =
+              m.grade === "blunder"
+                ? "#f43f5e"
+                : m.grade === "mistake"
+                  ? "#fb923c"
+                  : m.grade === "inaccuracy"
+                    ? "#fcd34d"
+                    : m.grade === "excellent"
+                      ? "#34d399"
+                      : null;
+            if (!dotColor) return null;
+            const cx = ((i + 0.5) / reviewedMoves.length) * 1000;
+            const cy = 50 * (1 - Math.tanh((m as any).eval / 600));
+            return (
+              <circle
+                key={i}
+                cx={cx}
+                cy={cy}
+                r="14"
+                fill={dotColor}
+                fillOpacity="0.85"
+              />
+            );
+          })}
+        {currentMoveIdx >= 0 && (
+          <line
+            x1={((currentMoveIdx + 0.5) / reviewedMoves.length) * 1000}
+            y1="0"
+            x2={((currentMoveIdx + 0.5) / reviewedMoves.length) * 1000}
+            y2="100"
+            stroke="#818cf8"
+            strokeWidth="3"
+          />
+        )}
+      </svg>
+      {/* Seek overlay (whole strip except chevron) */}
+      <div
+        className="absolute inset-0"
+        style={{ right: "28px" }}
+        onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const pct = (e.clientX - rect.left) / rect.width;
+          setCurrentMoveIdx(
+            Math.max(
+              0,
+              Math.min(
+                reviewedMoves.length - 1,
+                Math.floor(pct * reviewedMoves.length),
+              ),
+            ),
+          );
+        }}
+      />
+      {/* Expand/collapse chevron — mobile only */}
+      <button
+        className="lg:hidden absolute top-0 right-0 bottom-0 w-7 flex items-center justify-center text-slate-500 hover:text-white transition-colors"
+        onClick={() => setEvalExpanded((e) => !e)}
+        aria-label={evalExpanded ? "Collapse eval" : "Expand eval"}
+      >
+        {evalExpanded ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
+      </button>
+    </div>
+  );
+}
 ```
 
 ### Step 6: Hide the sidebar on mobile
 
 Find (around line 438):
+
 ```tsx
 <div className="w-full lg:w-[420px] bg-[#0a0d14] lg:border-l border-white/5 flex flex-col shrink-0">
 ```
 
 Replace `flex` with `hidden lg:flex`:
+
 ```tsx
 <div className="w-full lg:w-[420px] bg-[#0a0d14] lg:border-l border-white/5 hidden lg:flex flex-col shrink-0">
 ```
@@ -388,6 +457,7 @@ Replace `flex` with `hidden lg:flex`:
 ### Step 7: Add MoveTickerStrip and BottomDrawer after the main flex row
 
 The main flex row is:
+
 ```tsx
 <div className="flex-1 flex overflow-hidden flex-col lg:flex-row">
   {/* LEFT: Board Area */}
@@ -472,6 +542,7 @@ After the closing `</div>` of this flex row (and still inside the outer `absolut
 ```bash
 cd "/Users/kevin/Chess Trainer" && npx tsc --noEmit 2>&1 | head -40
 ```
+
 Expected: 0 errors.
 
 ### Step 9: Commit
@@ -487,6 +558,7 @@ git commit -m "feat: mobile game review — ticker strip, expandable eval, botto
 ## Task 4: Update GameLab.tsx — mobile layout
 
 **Files:**
+
 - Modify: `src/components/GameLab.tsx`
 
 GameLab is simpler — no coach panel. The right sidebar is only a move list.
@@ -494,7 +566,7 @@ GameLab is simpler — no coach panel. The right sidebar is only a move list.
 ### Step 1: Add import
 
 ```tsx
-import { MoveTickerStrip, TickerMove } from './MoveTickerStrip';
+import { MoveTickerStrip, TickerMove } from "./MoveTickerStrip";
 ```
 
 ### Step 2: Add evalExpanded state
@@ -508,25 +580,29 @@ const [evalExpanded, setEvalExpanded] = useState(false);
 After the existing `graphPoints` useMemo (~line 134), add:
 
 ```tsx
-const tickerMoves = useMemo((): TickerMove[] =>
-  reviewedMoves.map((m, idx) => ({
-    idx,
-    san: m.san,
-    grade: m.grade,
-    moveNumber: Math.floor(idx / 2) + 1,
-    isWhite: idx % 2 === 0,
-  })),
-[reviewedMoves]);
+const tickerMoves = useMemo(
+  (): TickerMove[] =>
+    reviewedMoves.map((m, idx) => ({
+      idx,
+      san: m.san,
+      grade: m.grade,
+      moveNumber: Math.floor(idx / 2) + 1,
+      isWhite: idx % 2 === 0,
+    })),
+  [reviewedMoves],
+);
 ```
 
 ### Step 4: Hide right panel on mobile
 
 Find (around line 352):
+
 ```tsx
 <div className="w-full lg:w-[340px] bg-[#0a0d14] border-l border-white/5 flex flex-col shrink-0 overflow-hidden">
 ```
 
 Change `flex` to `hidden lg:flex`:
+
 ```tsx
 <div className="w-full lg:w-[340px] bg-[#0a0d14] border-l border-white/5 hidden lg:flex flex-col shrink-0 overflow-hidden">
 ```
@@ -534,6 +610,7 @@ Change `flex` to `hidden lg:flex`:
 ### Step 5: Make eval graph expandable
 
 Find the eval graph div (around line 270):
+
 ```tsx
 <div className="w-full max-w-[min(55vh,420px)] h-12 rounded-xl border border-white/5 overflow-hidden relative shrink-0 bg-[#0a0d14]">
 ```
@@ -547,6 +624,7 @@ Add grade dots in expanded state using `reviewedMoves` with the same logic as Ta
 ### Step 6: Add MoveTickerStrip below the navigator
 
 The current layout in the `results` view has:
+
 ```tsx
 <div className="flex-[1.5] flex flex-col items-center p-4 lg:p-6 gap-4 ...">
   <board />
@@ -562,8 +640,10 @@ After the `</div>` that closes the left panel (`flex-[1.5]`), before the right p
   moves={tickerMoves}
   currentIdx={currentMoveIndex}
   onSelect={setCurrentMoveIndex}
-  onPrev={() => setCurrentMoveIndex(i => Math.max(-1, i - 1))}
-  onNext={() => setCurrentMoveIndex(i => Math.min(reviewedMoves.length - 1, i + 1))}
+  onPrev={() => setCurrentMoveIndex((i) => Math.max(-1, i - 1))}
+  onNext={() =>
+    setCurrentMoveIndex((i) => Math.min(reviewedMoves.length - 1, i + 1))
+  }
   accentColor="bg-cyan-500/20 ring-cyan-500/40 text-cyan-100"
 />
 ```
@@ -591,6 +671,7 @@ git commit -m "feat: mobile game lab — ticker strip + expandable eval"
 Check the following in the browser (mobile viewport, ~390px wide):
 
 **GameAnalysis:**
+
 - [ ] Board stays on screen when pressing Next/Prev — no page scroll
 - [ ] Move ticker scrolls horizontally to center the active chip
 - [ ] Tapping a chip in the ticker jumps to that move
@@ -603,6 +684,7 @@ Check the following in the browser (mobile viewport, ~390px wide):
 - [ ] Desktop (`lg:`) layout is completely unchanged
 
 **GameLab:**
+
 - [ ] Board stays visible during navigation
 - [ ] Ticker appears below the eval graph
 - [ ] Cyan accent color used for active move chip

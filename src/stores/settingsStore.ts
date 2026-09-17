@@ -1,8 +1,8 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
-export type Theme = 'dark' | 'night';
-export type BoardColorScheme = 'slate' | 'green' | 'blue' | 'walnut';
+export type Theme = "dark" | "night";
+export type BoardColorScheme = "slate" | "green" | "blue" | "walnut";
 
 interface BoardSettings {
   showVision: boolean;
@@ -45,14 +45,17 @@ interface SettingsState {
   setAnalysisSetting: (key: keyof BoardSettings, value: boolean) => void;
   toggleAnalysisVision: () => void;
   toggleAnalysisThreats: () => void;
-  setLabSetting: (key: keyof SettingsState['lab'], value: boolean) => void;
+  setLabSetting: (key: keyof SettingsState["lab"], value: boolean) => void;
   toggleLabVision: () => void;
 
   // === New actions ===
   setTheme: (theme: Theme) => void;
   toggleSound: () => void;
   toggleAutoProceed: () => void;
-  setBoardSetting: <K extends keyof SettingsState['board']>(key: K, value: SettingsState['board'][K]) => void;
+  setBoardSetting: <K extends keyof SettingsState["board"]>(
+    key: K,
+    value: SettingsState["board"][K],
+  ) => void;
   setEngineLines: (lines: 1 | 2 | 3) => void;
   setEngineDepth: (depth: 16 | 20 | 24) => void;
 }
@@ -75,7 +78,7 @@ export const useSettingsStore = create<SettingsState>()(
         showEngine: false,
       },
       appearance: {
-        theme: 'dark',
+        theme: "dark",
       },
       sound: {
         enabled: true,
@@ -83,7 +86,7 @@ export const useSettingsStore = create<SettingsState>()(
       board: {
         showCoordinates: true,
         animatePieces: true,
-        colorScheme: 'slate',
+        colorScheme: "slate",
       },
       engine: {
         lines: 3,
@@ -92,7 +95,10 @@ export const useSettingsStore = create<SettingsState>()(
 
       toggleTrainingVision: () =>
         set((state) => ({
-          training: { ...state.training, showVision: !state.training.showVision },
+          training: {
+            ...state.training,
+            showVision: !state.training.showVision,
+          },
         })),
       setAnalysisSetting: (key, value) =>
         set((state) => ({
@@ -100,11 +106,17 @@ export const useSettingsStore = create<SettingsState>()(
         })),
       toggleAnalysisVision: () =>
         set((state) => ({
-          analysis: { ...state.analysis, showVision: !state.analysis.showVision },
+          analysis: {
+            ...state.analysis,
+            showVision: !state.analysis.showVision,
+          },
         })),
       toggleAnalysisThreats: () =>
         set((state) => ({
-          analysis: { ...state.analysis, showThreats: !state.analysis.showThreats },
+          analysis: {
+            ...state.analysis,
+            showThreats: !state.analysis.showThreats,
+          },
         })),
       setLabSetting: (key, value) =>
         set((state) => ({
@@ -121,7 +133,10 @@ export const useSettingsStore = create<SettingsState>()(
         set((state) => ({ sound: { enabled: !state.sound.enabled } })),
       toggleAutoProceed: () =>
         set((state) => ({
-          training: { ...state.training, autoProceed: !state.training.autoProceed },
+          training: {
+            ...state.training,
+            autoProceed: !state.training.autoProceed,
+          },
         })),
       setBoardSetting: (key, value) =>
         set((state) => ({ board: { ...state.board, [key]: value } })),
@@ -131,7 +146,7 @@ export const useSettingsStore = create<SettingsState>()(
         set((state) => ({ engine: { ...state.engine, depth } })),
     }),
     {
-      name: 'chess-forge-settings',
+      name: "chess-forge-settings",
       partialize: (state) => ({
         training: state.training,
         analysis: state.analysis,
@@ -141,6 +156,6 @@ export const useSettingsStore = create<SettingsState>()(
         board: state.board,
         engine: state.engine,
       }),
-    }
-  )
+    },
+  ),
 );

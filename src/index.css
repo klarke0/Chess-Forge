@@ -109,6 +109,7 @@ html[data-theme="dark"] {
   --forge-bg-elevated: #111520;
   --forge-bg-shell: #020204;
   --forge-bg-board: #161b22;
+  --forge-bg-nav: rgba(10, 13, 20, 0.9);
 
   --forge-accent-primary: #4f46e5;
   --forge-accent-primary-hover: #6366f1;
@@ -154,4 +155,5 @@ html[data-theme="night"] {
   --forge-bg-surface: #03040a;
   --forge-bg-card: #080b10;
   --forge-bg-elevated: #0c0f18;
+  --forge-bg-nav: rgba(3, 4, 10, 0.92);
 }

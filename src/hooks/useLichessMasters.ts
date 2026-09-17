@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { fetchLichessMasters, MastersData } from '../services/api';
+import { useState, useEffect } from "react";
+import { fetchLichessMasters, MastersData } from "../services/api";
 
 export function useLichessMasters(fen: string) {
   const [data, setData] = useState<MastersData | null>(null);

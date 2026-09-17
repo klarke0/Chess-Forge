@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React, { useId } from "react";
 
 interface ForgeIconProps {
   size?: number;
@@ -11,7 +11,14 @@ export const ForgeIcon: React.FC<ForgeIconProps> = ({ size = 20 }) => {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
       <defs>
-        <linearGradient id={gradientId} x1="12" y1="21.5" x2="12" y2="1.5" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id={gradientId}
+          x1="12"
+          y1="21.5"
+          x2="12"
+          y2="1.5"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop offset="0%" stopColor="#dc2626" />
           <stop offset="55%" stopColor="#f97316" />
           <stop offset="100%" stopColor="#fcd34d" stopOpacity="0.85" />
@@ -26,13 +33,16 @@ export const ForgeIcon: React.FC<ForgeIconProps> = ({ size = 20 }) => {
 
       {/* Pawn Head */}
       <circle cx="12" cy="7.25" r="2" fill="white" />
-      
+
       {/* Pawn Collar */}
       <rect x="9.5" y="9.5" width="5" height="1.25" rx="0.5" fill="white" />
-      
+
       {/* Pawn Body */}
-      <path d="M10.5 10.75h3c0 0 .5 3.5 2.25 5v1H8.25v-1c1.75-1.5 2.25-5 2.25-5z" fill="white" />
-      
+      <path
+        d="M10.5 10.75h3c0 0 .5 3.5 2.25 5v1H8.25v-1c1.75-1.5 2.25-5 2.25-5z"
+        fill="white"
+      />
+
       {/* Pawn Base */}
       <rect x="7.5" y="17" width="9" height="1.75" rx="0.5" fill="white" />
     </svg>

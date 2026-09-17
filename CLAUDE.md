@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Focus: V2 Only
+
+**The user is exclusively working on v2.** All new features, bug fixes, and improvements should target the v2 interface and backend. The v1 `App.tsx` / `src/App.tsx` is legacy — do not modify it unless explicitly asked.
+
+- **V2 frontend entry:** `src/v2/AppV2.tsx` → routes between `HomeScreen`, `TrainNowScreen`, and `InsightsTab`
+- **V2 backend:** `server/routes/v2_train_now.ts`, `server/routes/v2_insights.ts`, `server/routes/progress.ts`
+- **V2 live at:** `/v2` route (ngrok tunnel for mobile testing)
+
+---
+
 ## Commands
 
 - **Dev server:** `npm run dev` (Vite)
@@ -11,48 +21,103 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Build (Strict):** `./dev.sh build` (Always use this before restarting for mobile testing)
 
 ## AI Agent Protocols: Mobile Testing
+
 **CRITICAL:** When pushing changes for mobile testing via ngrok, the backend serves the `dist/` folder. You MUST run `./dev.sh build` synchronously in the foreground and verify its success `exit 0` BEFORE attempting to restart the backend. Never string build and restart commands together in the background (`npm run build && restart &`), as silent TypeScript errors will result in the old buggy bundle being served to the user.
+
 - **Lint:** `npm run lint` (ESLint with TypeScript + React hooks rules)
 - **Preview prod build:** `npm run preview`
 - **Rebuild repertoire data:** `node scripts/parseJobava.cjs` (parses PGN files from `bortnyk-and-naroditsky-s-jobava-london/` into `src/data/jobava_full.json`)
 
-## Architecture
+---
 
-Single-page React/TypeScript app (Vite + Tailwind CSS) that drills chess opening repertoire moves. No backend, no routing, no state management library.
+## V2 Architecture
 
-### Core Data Flow
+### Overview
 
-```
-PGN files → parseJobava.cjs → src/data/jobava_full.json → App.tsx (static import)
-```
+Full-stack React/TypeScript app (Vite + Tailwind + Bun backend) that trains chess improvement through spaced repetition of real game mistakes. The v2 interface replaces the static repertoire driller of v1 with a personalized mistake-based training loop.
 
-The repertoire JSON has two keys:
-- `chapters`: Array of 10 chapter objects (`name`, `startMoves[]`, `firstFen`)
-- `positions`: FEN-keyed map → array of `{ san, nextFen, comment? }` — the move tree
+### V2 Frontend (`src/v2/`)
 
-### Training Loop
+- **`AppV2.tsx`** — Root component, handles navigation between screens
+- **`HomeScreen.tsx`** — Session summary, drill count breakdown, start button
+- **`TrainNowScreen.tsx`** — Main drill loop: loads session from API, cycles through positions, records SM-2 results. States: `idle → loading → queued → drilling → explanation → teaching → complete`
+- **`BlunderExplanation.tsx`** — Gemini-powered coaching card. Only fires API call when `revealed=true` or `wrongMove !== null` (skips on first-try correct). Accepts `nextLabel` prop.
 
-User plays White against the repertoire. On `onPieceDrop`, the played move is checked against `positions[currentFen]`. Correct moves advance; wrong moves shake the panel and increment `mistakeCount`. After 2 mistakes, the correct move is revealed. After each correct White move, a "Proceed" gate appears, then the app plays Black's response randomly from the repertoire tree.
+### V2 Backend (`server/routes/`)
 
-Novelty detection: if a wrong move has Stockfish eval > +0.50, it's flagged as a "novelty" instead of an error.
+- **`v2_train_now.ts`** — Drill pool builder. Three sources scored by:
+  `score = cpLossWeight * recencyWeight * repetitionWeight * phaseMultiplier / familiarityDecay`
+  - Source 1: Progress table (accuracy < 0.7 OR next_review due)
+  - Source 2: Blunders from `analysis_json` — uses repertoire move if FEN is in repertoire, falls back to `m.bestMove` for positions outside repertoire
+  - Source 3: Deviations table (player deviations only: `notes = 'player'`)
+  - Session size: 12 positions. SM-2 caps: ease_factor max 2.5, interval_days max 180.
+
+- **`progress.ts`** — SM-2 spaced repetition recording. Initial ease factor varies by source/severity: blunders >2 pawns → 1.3, blunders 1–2 pawns → 1.8, deviations → 2.0, review → 2.5.
+- **`analyze.ts`** — `POST /api/analyze/blunder` — Gemini GM-style explanation.
+- **`games.ts`** — Game sync, analysis save (`saveAnalysis`), backfill deviations.
+
+### Key Data Dependencies
+
+- **`bestMove` in `analysis_json`**: Required for blunder-first drilling of non-repertoire positions. All games analyzed before March 2026 are missing this field — only `{san, fen, eval, cpLoss, grade}` present. Fixed in `background_analysis.ts` going forward. Existing games need re-analysis to get bestMove.
+- **SM-2 intervals**: Capped at ease_factor 2.5 and interval_days **30** in `server/utils/sm2.ts`. If the drill pool feels stale ("same positions every session"), check the `progress` table for rows with `next_review` far in the future or `interval_days` near the cap.
+
+### Analysis & coach updates — clear stale outputs
+
+When shipping changes that alter the **shape of `analysis_json`** (new fields, changed grading, new bestMove semantics) or the **coach prompt / model** (`server/routes/analyze.ts`, `server/services/ai_coach.ts`), old cached outputs will misalign with the new logic and produce hallucinations or wrong UI. Clear them as part of the rollout — never ship the code change alone.
+
+**What is cached and how to clear it:**
+
+| Surface | Storage | Clear it by |
+|---|---|---|
+| Engine analysis (per-game) | `games.analysis_json` column | `POST /api/v2/refresh-analysis` (clears rows missing required fields, background queue re-analyzes). Extend the `NOT LIKE` filter in `server/routes/v2_refresh_analysis.ts` to catch the new field. |
+| Coach explanations | NOT persisted — regenerated per call | No action needed server-side. |
+| Frontend bundle (PWA / browser) | Service worker / browser cache | Run `./dev.sh build` then restart backend; the new asset hashes in `dist/assets/*` force a refetch. If a screenshot shows pre-fix behavior post-deploy, suspect stale PWA before re-debugging the code. |
+| SM-2 progress / drill pool | `progress` table | See "Drill pool freshness" below. |
+
+**Checklist when changing analysis_json shape:**
+1. Update `server/routes/v2_refresh_analysis.ts`'s `NOT LIKE` filter to detect rows missing the new field.
+2. Run `./dev.sh build` and restart so the new bundle ships.
+3. Hit `POST /api/v2/refresh-analysis` to queue old rows for re-analysis.
+4. Verify with `sqlite3 server/chess_trainer.db "SELECT COUNT(*) FROM games WHERE analysis_json IS NOT NULL AND analysis_json NOT LIKE '%<new_field>%';"` — should trend to 0 as the queue drains.
+
+**Checklist when changing the coach prompt or model:**
+1. `./dev.sh build` and restart backend.
+2. `curl` the `/api/analyze/blunder` endpoint with a known-bad FEN to verify the new prompt is live before debugging from screenshots — screenshots can be stale PWA renders.
+
+### Drill pool freshness — DO NOT REGRESS
+
+The drill pool is small (~75 progress rows, 12 positions/session). Any change that lets correct positions disappear for too long will make Kevin re-drill the same handful of failures forever. Past incident: a 180-day cap left 8 rows pinned at max and 12 rows scheduled into Sept 2026, starving the pool.
+
+**Before merging changes that touch SM-2 or the drill pool**, verify:
+1. `interval_days` cap stays ≤ 30 in `server/utils/sm2.ts` (raise only if you also grow the progress pool proportionally).
+2. Session size in `server/routes/v2_train_now.ts` (currently 12) is still ≤ ~20% of available drillable rows.
+3. After running a session locally, run:
+   ```
+   sqlite3 server/chess_trainer.db "SELECT COUNT(*), SUM(CASE WHEN next_review > datetime('now') THEN 1 ELSE 0 END), MAX(interval_days) FROM progress;"
+   ```
+   The "future" count should be a small fraction of total. If most rows are future-dated, the pool is starving.
+
+**Recovery if it regresses:** `UPDATE progress SET interval_days = 30 WHERE interval_days > 30; UPDATE progress SET next_review = datetime('now') WHERE next_review > datetime('now', '+30 days');`
+- **Deviations**: Only `notes = 'player'` rows are valid for drilling. Run `POST /api/v2/backfill-deviations` to populate deviations for pre-v2 games.
+
+### Database (`server/chess_trainer.db`)
+
+Key tables:
+
+- `games` — imported games with `analysis_json`, `game_shape`, `pgn`
+- `game_positions` — per-move FENs (`fen_before`, `fen`, `san`) indexed by `game_id`
+- `positions` — repertoire move tree (FEN → san)
+- `progress` — SM-2 state per FEN per repertoire (`ease_factor`, `interval_days`, `next_review`, `total_attempts`, `correct_attempts`)
+- `deviations` — player/opponent deviations from repertoire
+- `repertoires` — id=2 (Caro-Kann), id=3 (Jobava London)
 
 ### Key Services
 
-- **`services/engine.ts`** — `StockfishEngine` class fetches Stockfish 10 from CDN, creates a Web Worker (via Blob URL for CORS), runs MultiPV 3. The `useStockfish()` hook manages lifecycle and parses UCI output into `EngineLine[]`.
-- **`services/ai_coach.ts`** — Calls Gemini 2.0 Flash with the current FEN + last move. Parses structured `ANALYSIS:` / `LINE:` output. API key from `VITE_GEMINI_API_KEY` in `.env.local`.
+- **`services/engine.ts`** — `StockfishEngine` class. `evaluateOnce(fen, depth)` returns `{cp, mate, pv, bestMove}`.
+- **`services/background_analysis.ts`** — Silently analyzes unanalyzed games. Now captures `bestMove` per move.
+- **`services/ai_coach.ts`** — Gemini 2.0 Flash integration. API key from `VITE_GEMINI_API_KEY` in `.env.local`.
 
-### v2 Data Layer
-
-- **`GET /api/v2/train-now?repertoireId=X`** — Returns top 8 mistake-pool positions scored by:
-  `score = cpLossWeight * recencyWeight * repetitionWeight / familiarityDecay`
-  Sources: progress table (accuracy < 0.7 or due), recent blunders (90 days, CP loss > 0.5), deviations table (90 days).
-- **`POST /api/analyze/blunder`** — Gemini-powered blunder explanation (GM coaching style). Returns `{ text, concept }`.
-- **Deviation persistence** — `server/utils/deviations.ts` runs after `saveAnalysis`, computing repertoire deviations and writing to the `deviations` table.
-- **`server/routes/v2_train_now.ts`** — Mistake pool builder and scoring logic.
-
-### Current State
-
-Everything lives in a single `App.tsx` (~510 lines) with all state as `useState` hooks. The `src/utils/` directory exists but is empty. Weak positions are tracked in localStorage (`jobava_weak_points`) as a `Record<FEN, count>` but not yet surfaced in the UI.
+---
 
 ## Path Alias
 
@@ -61,7 +126,45 @@ Everything lives in a single `App.tsx` (~510 lines) with all state as `useState`
 ## Style Conventions
 
 - Tailwind CSS utility classes with `cn()` helper (clsx + tailwind-merge) for conditional classes
-- Dark theme: near-black backgrounds (`#050507`, `#0d1117`), slate text, indigo accents
-- Very large border-radius on cards (`rounded-[3.5rem]`, `rounded-[4rem]`)
+- **Design tokens system** — use `forge-*` Tailwind utilities instead of hardcoded hex values. See `src/design/tokens.ts` and memory for full mapping. Examples: `bg-forge-card` not `bg-[#0d1117]`, `text-forge-danger` not `text-rose-400`, `border-forge-border-subtle` not `border-white/5`. Common backgrounds: `bg-forge-base` (shell), `bg-forge-surface`, `bg-forge-card`, `bg-forge-elevated`, `bg-forge-board`, `bg-forge-nav` (semi-transparent for the bottom nav).
+- **Board theming** — every `<Chessboard>` instance spreads `BOARD_THEME` (or `BOARD_THEME_MUTED` for the dashboard thumbnail) from `src/design/tokens.ts`. Do not pass raw `customDarkSquareStyle` / `customLightSquareStyle` props.
+- **ESLint enforces it** — `.eslintrc.cjs` has a `no-restricted-syntax` rule that flags `bg-[#...]`, `border-[#...]`, `text-[#...]`, and `bg/border/text-white/N` in className strings. V1 legacy files are exempted via the `overrides` block.
+- Dark theme: near-black backgrounds, slate text, indigo accents — all tokenized under `--forge-*` CSS vars
+- Very large border-radius on cards — use `rounded-forge-xl` (2rem) or `rounded-forge-lg` (1.5rem) from token system
 - Sounds loaded from chess.com CDN URLs
 - Icons from lucide-react
+
+---
+
+## Active vs Legacy Inventory
+
+V2 is the only product surface that gets new work. V1 files are preserved (still reachable via `?v1=true` for diffing/recovery) but flagged with `@legacy` headers; do not extend.
+
+| Path | Status | Notes |
+|---|---|---|
+| `src/v2/**` | **ACTIVE** | V2 product surface |
+| `src/components/{Layout,TrainTab,ReviewTab,LibraryTab,ChapterLibrary,CoachPanel,SettingsPanel}.tsx`, `src/components/ExplorePanel/**` | LEGACY | V1 only; preserved |
+| `src/components/{GamesTab,InsightsTab,GameAnalysis}.tsx`, `src/components/MoveTickerStrip.tsx`, etc. | SHARED | Used by both V1 + V2 |
+| `src/App.tsx`, `src/hooks/useTraining.ts`, `src/stores/trainingStore.ts` | LEGACY | V1 root + state. `@legacy` header in file. |
+| `src/services/{api,engine,background_analysis,ai_coach,pgn_parser}.ts` | SHARED | |
+| `src/stores/{repertoireStore,engineStore,backgroundStore,coachStore,settingsStore}.ts` | SHARED | |
+| `src/utils/{cn,normalizeFen,san,deviations}.ts` | SHARED | |
+| `src/design/tokens.ts` | ACTIVE | Single source of truth for theme |
+| `server/routes/v2_*.ts`, `server/routes/{progress,games,analyze,repertoire}.ts` | ACTIVE | V2 hot path |
+| `server/routes/{patterns,sessions}.ts` | LEGACY | V1 only — `@legacy` header in file |
+| `server/utils/{fen,san*,dateFormat,gamePositions,analysis,response,sm2,deviations,gameShape}.ts` | ACTIVE | Shared helpers |
+| `scripts/parseJobava.cjs` | ACTIVE | Reusable PGN→JSON converter |
+| `scripts/archive/**` | ARCHIVED | One-off importers/migrations already run |
+| `docs/plans/archive/**` | ARCHIVED | Shipped feature plans, kept for context |
+
+## Backend conventions
+
+- **Shared helpers (use these — don't redefine):**
+  - `server/utils/fen.ts` — `normalizeFen` (4-field FEN normalization). Mirrors `src/utils/normalizeFen.ts`.
+  - `server/utils/gamePositions.ts` — `batchLoadGamePositions(ids)` to avoid the per-game N+1 SELECT against `game_positions`.
+  - `server/utils/analysis.ts` — `parseAnalysisJson(json, gameId?)` returns a typed `AnalysisMove[] | null`. Always use this; never `JSON.parse(game.analysis_json)` inline.
+  - `server/utils/dateFormat.ts` — `SHORT_MONTHS`, `formatWeekLabel`, `formatShortDate`.
+  - `server/utils/response.ts` — `ok<T>(data)` / `err(msg, status)` typed envelope. **Use in any new V2 route**; existing routes can be migrated incrementally.
+- **SM-2** — call `computeSM2()` from `server/utils/sm2.ts`. Don't hand-roll the formula. The `progress` route's bool-only path already routes through `computeSM2` with a derived grade.
+- **Server type-checking** — `npm run typecheck:server` runs `tsc -p server/tsconfig.json`. Wired into `./dev.sh build`. Keep it green.
+- **api.ts client** — every endpoint goes through `request<T>(...)` (10-second AbortController timeout, typed body). No raw `fetch` in `src/services/api.ts` for `/api/*` routes.

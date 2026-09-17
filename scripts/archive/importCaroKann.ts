@@ -61,13 +61,13 @@ function tokenize(text: string): string[] {
   }
   if (current) tokens.push(current);
   return tokens.filter(
-    (t) => !/^\d+\.+$/.test(t) && !/^(1-0|0-1|1\/2-1\/2|\*)$/.test(t)
+    (t) => !/^\d+\.+$/.test(t) && !/^(1-0|0-1|1\/2-1\/2|\*)$/.test(t),
   );
 }
 
 function parseRecursive(
   tokens: string[],
-  chess: Chess
+  chess: Chess,
 ): { moves: ParsedMove[]; remaining: string[] } {
   const moves: ParsedMove[] = [];
   let i = 0;
@@ -81,7 +81,7 @@ function parseRecursive(
       const varChess = new Chess(varStartFen);
       const { moves: variation, remaining } = parseRecursive(
         tokens.slice(i + 1),
-        varChess
+        varChess,
       );
       if (moves.length > 0) moves[moves.length - 1].variations.push(variation);
       tokens = remaining;
@@ -107,10 +107,15 @@ function parseRecursive(
 
     try {
       const fenBefore = chess.fen();
-      const cleanToken = token.replace(/[!?]+$/, '');
+      const cleanToken = token.replace(/[!?]+$/, "");
       const m = chess.move(cleanToken);
       if (m) {
-        moves.push({ san: m.san, fenBefore, fenAfter: chess.fen(), variations: [] });
+        moves.push({
+          san: m.san,
+          fenBefore,
+          fenAfter: chess.fen(),
+          variations: [],
+        });
       }
     } catch {
       // skip unrecognised tokens
@@ -145,25 +150,51 @@ function parsePgn(pgn: string): ParsedGame[] {
 
 // ─── Position tree builder ───────────────────────────────────────────────────
 
-type MoveEntry = { san: string; nextFen: string; comment?: string };
+type MoveEntry = {
+  san: string;
+  nextFen: string;
+  comment?: string;
+  /** True when every ancestor was on the PGN trunk (outside all parentheses). */
+  isMainLine: boolean;
+  /** Parenthesis nesting depth where the move was first seen. Lower = more authoritative. */
+  depth: number;
+};
 type PositionMap = Map<string, Map<string, MoveEntry>>;
 
-function walkMoves(moves: ParsedMove[], positions: PositionMap) {
+/**
+ * `isMainLine`/`depth` must be written, not left at their column defaults: the
+ * drill builder resolves several book replies at one FEN with
+ * `ORDER BY is_main_line DESC, depth ASC, san ASC`, so leaving both at 0 makes
+ * the answer alphabetical. If the same (fen, san) shows up on several branches
+ * we keep the best classification seen.
+ */
+function walkMoves(
+  moves: ParsedMove[],
+  positions: PositionMap,
+  trunk = true,
+  depth = 0,
+) {
   for (const move of moves) {
     let fenMap = positions.get(move.fenBefore);
     if (!fenMap) {
       fenMap = new Map();
       positions.set(move.fenBefore, fenMap);
     }
-    if (!fenMap.has(move.san)) {
+    const existing = fenMap.get(move.san);
+    if (!existing) {
       fenMap.set(move.san, {
         san: move.san,
         nextFen: move.fenAfter,
         ...(move.comment ? { comment: move.comment } : {}),
+        isMainLine: trunk,
+        depth,
       });
+    } else {
+      existing.isMainLine = existing.isMainLine || trunk;
+      existing.depth = Math.min(existing.depth, depth);
     }
     for (const variation of move.variations) {
-      walkMoves(variation, positions);
+      walkMoves(variation, positions, false, depth + 1);
     }
   }
 }
@@ -193,38 +224,59 @@ const positionMap: PositionMap = new Map();
 const chapterNames: string[] = [];
 
 for (const game of games) {
-  const name = game.headers["ChapterName"] || game.headers["White"] || "Chapter";
+  const name =
+    game.headers["ChapterName"] || game.headers["White"] || "Chapter";
   chapterNames.push(name);
   walkMoves(game.moves, positionMap);
 }
 
 let totalMoves = 0;
 for (const fenMap of positionMap.values()) totalMoves += fenMap.size;
-console.log(`Position tree: ${positionMap.size} unique FENs, ${totalMoves} move entries`);
+console.log(
+  `Position tree: ${positionMap.size} unique FENs, ${totalMoves} move entries`,
+);
 
 db.transaction(() => {
-  db.prepare("DELETE FROM positions WHERE repertoire_id = ?").run(REPERTOIRE_ID);
+  db.prepare("DELETE FROM positions WHERE repertoire_id = ?").run(
+    REPERTOIRE_ID,
+  );
   db.prepare("DELETE FROM chapters WHERE repertoire_id = ?").run(REPERTOIRE_ID);
 
   const insertChapter = db.prepare(
-    "INSERT INTO chapters (repertoire_id, name, sort_order, start_moves, first_fen) VALUES (?, ?, ?, ?, ?)"
+    "INSERT INTO chapters (repertoire_id, name, sort_order, start_moves, first_fen) VALUES (?, ?, ?, ?, ?)",
   );
   for (let i = 0; i < chapterNames.length; i++) {
-    insertChapter.run(REPERTOIRE_ID, chapterNames[i], i, JSON.stringify(["e4"]), STANDARD_FEN);
+    insertChapter.run(
+      REPERTOIRE_ID,
+      chapterNames[i],
+      i,
+      JSON.stringify(["e4"]),
+      STANDARD_FEN,
+    );
   }
 
   const insertPos = db.prepare(
-    "INSERT OR IGNORE INTO positions (repertoire_id, fen, san, next_fen, comment) VALUES (?, ?, ?, ?, ?)"
+    "INSERT OR IGNORE INTO positions (repertoire_id, fen, san, next_fen, comment, is_main_line, depth) VALUES (?, ?, ?, ?, ?, ?, ?)",
   );
   let inserted = 0;
   for (const [fen, fenMap] of positionMap) {
     for (const move of fenMap.values()) {
-      insertPos.run(REPERTOIRE_ID, fen, move.san, move.nextFen, move.comment ?? null);
+      insertPos.run(
+        REPERTOIRE_ID,
+        fen,
+        move.san,
+        move.nextFen,
+        move.comment ?? null,
+        move.isMainLine ? 1 : 0,
+        move.depth,
+      );
       inserted++;
     }
   }
 
-  console.log(`✓ ${chapterNames.length} chapters, ${inserted} positions → repertoire_id=${REPERTOIRE_ID}`);
+  console.log(
+    `✓ ${chapterNames.length} chapters, ${inserted} positions → repertoire_id=${REPERTOIRE_ID}`,
+  );
 })();
 
 db.close();

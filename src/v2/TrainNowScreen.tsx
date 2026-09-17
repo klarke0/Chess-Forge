@@ -327,6 +327,8 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
       id: `single-${nfen}`,
       fen: fenRaw,
       correctSan: moves[0].san,
+      // Every book move stored for this FEN counts as correct.
+      acceptableSans: moves.map((m) => m.san).filter(Boolean),
       source: "deviation",
     };
     dispatch({ type: "LOAD_SINGLE", pos });
@@ -432,18 +434,25 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
       }
       if (!move) return false;
 
+      // A FEN reachable by several move orders can have several correct book
+      // replies. `correctSan` is only the one we display — accept any move in
+      // `acceptableSans` (falls back to correctSan alone when absent).
       // Compare by from/to squares — avoids notation mismatches (+, #, x, disambiguation)
-      let isCorrect = false;
-      try {
-        const refChess = new Chess(currentPosition.fen);
-        const refMove = refChess.move(currentPosition.correctSan);
-        if (refMove) {
-          isCorrect = move.from === refMove.from && move.to === refMove.to;
+      const accepted =
+        currentPosition.acceptableSans &&
+        currentPosition.acceptableSans.length > 0
+          ? currentPosition.acceptableSans
+          : [currentPosition.correctSan];
+      const isCorrect = accepted.some((san) => {
+        try {
+          const refChess = new Chess(currentPosition.fen);
+          const refMove = refChess.move(san);
+          return !!refMove && move.from === refMove.from && move.to === refMove.to;
+        } catch {
+          // Fallback: loose SAN comparison
+          return looseSan(move.san) === looseSan(san);
         }
-      } catch {
-        // Fallback: loose SAN comparison
-        isCorrect = looseSan(move.san) === looseSan(currentPosition.correctSan);
-      }
+      });
 
       if (isCorrect) {
         clearTimer();

@@ -16,7 +16,11 @@ db.run(`
   )
 `);
 
-db.run(`CREATE INDEX IF NOT EXISTS idx_game_positions_fen ON game_positions(fen)`);
-db.run(`CREATE INDEX IF NOT EXISTS idx_game_positions_game_id ON game_positions(game_id)`);
+db.run(
+  `CREATE INDEX IF NOT EXISTS idx_game_positions_fen ON game_positions(fen)`,
+);
+db.run(
+  `CREATE INDEX IF NOT EXISTS idx_game_positions_game_id ON game_positions(game_id)`,
+);
 
 console.log("Migration complete: 'game_positions' table created.");

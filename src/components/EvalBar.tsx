@@ -1,14 +1,13 @@
-import React from 'react';
-import { useEngineStore } from '../stores/engineStore';
+import React from "react";
+import { useEngineStore } from "../stores/engineStore";
 
 export const EvalBar: React.FC = () => {
   const { evaluation, topLines } = useEngineStore();
-  
+
   // Use evaluation state if available, otherwise fallback to topLines[0]
   const bestLine = topLines[0];
-  const evalData = (evaluation.cp !== null || evaluation.mate !== null) 
-    ? evaluation 
-    : bestLine;
+  const evalData =
+    evaluation.cp !== null || evaluation.mate !== null ? evaluation : bestLine;
 
   const getHeight = () => {
     if (!evalData) return 50;
@@ -18,7 +17,7 @@ export const EvalBar: React.FC = () => {
       return evalData.mate > 0 ? 100 : 0;
     }
     if (evalData.cp === null || evalData.cp === undefined) return 50;
-    
+
     // Normalize CP (-500 to +500 range for the bar)
     const clamped = Math.max(-500, Math.min(500, evalData.cp));
     return 50 + clamped / 10;
@@ -28,7 +27,7 @@ export const EvalBar: React.FC = () => {
     ? `M${evalData.mate}`
     : evalData?.cp !== null && evalData?.cp !== undefined
       ? (evalData.cp / 100).toFixed(1)
-      : '0.0';
+      : "0.0";
 
   return (
     <div className="w-full h-full bg-black/40 rounded-full overflow-hidden border border-white/5 flex flex-col justify-end relative shadow-2xl">

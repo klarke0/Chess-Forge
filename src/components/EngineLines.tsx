@@ -1,8 +1,8 @@
-import React from 'react';
-import { Activity } from 'lucide-react';
-import { useEngineStore } from '../stores/engineStore';
-import { cn } from '../utils/cn';
-import { formatPV } from '../utils/chessLogic';
+import React from "react";
+import { Activity } from "lucide-react";
+import { useEngineStore } from "../stores/engineStore";
+import { cn } from "../utils/cn";
+import { formatPV } from "../utils/chessLogic";
 
 interface EngineLinesProps {
   fen: string;
@@ -20,23 +20,26 @@ export const EngineLines: React.FC<EngineLinesProps> = ({ fen }) => {
       </h4>
       <div className="space-y-3">
         {topLines.slice(0, 3).map((line, idx) => (
-          <div key={idx} className="flex justify-between items-center group gap-2">
+          <div
+            key={idx}
+            className="flex justify-between items-center group gap-2"
+          >
             <span className="text-[10px] font-mono font-bold text-slate-300 group-hover:text-white transition-colors truncate">
               {formatPV(fen, line.pv, 2)}
             </span>
             <span
               className={cn(
-                'text-[10px] font-black px-2 py-0.5 rounded-lg shrink-0',
+                "text-[10px] font-black px-2 py-0.5 rounded-lg shrink-0",
                 (line.cp || 0) >= 0
-                  ? 'bg-emerald-500/10 text-emerald-400'
-                  : 'bg-rose-500/10 text-rose-400'
+                  ? "bg-emerald-500/10 text-emerald-400"
+                  : "bg-rose-500/10 text-rose-400",
               )}
             >
               {line.mate
                 ? `M${line.mate}`
                 : line.cp !== null
                   ? (line.cp / 100).toFixed(1)
-                  : '0.0'}
+                  : "0.0"}
             </span>
           </div>
         ))}

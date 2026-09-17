@@ -48,7 +48,11 @@ export function computeSM2(input: SM2Input, grade: number): SM2Output {
   } else {
     nextIntervalDays = Math.round(intervalDays * easeFactor);
   }
-  nextIntervalDays = Math.min(180, nextIntervalDays);
+  // Cap at 30 days. Higher caps starve the drill pool: with ~75 progress rows
+  // and 12 positions/session, a 180-day cap meant correct positions vanished
+  // for 6 months and the same handful of failures cycled forever.
+  // See CLAUDE.md "Drill pool freshness" before raising this.
+  nextIntervalDays = Math.min(30, nextIntervalDays);
 
   const nextReviewDate = new Date(
     Date.now() + nextIntervalDays * 86400 * 1000,

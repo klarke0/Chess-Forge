@@ -3,5 +3,5 @@
  * dropping the halfmove clock and fullmove number.
  */
 export function normalizeFen(fen: string): string {
-  return fen.split(' ').slice(0, 4).join(' ');
+  return fen.split(" ").slice(0, 4).join(" ");
 }

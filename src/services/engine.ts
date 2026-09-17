@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 export interface EngineLine {
   pv: string;
@@ -20,13 +20,13 @@ export class StockfishEngine {
 
   init() {
     try {
-      this.worker = new Worker('/stockfish.js');
+      this.worker = new Worker("/stockfish.js");
 
       this.worker.onmessage = (e) => {
         const data = e.data as string;
-        if (typeof data === 'string' && data.includes('uciok')) {
+        if (typeof data === "string" && data.includes("uciok")) {
           this._ready = true;
-          this._readyCallbacks.forEach(cb => cb());
+          this._readyCallbacks.forEach((cb) => cb());
           this._readyCallbacks = [];
           this._errorCallbacks = [];
         }
@@ -35,14 +35,14 @@ export class StockfishEngine {
 
       this.worker.onerror = (e) => {
         console.error("Stockfish worker error:", e);
-        const err = new Error('Stockfish worker failed to load');
-        this._errorCallbacks.forEach(cb => cb(err));
+        const err = new Error("Stockfish worker failed to load");
+        this._errorCallbacks.forEach((cb) => cb(err));
         this._readyCallbacks = [];
         this._errorCallbacks = [];
       };
 
-      this.worker.postMessage('uci');
-      this.worker.postMessage('setoption name MultiPV value 3');
+      this.worker.postMessage("uci");
+      this.worker.postMessage("setoption name MultiPV value 3");
     } catch (e) {
       console.error("Stockfish failed:", e);
     }
@@ -63,57 +63,140 @@ export class StockfishEngine {
     }
   }
 
-  evaluateOnce(fen: string, depth: number = 16): Promise<{ cp: number | null; mate: number | null; pv: string; bestMove: string }> {
+  evaluateOnce(
+    fen: string,
+    depth: number = 16,
+  ): Promise<{
+    cp: number | null;
+    mate: number | null;
+    pv: string;
+    bestMove: string;
+  }> {
     return new Promise((resolve) => {
-      if (!this.worker) { resolve({ cp: null, mate: null, pv: '', bestMove: '' }); return; }
+      if (!this.worker) {
+        resolve({ cp: null, mate: null, pv: "", bestMove: "" });
+        return;
+      }
       let lastCp: number | null = null;
       let lastMate: number | null = null;
-      let lastPv: string = '';
-      
+      let lastPv: string = "";
+
       // Strict timeout: resolve after 5s no matter what to prevent stalls
       const timeout = setTimeout(() => {
         if (this.worker) this.worker.onmessage = prevOnMessage;
-        resolve({ cp: lastCp, mate: lastMate, pv: lastPv, bestMove: '' });
+        resolve({ cp: lastCp, mate: lastMate, pv: lastPv, bestMove: "" });
       }, 5000);
 
       const prevOnMessage = this.worker.onmessage;
       this.worker.onmessage = (e: MessageEvent) => {
         const data = e.data as string;
-        if (typeof data !== 'string') return;
-        
+        if (typeof data !== "string") return;
+
         // Only parse info depth lines to save CPU
-        if (data.startsWith('info depth')) {
+        if (data.startsWith("info depth")) {
           const cpMatch = data.match(/score cp (-?\d+)/);
           const mateMatch = data.match(/score mate (-?\d+)/);
           const pvMatch = data.match(/ pv (.*)/);
-          
+
           if (cpMatch) lastCp = parseInt(cpMatch[1], 10);
           if (mateMatch) lastMate = parseInt(mateMatch[1], 10);
           if (pvMatch) lastPv = pvMatch[1];
         }
 
-        if (data.startsWith('bestmove')) {
+        if (data.startsWith("bestmove")) {
           clearTimeout(timeout);
-          const bestMove = data.split(' ')[1];
+          const bestMove = data.split(" ")[1];
           this.worker!.onmessage = prevOnMessage;
+          // Restore MultiPV 3 for live analysis after single-shot eval
+          this.worker!.postMessage("setoption name MultiPV value 3");
           resolve({ cp: lastCp, mate: lastMate, pv: lastPv, bestMove });
         }
       };
-      
+
       // Force single-PV mode for accurate evaluation (init sets MultiPV 3 for live analysis)
-      this.worker.postMessage('setoption name MultiPV value 1');
+      this.worker.postMessage("setoption name MultiPV value 1");
+      this.worker.postMessage(`position fen ${fen}`);
+      this.worker.postMessage(`go depth ${depth}`);
+    });
+  }
+
+  evaluateMultiPV(
+    fen: string,
+    depth: number = 20,
+    numLines: number = 3,
+  ): Promise<
+    Array<{ rank: number; cp: number | null; mate: number | null; pv: string }>
+  > {
+    return new Promise((resolve) => {
+      if (!this.worker) {
+        resolve([]);
+        return;
+      }
+
+      const lines = new Map<
+        number,
+        { cp: number | null; mate: number | null; pv: string }
+      >();
+
+      function buildResult() {
+        return Array.from(lines.entries())
+          .map(([rank, line]) => ({ rank, ...line }))
+          .sort((a, b) => a.rank - b.rank);
+      }
+
+      const timeout = setTimeout(() => {
+        this.worker!.onmessage = prevOnMessage;
+        this.worker!.postMessage("setoption name MultiPV value 3");
+        resolve(buildResult());
+      }, 15000);
+
+      const prevOnMessage = this.worker.onmessage;
+      this.worker.onmessage = (e: MessageEvent) => {
+        const data = e.data as string;
+        if (typeof data !== "string") return;
+
+        if (data.startsWith("info depth")) {
+          const depthMatch = data.match(/\bdepth (\d+)/);
+          const currentDepth = depthMatch ? parseInt(depthMatch[1]) : 0;
+          // Only capture lines near the target depth to avoid partial-search noise
+          if (currentDepth >= depth - 2) {
+            const multipvMatch = data.match(/multipv (\d+)/);
+            const cpMatch = data.match(/score cp (-?\d+)/);
+            const mateMatch = data.match(/score mate (-?\d+)/);
+            const pvMatch = data.match(/ pv (.+)/);
+
+            if (multipvMatch && pvMatch) {
+              const rank = parseInt(multipvMatch[1]);
+              lines.set(rank, {
+                cp: cpMatch ? parseInt(cpMatch[1]) : null,
+                mate: mateMatch ? parseInt(mateMatch[1]) : null,
+                pv: pvMatch[1].trim(),
+              });
+            }
+          }
+        }
+
+        if (data.startsWith("bestmove")) {
+          clearTimeout(timeout);
+          this.worker!.onmessage = prevOnMessage;
+          this.worker!.postMessage("setoption name MultiPV value 3");
+          resolve(buildResult());
+        }
+      };
+
+      this.worker.postMessage(`setoption name MultiPV value ${numLines}`);
       this.worker.postMessage(`position fen ${fen}`);
       this.worker.postMessage(`go depth ${depth}`);
     });
   }
 
   stop() {
-    if (this.worker) this.worker.postMessage('stop');
+    if (this.worker) this.worker.postMessage("stop");
   }
 
   quit() {
     if (this.worker) {
-      this.worker.postMessage('quit');
+      this.worker.postMessage("quit");
       this.worker.terminate();
     }
   }
@@ -125,11 +208,11 @@ export const useStockfish = () => {
 
   useEffect(() => {
     const eng = new StockfishEngine();
-    
+
     eng.onMessage = (data: any) => {
-      if (typeof data !== 'string') return;
-      
-      if (data.includes('info depth') && data.includes('multipv')) {
+      if (typeof data !== "string") return;
+
+      if (data.includes("info depth") && data.includes("multipv")) {
         const multipvMatch = data.match(/multipv (\d+)/);
         const scoreMatch = data.match(/score cp (-?\d+)/);
         const mateMatch = data.match(/score mate (-?\d+)/);
@@ -141,11 +224,11 @@ export const useStockfish = () => {
           const mate = mateMatch ? parseInt(mateMatch[1], 10) : null;
           const pv = pvMatch[1];
 
-          setTopLines(prev => {
+          setTopLines((prev) => {
             const newLines = [...prev];
-            const index = newLines.findIndex(l => l.multipv === multipv);
+            const index = newLines.findIndex((l) => l.multipv === multipv);
             const newLine = { pv, cp, mate, multipv };
-            
+
             if (index !== -1) {
               newLines[index] = newLine;
             } else {
@@ -156,7 +239,7 @@ export const useStockfish = () => {
         }
       }
     };
-    
+
     setEngine(eng);
 
     return () => {

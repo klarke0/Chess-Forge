@@ -13,6 +13,7 @@
 ### Task 1: Add MastersData types + `fetchLichessMasters` to `api.ts`
 
 **Files:**
+
 - Modify: `src/services/api.ts`
 
 **Step 1: Add exported types and fetch function**
@@ -38,7 +39,7 @@ export interface MastersData {
 export async function fetchLichessMasters(fen: string): Promise<MastersData> {
   const url = `https://explorer.lichess.ovh/masters?fen=${encodeURIComponent(fen)}&moves=12&topGames=0`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error('Lichess Masters API error');
+  if (!res.ok) throw new Error("Lichess Masters API error");
   return res.json();
 }
 ```
@@ -58,7 +59,7 @@ export interface AnalyzeRequest {
   repertoireComment?: string;
   mode?: string;
   repertoireMoves?: string[];
-  mastersData?: MastersData | null;   // ← ADD
+  mastersData?: MastersData | null; // ← ADD
 }
 ```
 
@@ -67,6 +68,7 @@ export interface AnalyzeRequest {
 ```bash
 cd "/Users/kevin/Chess Trainer" && npx tsc --noEmit 2>&1 | head -20
 ```
+
 Expected: 0 errors.
 
 ---
@@ -74,13 +76,14 @@ Expected: 0 errors.
 ### Task 2: Create `useLichessMasters` hook
 
 **Files:**
+
 - Create: `src/hooks/useLichessMasters.ts`
 
 **Step 1: Write the hook**
 
 ```ts
-import { useState, useEffect } from 'react';
-import { fetchLichessMasters, MastersData } from '../services/api';
+import { useState, useEffect } from "react";
+import { fetchLichessMasters, MastersData } from "../services/api";
 
 export function useLichessMasters(fen: string) {
   const [data, setData] = useState<MastersData | null>(null);
@@ -119,6 +122,7 @@ The 400ms debounce prevents firing on every rapid position change during drillin
 ```bash
 npx tsc --noEmit 2>&1 | head -20
 ```
+
 Expected: 0 errors.
 
 ---
@@ -126,6 +130,7 @@ Expected: 0 errors.
 ### Task 3: Add `mastersData` + `setMastersData` to `coachStore`
 
 **Files:**
+
 - Modify: `src/stores/coachStore.ts`
 
 **Step 1: Add import**
@@ -133,7 +138,7 @@ Expected: 0 errors.
 At the top of the file, add:
 
 ```ts
-import type { MastersData } from '../services/api';
+import type { MastersData } from "../services/api";
 ```
 
 **Step 2: Extend `CoachState` interface**
@@ -144,24 +149,35 @@ interface CoachState {
   demoLine: string[];
   isAnalyzing: boolean;
   isError: boolean;
-  mastersData: MastersData | null;          // ← ADD
+  mastersData: MastersData | null; // ← ADD
 
   setInsight: (insight: string | null) => void;
   setDemoLine: (line: string[]) => void;
   clearInsight: () => void;
-  setMastersData: (data: MastersData | null) => void;  // ← ADD
-  analyzePosition: (fen: string, lastMove: string, turn: string, engineData?: { bestMove: string; eval: string; line: string }, repertoireComment?: string, userColor?: string, mode?: string, repertoireMoves?: string[]) => Promise<void>;
+  setMastersData: (data: MastersData | null) => void; // ← ADD
+  analyzePosition: (
+    fen: string,
+    lastMove: string,
+    turn: string,
+    engineData?: { bestMove: string; eval: string; line: string },
+    repertoireComment?: string,
+    userColor?: string,
+    mode?: string,
+    repertoireMoves?: string[],
+  ) => Promise<void>;
 }
 ```
 
 **Step 3: Add initial state + action**
 
 In the `create` call, add to initial state:
+
 ```ts
 mastersData: null,
 ```
 
 Add the new action alongside `setInsight` etc.:
+
 ```ts
 setMastersData: (data) => set({ mastersData: data }),
 ```
@@ -192,6 +208,7 @@ Note: `useCoachStore.getState()` is a standard Zustand pattern for self-referenc
 ```bash
 npx tsc --noEmit 2>&1 | head -20
 ```
+
 Expected: 0 errors.
 
 ---
@@ -199,6 +216,7 @@ Expected: 0 errors.
 ### Task 4: Thread `mastersData` through `ai_coach.ts`
 
 **Files:**
+
 - Modify: `src/services/ai_coach.ts`
 
 **Step 1: Add import + extend signature**
@@ -206,7 +224,7 @@ Expected: 0 errors.
 The file currently imports `* as api`. Add a type import:
 
 ```ts
-import type { MastersData } from './api';
+import type { MastersData } from "./api";
 ```
 
 Update `analyzePosition` to accept and forward `mastersData`:
@@ -217,18 +235,25 @@ export async function analyzePosition(
   lastMove: string,
   turn: string,
   engineData?: { bestMove: string; eval: string; line: string },
-  openingName = 'your opening',
+  openingName = "your opening",
   repertoireComment?: string,
   userColor?: string,
   mode?: string,
   repertoireMoves?: string[],
-  mastersData?: MastersData | null,   // ← ADD
+  mastersData?: MastersData | null, // ← ADD
 ) {
   try {
     return await api.analyzePosition({
-      fen, lastMove, turn, userColor, engineData,
-      openingName, repertoireComment, mode, repertoireMoves,
-      mastersData,                               // ← ADD
+      fen,
+      lastMove,
+      turn,
+      userColor,
+      engineData,
+      openingName,
+      repertoireComment,
+      mode,
+      repertoireMoves,
+      mastersData, // ← ADD
     });
   } catch (error) {
     console.error("AI Coach error:", error);
@@ -246,6 +271,7 @@ export async function analyzePosition(
 ```bash
 npx tsc --noEmit 2>&1 | head -20
 ```
+
 Expected: 0 errors.
 
 ---
@@ -253,6 +279,7 @@ Expected: 0 errors.
 ### Task 5: Inject masters context into Gemini prompt in `server/routes/analyze.ts`
 
 **Files:**
+
 - Modify: `server/routes/analyze.ts`
 
 **Step 1: Add `mastersData` to request body type**
@@ -260,7 +287,7 @@ Expected: 0 errors.
 The inline type cast on `req.json()` (around line 5) — add `mastersData`:
 
 ```ts
-const body = await req.json() as {
+const body = (await req.json()) as {
   fen: string;
   lastMove: string;
   turn: string;
@@ -270,7 +297,8 @@ const body = await req.json() as {
   repertoireComment?: string;
   mode?: string;
   repertoireMoves?: string[];
-  mastersData?: {             // ← ADD
+  mastersData?: {
+    // ← ADD
     white: number;
     draws: number;
     black: number;
@@ -284,7 +312,17 @@ const body = await req.json() as {
 Find the destructure line (around line 25) and add `mastersData`:
 
 ```ts
-const { fen, lastMove, engineData, openingName = "your opening", repertoireComment, userColor, mode, repertoireMoves, mastersData } = body;
+const {
+  fen,
+  lastMove,
+  engineData,
+  openingName = "your opening",
+  repertoireComment,
+  userColor,
+  mode,
+  repertoireMoves,
+  mastersData,
+} = body;
 ```
 
 **Step 3: Add masters context block**
@@ -302,10 +340,10 @@ if (mastersData && mastersData.moves.length > 0) {
     const lPct = 100 - wPct - dPct;
     return `- ${m.san}: ${pct}% of games — W${wPct}% D${dPct}% L${lPct}%`;
   });
-  const mostPopular = mastersData.moves[0]?.san ?? '';
+  const mostPopular = mastersData.moves[0]?.san ?? "";
   context += `
     MASTERS DATABASE (titled players, Lichess — ${totalGames.toLocaleString()} games):
-    ${topMoves.join('\n    ')}
+    ${topMoves.join("\n    ")}
     The most popular move among masters is ${mostPopular}.
 
     Use this to contextualize move choices: note when Stockfish's recommendation aligns with master practice, or when masters favor a practical choice the engine doesn't rate highest.
@@ -318,6 +356,7 @@ if (mastersData && mastersData.moves.length > 0) {
 ```bash
 cd "/Users/kevin/Chess Trainer" && npx tsc --noEmit 2>&1 | head -20
 ```
+
 Expected: 0 errors (server files are `.ts` and included in tsc scope).
 
 ---
@@ -325,18 +364,21 @@ Expected: 0 errors (server files are `.ts` and included in tsc scope).
 ### Task 6: Add `fen` prop + masters widget to `CoachPanel`
 
 **Files:**
+
 - Modify: `src/components/CoachPanel.tsx`
 
 **Step 1: Update imports**
 
 Change the React import to include `useEffect`:
+
 ```ts
-import React, { useEffect } from 'react';
+import React, { useEffect } from "react";
 ```
 
 Add two more imports below the existing ones:
+
 ```ts
-import { useLichessMasters } from '../hooks/useLichessMasters';
+import { useLichessMasters } from "../hooks/useLichessMasters";
 ```
 
 (`useCoachStore` is already imported on line 3.)
@@ -345,7 +387,7 @@ import { useLichessMasters } from '../hooks/useLichessMasters';
 
 ```ts
 interface CoachPanelProps {
-  fen: string;               // ← ADD
+  fen: string; // ← ADD
   onDeepAnalysis: () => void;
   onPlayDemo: () => void;
   onShowSolution: () => void;
@@ -356,8 +398,9 @@ interface CoachPanelProps {
 **Step 3: Destructure `fen` and wire the hook**
 
 In the component body, after the existing store reads:
+
 ```ts
-const setMastersData = useCoachStore(s => s.setMastersData);
+const setMastersData = useCoachStore((s) => s.setMastersData);
 const { data: mastersData, loading: mastersLoading } = useLichessMasters(fen);
 
 useEffect(() => {
@@ -370,66 +413,86 @@ useEffect(() => {
 Place this block between the closing `</div>` of the scrollable content area and the `<div className="flex gap-3 ...">` training actions section:
 
 ```tsx
-{/* Masters Database widget */}
-{(mastersLoading || (mastersData && mastersData.moves.length > 0)) && (
-  <div className="relative z-10 mb-4">
-    <div className="border border-white/5 rounded-2xl overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-white/[0.02] border-b border-white/5">
-        <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">
-          Masters Database
-        </span>
-        {mastersData && (
-          <span className="text-[9px] font-bold text-slate-600">
-            {(mastersData.white + mastersData.draws + mastersData.black).toLocaleString()} games
+{
+  /* Masters Database widget */
+}
+{
+  (mastersLoading || (mastersData && mastersData.moves.length > 0)) && (
+    <div className="relative z-10 mb-4">
+      <div className="border border-white/5 rounded-2xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-3 py-2 bg-white/[0.02] border-b border-white/5">
+          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">
+            Masters Database
           </span>
-        )}
-      </div>
+          {mastersData && (
+            <span className="text-[9px] font-bold text-slate-600">
+              {(
+                mastersData.white +
+                mastersData.draws +
+                mastersData.black
+              ).toLocaleString()}{" "}
+              games
+            </span>
+          )}
+        </div>
 
-      {/* Rows */}
-      <div className="divide-y divide-white/[0.03]">
-        {mastersLoading && !mastersData ? (
-          [0, 1, 2].map((i) => (
-            <div key={i} className="flex items-center gap-2 px-3 py-2 animate-pulse">
-              <div className="w-8 h-2.5 bg-white/5 rounded" />
-              <div className="flex-1 h-1.5 bg-white/5 rounded-full" />
-              <div className="w-6 h-2.5 bg-white/5 rounded" />
-            </div>
-          ))
-        ) : (
-          mastersData?.moves.slice(0, 3).map((move) => {
-            const totalGames = mastersData.white + mastersData.draws + mastersData.black;
-            const moveTotal = move.white + move.draws + move.black;
-            const pct = Math.round((moveTotal / totalGames) * 100);
-            const maxTotal = mastersData.moves[0]
-              ? mastersData.moves[0].white + mastersData.moves[0].draws + mastersData.moves[0].black
-              : 1;
-            const barWidth = Math.round((moveTotal / maxTotal) * 100);
-            const wPct = Math.round((move.white / moveTotal) * 100);
-            const dPct = Math.round((move.draws / moveTotal) * 100);
-            const lPct = 100 - wPct - dPct;
-
-            return (
-              <div key={move.san} className="flex items-center gap-2.5 px-3 py-2">
-                <span className="text-[11px] font-black text-slate-300 w-8 shrink-0">{move.san}</span>
-                <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-indigo-500/60 rounded-full"
-                    style={{ width: `${barWidth}%` }}
-                  />
+        {/* Rows */}
+        <div className="divide-y divide-white/[0.03]">
+          {mastersLoading && !mastersData
+            ? [0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 px-3 py-2 animate-pulse"
+                >
+                  <div className="w-8 h-2.5 bg-white/5 rounded" />
+                  <div className="flex-1 h-1.5 bg-white/5 rounded-full" />
+                  <div className="w-6 h-2.5 bg-white/5 rounded" />
                 </div>
-                <span className="text-[10px] font-bold text-slate-400 w-7 text-right shrink-0">{pct}%</span>
-                <span className="text-[9px] font-mono text-slate-600 shrink-0">
-                  W{wPct} D{dPct} L{lPct}
-                </span>
-              </div>
-            );
-          })
-        )}
+              ))
+            : mastersData?.moves.slice(0, 3).map((move) => {
+                const totalGames =
+                  mastersData.white + mastersData.draws + mastersData.black;
+                const moveTotal = move.white + move.draws + move.black;
+                const pct = Math.round((moveTotal / totalGames) * 100);
+                const maxTotal = mastersData.moves[0]
+                  ? mastersData.moves[0].white +
+                    mastersData.moves[0].draws +
+                    mastersData.moves[0].black
+                  : 1;
+                const barWidth = Math.round((moveTotal / maxTotal) * 100);
+                const wPct = Math.round((move.white / moveTotal) * 100);
+                const dPct = Math.round((move.draws / moveTotal) * 100);
+                const lPct = 100 - wPct - dPct;
+
+                return (
+                  <div
+                    key={move.san}
+                    className="flex items-center gap-2.5 px-3 py-2"
+                  >
+                    <span className="text-[11px] font-black text-slate-300 w-8 shrink-0">
+                      {move.san}
+                    </span>
+                    <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-indigo-500/60 rounded-full"
+                        style={{ width: `${barWidth}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 w-7 text-right shrink-0">
+                      {pct}%
+                    </span>
+                    <span className="text-[9px] font-mono text-slate-600 shrink-0">
+                      W{wPct} D{dPct} L{lPct}
+                    </span>
+                  </div>
+                );
+              })}
+        </div>
       </div>
     </div>
-  </div>
-)}
+  );
+}
 ```
 
 **Step 5: Verify**
@@ -437,6 +500,7 @@ Place this block between the closing `</div>` of the scrollable content area and
 ```bash
 npx tsc --noEmit 2>&1 | head -20
 ```
+
 Expected: 0 errors.
 
 ---
@@ -444,6 +508,7 @@ Expected: 0 errors.
 ### Task 7: Pass `fen` from `TrainTab` to `CoachPanel`
 
 **Files:**
+
 - Modify: `src/components/TrainTab.tsx`
 
 `TrainTab` already receives `fen` as a prop. Find the `<CoachPanel>` JSX (around line 299) and add the prop:
