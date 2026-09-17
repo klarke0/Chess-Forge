@@ -294,12 +294,24 @@ export function useGameReview(
           if (Math.abs(prevEval) > 1500 && Math.abs(normalizedEval) > 1500)
             cpLoss = 0;
 
-          // A move that IS the engine's best move can never be a blunder/mistake/inaccuracy.
-          // Eval swings from forced-mate positions to "merely winning" positions cause false
-          // positives (e.g. Qxa1 graded as blunder when it's clearly the best capture).
-          const rawGrade = getGrade(prevEval, normalizedEval, sideMoved);
+          // Grade off the final cpLoss, not the raw evals, so the stored grade can never
+          // contradict the stored loss (the >1500 clamp above zeroes cpLoss on mate-to-
+          // winning swings, and the grade has to follow it).
+          const rawGrade = getGrade(
+            prevEval,
+            sideMoved === "w" ? prevEval - cpLoss : prevEval + cpLoss,
+            sideMoved,
+          );
+          // A move that IS the engine's best move is normally a false positive (e.g. Qxa1
+          // flagged as a blunder when it's clearly the best capture). But bestMove comes
+          // from the shallow depth-10 pass, so drop the override once the depth-13 re-eval
+          // has measured a mistake- or blunder-sized loss — otherwise the drill pool loses
+          // a real blunder to a grade the cpLoss disagrees with.
+          const measuredLargeLoss = rawGrade === "mistake" || rawGrade === "blunder";
           const grade: ReviewedMove["grade"] =
-            rawGrade !== "best" && isPlayedMoveBest(fenBefore, moveSan, bestMoveForThisMove)
+            rawGrade !== "best" &&
+            !measuredLargeLoss &&
+            isPlayedMoveBest(fenBefore, moveSan, bestMoveForThisMove)
               ? "best"
               : rawGrade;
 

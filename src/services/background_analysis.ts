@@ -175,12 +175,22 @@ export class BackgroundAnalysisQueue {
             ? Math.max(0, prevEval - normalizedEval)
             : Math.max(0, normalizedEval - prevEval);
 
-        // A move that IS the engine's best move can never be a blunder/mistake/inaccuracy.
-        // Eval swings from forced-mate positions to "merely winning" positions cause false
-        // positives (e.g. Qxa1 graded as blunder when it's clearly the best capture).
-        const rawGrade = this.getGrade(prevEval, normalizedEval, sideMoved);
+        // Grade off the cpLoss actually stored, so the two can never contradict.
+        const rawGrade = this.getGrade(
+          prevEval,
+          sideMoved === "w" ? prevEval - cpLoss : prevEval + cpLoss,
+          sideMoved,
+        );
+        // A move that IS the engine's best move is normally a false positive (e.g. Qxa1
+        // flagged as a blunder when it's clearly the best capture). bestMove here comes
+        // from the previous position's scan, so drop the override once the eval has
+        // measured a mistake- or blunder-sized loss — otherwise the drill pool loses a
+        // real blunder to a grade the cpLoss disagrees with.
+        const measuredLargeLoss = rawGrade === "mistake" || rawGrade === "blunder";
         const grade =
-          rawGrade !== "best" && this.isPlayedMoveBest(fenBefore, move.san, bestMoveForThisMove)
+          rawGrade !== "best" &&
+          !measuredLargeLoss &&
+          this.isPlayedMoveBest(fenBefore, move.san, bestMoveForThisMove)
             ? "best"
             : rawGrade;
 
