@@ -135,6 +135,12 @@ function runMigrations(db: Database) {
   addCol("positions", "is_main_line", "INTEGER NOT NULL DEFAULT 0");
   addCol("positions", "depth", "INTEGER NOT NULL DEFAULT 0");
 
+  // Punish training: engine judgment of opponent deviations (harvest runner).
+  addCol("deviations", "eval_best_cp", "INTEGER");
+  addCol("deviations", "eval_played_cp", "INTEGER");
+  addCol("deviations", "loss_cp", "INTEGER");
+  addCol("deviations", "refutation_pv", "TEXT");
+
   db.query(
     `CREATE TABLE IF NOT EXISTS pattern_reports (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -40,6 +40,9 @@ import { deleteRepertoireProgress } from "./routes/v2_repertoire_progress";
 import {
   auditSweepRoute, auditStatusRoute, auditTiebreakRoute, auditReportRoute,
 } from "./routes/v2_audit";
+import {
+  punishHarvestRoute, punishStatusRoute, punishListRoute,
+} from "./routes/v2_punish";
 
 const PORT = 3001;
 const DIST_PATH = join(import.meta.dir, "../dist");
@@ -558,6 +561,39 @@ async function route(
     segments.length === 4
   ) {
     return auditReportRoute(url);
+  }
+
+  // POST /api/v2/punish/harvest
+  if (
+    method === "POST" &&
+    segments[1] === "v2" &&
+    segments[2] === "punish" &&
+    segments[3] === "harvest" &&
+    segments.length === 4
+  ) {
+    return punishHarvestRoute();
+  }
+
+  // GET /api/v2/punish/status
+  if (
+    method === "GET" &&
+    segments[1] === "v2" &&
+    segments[2] === "punish" &&
+    segments[3] === "status" &&
+    segments.length === 4
+  ) {
+    return punishStatusRoute();
+  }
+
+  // GET /api/v2/punish/list
+  if (
+    method === "GET" &&
+    segments[1] === "v2" &&
+    segments[2] === "punish" &&
+    segments[3] === "list" &&
+    segments.length === 4
+  ) {
+    return punishListRoute(url);
   }
 
   // POST /api/analyze/blunder
