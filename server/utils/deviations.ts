@@ -64,8 +64,14 @@ export function computeAndPersistDeviations(
     if (game.user_color !== playerColor) continue;
 
     // Load the position tree for this repertoire
+    // Ordered so index 0 of each FEN's move list is the canonical book reply —
+    // the same pick the drill builder and `bookMovesFor` use. Without this the
+    // persisted `expected_san` for a multi-answer FEN is whatever row the table
+    // happened to return first.
     const posRows = db
-      .query("SELECT fen, san, next_fen FROM positions WHERE repertoire_id = ?")
+      .query(
+        "SELECT fen, san, next_fen FROM positions WHERE repertoire_id = ? ORDER BY is_main_line DESC, depth ASC, san ASC",
+      )
       .all(rep.id) as { fen: string; san: string; next_fen: string }[];
 
     // Build a FEN -> moves map

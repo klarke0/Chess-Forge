@@ -10,6 +10,7 @@ import {
   Cpu,
   Sparkles,
   AlertTriangle,
+  GitBranch,
 } from "lucide-react";
 import { UniversalBoard } from "./UniversalBoard";
 import { ParsedGame } from "../services/pgn_parser";
@@ -17,6 +18,7 @@ import { useEngineStore } from "../stores/engineStore";
 import { useRepertoireStore } from "../stores/repertoireStore";
 import { useGameReview } from "../hooks/useGameReview";
 import { cn } from "../utils/cn";
+import { normalizeFen } from "../utils/normalizeFen";
 import { Chess } from "chess.js";
 import { request } from "../services/api";
 
@@ -265,7 +267,7 @@ export const GameAnalysis: React.FC<GameAnalysisProps> = ({
   parsedGame,
   initialMoveIdx,
   onClose,
-  onDrillDeviation: _onDrillDeviation,
+  onDrillDeviation,
   onSwitchToSummary,
 }) => {
   const [currentMoveIdx, setCurrentMoveIdx] = useState(initialMoveIdx ?? -1);
@@ -321,6 +323,24 @@ export const GameAnalysis: React.FC<GameAnalysisProps> = ({
   }, [currentMoveIdx, movesList]);
 
   const currentFen = useMemo(() => previewFen || baseFen, [previewFen, baseFen]);
+
+  // Only the user's own deviations are drillable (opponent deviations aren't
+  // the user's decision to fix).
+  const playerDeviations = useMemo(
+    () => (game.deviations || []).filter((d) => d.side === "player"),
+    [game.deviations],
+  );
+
+  // Jump the board to the position *before* the deviating move — the point
+  // where the user had the choice.
+  const goToDeviation = (dev: Deviation) => {
+    const idx = movesList.findIndex(
+      (m) => normalizeFen(m.fenBefore) === normalizeFen(dev.fen),
+    );
+    if (idx === -1) return;
+    setPreviewFen(null);
+    setCurrentMoveIdx(idx - 1);
+  };
 
   const userColor = game.userColor ?? (repertoireSide as "white" | "black");
   const opponentColor: "white" | "black" = userColor === "white" ? "black" : "white";
@@ -687,6 +707,54 @@ export const GameAnalysis: React.FC<GameAnalysisProps> = ({
           <button onClick={() => handleNav("end")} disabled={currentMoveIdx >= movesList.length - 1} className="p-2 rounded-forge-sm bg-forge-card border border-forge-border-subtle text-slate-400 hover:text-white disabled:opacity-20 transition-all active:scale-95" aria-label="End"><ChevronsRight size={16} /></button>
         </div>
       </div>
+
+      {/* ── REPERTOIRE DEVIATIONS ── */}
+      {/* Positions where the game left the book. Tapping a row jumps the board to */}
+      {/* the decision point; "Drill" queues it for spaced repetition. */}
+      {playerDeviations.length > 0 && (
+        <div className="shrink-0 border-t border-forge-border-subtle bg-forge-surface px-3 py-2">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <GitBranch size={11} className="text-amber-400 shrink-0" />
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+              Out of book
+            </span>
+            <span className="text-[10px] font-black text-amber-400">
+              {playerDeviations.length}
+            </span>
+          </div>
+          <div className="flex flex-col gap-1 max-h-[104px] overflow-y-auto">
+            {playerDeviations.map((dev) => (
+              <div
+                key={`${dev.moveNumber}-${dev.playedSan}`}
+                className="flex items-center gap-2 rounded-forge-sm bg-forge-card border border-forge-border-subtle px-2 py-1.5"
+              >
+                <button
+                  onClick={() => goToDeviation(dev)}
+                  className="flex-1 flex items-baseline gap-1.5 min-w-0 text-left"
+                >
+                  <span className="text-[11px] font-mono text-slate-600 shrink-0">
+                    {dev.moveNumber}.
+                  </span>
+                  <span className="text-[12px] font-black text-rose-400 shrink-0">
+                    {dev.playedSan}
+                  </span>
+                  <span className="text-[10px] text-slate-600 shrink-0">→</span>
+                  <span className="text-[12px] font-black text-emerald-400 truncate">
+                    {dev.repertoireSan}
+                  </span>
+                </button>
+                <button
+                  onClick={() => onDrillDeviation(dev)}
+                  className="shrink-0 flex items-center gap-1 rounded-forge-sm bg-indigo-500/15 border border-indigo-500/30 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-300 hover:bg-indigo-500/25 transition-all active:scale-95"
+                >
+                  <Zap size={10} />
+                  Drill
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── MISTAKE COACH (above move list — keeps text in view on mobile) ── */}
       {/* Lifted out of the scrollable move list so the auto-scroll-to-active-move */}

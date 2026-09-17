@@ -13,6 +13,28 @@ import { useCoachStore } from "../stores/coachStore";
 import { useSound } from "./useSound";
 import * as api from "../services/api";
 
+/**
+ * Post a drill attempt, skipping the call when no repertoire is active.
+ *
+ * `repertoireStore.repertoireId` starts at 0 until localStorage seeds it or
+ * `loadFromApi` succeeds, and the server rejects a falsy `repertoireId` with a
+ * 400. Posting anyway silently drops a whole session's attempts, so guard here
+ * and surface both the skip and any real failure in the console.
+ */
+function recordAttemptSafe(fen: string, correct: boolean): void {
+  const repertoireId = useRepertoireStore.getState().repertoireId;
+  if (!repertoireId) {
+    console.warn(
+      "[useTraining] Skipping recordAttempt — no active repertoire yet.",
+      { fen, correct },
+    );
+    return;
+  }
+  api.recordAttempt(repertoireId, { fen, correct }).catch((e) => {
+    console.error("[useTraining] recordAttempt failed", e);
+  });
+}
+
 export function useTraining() {
   const trainingStatus = useTrainingStore((s) => s.status);
   const topLines = useEngineStore((s) => s.topLines);
@@ -776,12 +798,7 @@ export function useTraining() {
 
           statsRef.current.drilled++;
           statsRef.current.correct++;
-          api
-            .recordAttempt(useRepertoireStore.getState().repertoireId, {
-              fen: currentFen,
-              correct: true,
-            })
-            .catch(() => {});
+          recordAttemptSafe(currentFen, true);
           return true;
         } else {
           if (ts.mode === "learn") {
@@ -828,12 +845,7 @@ export function useTraining() {
 
           statsRef.current.drilled++;
           statsRef.current.mistakes++;
-          api
-            .recordAttempt(useRepertoireStore.getState().repertoireId, {
-              fen: currentFen,
-              correct: false,
-            })
-            .catch(() => {});
+          recordAttemptSafe(currentFen, false);
 
           if (mistakeCount >= 1) {
             const correct = possibleMoves[0];
@@ -1067,12 +1079,7 @@ export function useTraining() {
 
       statsRef.current.drilled++;
       statsRef.current.mistakes++;
-      api
-        .recordAttempt(useRepertoireStore.getState().repertoireId, {
-          fen: currentFen,
-          correct: false,
-        })
-        .catch(() => {});
+      recordAttemptSafe(currentFen, false);
       useRepertoireStore.getState().recordMistake(currentFen);
 
       const temp = new Chess(currentFen);
