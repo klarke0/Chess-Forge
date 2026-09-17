@@ -144,6 +144,27 @@ function runMigrations(db: Database) {
   )`,
   ).run();
 
+  // Book quality audit: one row per (repertoire, fen, san) book move, written
+  // by the engine sweep. Derived data — safe to wipe and re-sweep.
+  db.query(
+    `CREATE TABLE IF NOT EXISTS book_audit (
+    repertoire_id INTEGER NOT NULL,
+    fen TEXT NOT NULL,
+    san TEXT NOT NULL,
+    depth INTEGER NOT NULL,
+    best_cp INTEGER,
+    played_cp INTEGER,
+    loss_cp INTEGER NOT NULL,
+    best_uci TEXT NOT NULL DEFAULT '',
+    pv_uci TEXT NOT NULL DEFAULT '',
+    verdict TEXT NOT NULL,
+    masters_move_games INTEGER,
+    masters_total_games INTEGER,
+    swept_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (repertoire_id, fen, san)
+  )`,
+  ).run();
+
   // Challenge corrections for positions OUTSIDE the repertoire (game blunder
   // drills). Kept separate from `positions` so middlegame FENs never pollute
   // the book tree; v2_train_now consults this when a FEN has no book rows.
