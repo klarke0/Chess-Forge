@@ -933,9 +933,10 @@ export async function explainBlunder(req: Request): Promise<Response> {
     correctMove: string;
     cpLoss: number | null;
     phase?: string;
+    framing?: string;
   };
 
-  const { fen, wrongMove, correctMove, cpLoss, phase } = body;
+  const { fen, wrongMove, correctMove, cpLoss, phase, framing } = body;
 
   // Derive which color the student is from the FEN (they were to move at this position)
   const sideToMove = fen.split(" ")[1] === "w" ? "White" : "Black";
@@ -1039,7 +1040,7 @@ Your task — be specific and tactical, not generic:
 1. CORRECT MOVE: Explain the concrete tactical or structural benefit ${correctMove} creates — use ONLY the pieces and squares confirmed in VERIFIED MOVE FACTS and EXACT PIECES above.
 2. WRONG MOVE CONSEQUENCE: If ${wrongMove ? `${wrongMove} was played` : "the correct move was missed"}, state exactly what goes wrong — which specific piece becomes hanging or undefended, which square becomes weak, which combination or tactic is missed. Concrete, not vague.
 3. PRINCIPLE: End with one sharp, memorable principle that applies to THIS type of position — not a generic chess rule.
-
+${framing ? `\n\nCONTEXT: ${framing}` : ""}
 OUTPUT FORMAT (use exactly):
 ANALYSIS: [2-3 concrete sentences hitting all three points above. Name squares and pieces explicitly.]
 CONCEPT: [A precise chess concept — e.g. "Fork", "Pin", "Discovered attack", "Overloaded piece", "Back-rank weakness", "Zwischenzug", "King safety", "Piece activity" — NOT generic like "tactics" or "strategy"]`;

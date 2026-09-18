@@ -21,6 +21,7 @@ function initialEaseFactor(source?: string, cpLoss?: number): number {
     return 1.8;
   }
   if (source === "deviation") return 2.0;
+  if (source === "punish") return 2.0;
   return 2.5; // review or unknown
 }
 

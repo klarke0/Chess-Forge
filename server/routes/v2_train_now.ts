@@ -38,7 +38,7 @@ interface TrainPosition {
   correctSan: string;
   cpLoss: number;
   score: number;
-  source: "blunder" | "deviation" | "review" | "repertoire";
+  source: "blunder" | "deviation" | "review" | "repertoire" | "punish";
   gameId?: number;
   moveNumber?: number;
   context?: string;
@@ -50,6 +50,10 @@ interface TrainPosition {
    * `correctSan` is the one we display; all of these are accepted.
    */
   acceptableSans?: string[];
+  /** punish drills: the opponent's mistake move (SAN) that created this position */
+  opponentMove?: string;
+  /** punish drills: refutation line in SAN from the drill FEN; [0] === correctSan */
+  refutationSans?: string[];
 }
 
 /**
@@ -338,6 +342,56 @@ function buildContext(gameId: number, moveNumber?: number): string {
   return parts.join(" \u00b7 ");
 }
 
+export interface PunishCandidate {
+  drillFen: string;
+  opponentMove: string;
+  correctSan: string;
+  refutationSans: string[];
+  cpLossPawns: number;
+}
+
+/**
+ * Convert one harvested opponent deviation into a punish drill candidate.
+ * The drill position is AFTER the opponent's mistake \u2014 the user is to move
+ * and must find the engine's refutation. Returns null when the stored data
+ * doesn't replay cleanly (illegal recorded move / stale PV).
+ */
+export function punishCandidateFromRow(row: {
+  fen: string;
+  played_san: string;
+  refutation_pv: string;
+  loss_cp: number;
+  game_id: number;
+  move_number: number;
+  date: string | null;
+}): PunishCandidate | null {
+  try {
+    const chess = new Chess(ensureFullFen(row.fen));
+    if (!chess.move(row.played_san)) return null;
+    const drillFen = chess.fen();
+    const refutationSans: string[] = [];
+    for (const uci of row.refutation_pv.split(/\s+/).slice(0, 5)) {
+      const m = chess.move({
+        from: uci.slice(0, 2),
+        to: uci.slice(2, 4),
+        promotion: (uci[4] as "q" | "r" | "b" | "n" | undefined) ?? "q",
+      });
+      if (!m) break;
+      refutationSans.push(m.san);
+    }
+    if (refutationSans.length === 0) return null;
+    return {
+      drillFen,
+      opponentMove: row.played_san,
+      correctSan: refutationSans[0],
+      refutationSans,
+      cpLossPawns: row.loss_cp / 100,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function trainNow(req: Request): Response {
   const url = new URL(req.url);
   const repertoireIdParam = url.searchParams.get("repertoireId");
@@ -460,12 +514,14 @@ export function trainNow(req: Request): Response {
       correctSan: string;
       totalCpLoss: number;
       occurrences: number;
-      source: "blunder" | "deviation" | "review" | "repertoire";
+      source: "blunder" | "deviation" | "review" | "repertoire" | "punish";
       gameId?: number;
       moveNumber?: number;
       date: string | null;
       context?: string;
       fullFen?: string; // original 6-part FEN for chess.js compatibility
+      opponentMove?: string;
+      refutationSans?: string[];
     }
   >();
 
@@ -702,6 +758,41 @@ export function trainNow(req: Request): Response {
     }
   }
 
+  // ---------- Punishable opponent mistakes (harvested) ----------
+  const punishRows = db
+    .query(
+      `SELECT d.fen, d.played_san, d.refutation_pv, d.loss_cp, d.game_id, d.move_number, g.date
+       FROM deviations d
+       JOIN games g ON d.game_id = g.id
+       WHERE d.repertoire_id = ? AND d.notes = 'opponent'
+         AND d.loss_cp >= 150
+         AND d.refutation_pv IS NOT NULL AND d.refutation_pv != ''
+       ORDER BY d.loss_cp DESC`,
+    )
+    .all(repertoireId) as any[];
+
+  for (const row of punishRows) {
+    const cand = punishCandidateFromRow(row);
+    if (!cand) continue;
+    const nFen = normalizeFen(cand.drillFen);
+    if (dismissedSet.has(nFen)) continue;
+    if (candidates.has(nFen)) continue; // another source already owns this FEN
+    candidates.set(nFen, {
+      san: cand.opponentMove,
+      correctSan: cand.correctSan,
+      totalCpLoss: cand.cpLossPawns,
+      occurrences: 1,
+      source: "punish",
+      gameId: row.game_id,
+      moveNumber: row.move_number,
+      date: row.date,
+      context: buildContext(row.game_id, row.move_number),
+      fullFen: cand.drillFen,
+      opponentMove: cand.opponentMove,
+      refutationSans: cand.refutationSans,
+    });
+  }
+
   // ---------- Source 4: Repertoire positions not yet mastered (fill pool) ----------
   // Only fills candidates not already covered by Sources 1–3.
   const repertoireFillRows = db
@@ -862,6 +953,8 @@ export function trainNow(req: Request): Response {
       phase,
       firstEncounter: !everDrilled,
       pattern,
+      opponentMove: cand.opponentMove,
+      refutationSans: cand.refutationSans,
     });
   }
 
@@ -887,11 +980,17 @@ export function trainNow(req: Request): Response {
   tierPositions.sort((a, b) => b.score - a.score);
   const shuffledValid = [...tierPositions, ...belowTier];
 
+  // Punish cards are spice, not the meal: at most 3 per session.
+  let punishCount = 0;
+  const cappedValid = shuffledValid.filter((p) =>
+    p.source === "punish" ? ++punishCount <= 3 : true,
+  );
+
   // ---------- Enforce session composition (blunders first, then deviation, then review) ----------
   const SESSION_SIZE = 12;
-  const blunders = shuffledValid.filter((p) => p.source === "blunder");
-  const deviationsList = shuffledValid.filter((p) => p.source === "deviation");
-  const reviewList = shuffledValid.filter((p) => p.source === "review");
+  const blunders = cappedValid.filter((p) => p.source === "blunder");
+  const deviationsList = cappedValid.filter((p) => p.source === "deviation");
+  const reviewList = cappedValid.filter((p) => p.source === "review");
 
   const session: TrainPosition[] = [];
 
@@ -913,7 +1012,7 @@ export function trainNow(req: Request): Response {
   // If we still have room (some source didn't have enough), fill from remaining highest-scored
   if (session.length < SESSION_SIZE) {
     const usedFens = new Set(session.map((p) => p.fen));
-    const remaining = shuffledValid.filter((p) => !usedFens.has(p.fen));
+    const remaining = cappedValid.filter((p) => !usedFens.has(p.fen));
     session.push(...remaining.slice(0, SESSION_SIZE - session.length));
   }
 
@@ -990,7 +1089,13 @@ export function trainNow(req: Request): Response {
   // Order: blunders first, then deviations, then review.
   // Within each source group, cluster by pattern so similar themes are adjacent
   // (Woodpecker Method: repeated exposure to the same motif in one session aids recognition).
-  const sourceOrder = { blunder: 0, deviation: 1, review: 2, repertoire: 3 };
+  const sourceOrder = {
+    blunder: 0,
+    deviation: 1,
+    review: 2,
+    punish: 3,
+    repertoire: 4,
+  };
   const patternOrder: Record<TacticalPattern, number> = {
     "back-rank": 0,
     "fork": 1,
