@@ -49,6 +49,12 @@ interface BlunderExplanationProps {
    * these callbacks. Without them, the prose path renders as before.
    */
   coachCallbacks?: InteractiveCoachCallbacks;
+  /**
+   * Extra context appended to the Gemini prompt server-side (e.g. punish-drill
+   * framing explaining the opponent's blunder and what the student's wrong
+   * move let them escape). Undefined for non-punish sources.
+   */
+  framing?: string;
 }
 
 interface BlunderAnalysis {
@@ -118,6 +124,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
   repertoireId,
   mistakeContext = "drill",
   coachCallbacks,
+  framing,
 }) => {
   const needsExplanation = revealed || wrongMove !== null;
 
@@ -159,12 +166,12 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
 
     request<BlunderAnalysis>("/analyze/blunder", {
       method: "POST",
-      body: JSON.stringify({ fen, wrongMove, correctMove, cpLoss, phase }),
+      body: JSON.stringify({ fen, wrongMove, correctMove, cpLoss, phase, framing }),
     })
       .then(setAnalysis)
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [fen, wrongMove, correctMove, cpLoss, phase, needsExplanation]);
+  }, [fen, wrongMove, correctMove, cpLoss, phase, needsExplanation, framing]);
 
   async function handleChallenge() {
     if (challengeState !== "idle") return;

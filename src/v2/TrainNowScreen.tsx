@@ -4,12 +4,14 @@ import { Chessboard } from "react-chessboard";
 import {
   ArrowLeft,
   Check,
+  ChevronRight,
   X,
   Eye,
   Loader2,
   Timer,
   RotateCcw,
   Swords,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { useRepertoireStore } from "@/stores/repertoireStore";
@@ -19,6 +21,7 @@ import { normalizeFen } from "@/utils/normalizeFen";
 import { BOARD_THEME } from "@/design/tokens";
 import { looseSan } from "@/utils/san";
 import { BlunderExplanation } from "./BlunderExplanation";
+import { InteractiveCoach, type CoachStep } from "./InteractiveCoach";
 import { useSound } from "@/hooks/useSound";
 import { useCoachBoard } from "./useCoachBoard";
 import { StockfishEngine } from "@/services/engine";
@@ -57,7 +60,32 @@ function PatternBadge({ pattern, className }: { pattern?: TacticalPattern; class
 }
 
 function getTimerDuration(source?: string): number {
-  return source === "blunder" ? 25 : 15;
+  return source === "blunder" || source === "punish" ? 25 : 15;
+}
+
+/**
+ * Client-built refutation walkthrough for a correctly-answered punish drill —
+ * no Gemini call. Alternating beats frame the line as "you punish" / "their
+ * best defense" so the student sees the full point of the opponent's blunder,
+ * not just the first move.
+ */
+function buildPunishSteps(
+  refutationSans: string[],
+  opponentMove: string,
+): CoachStep[] {
+  return refutationSans.map((san, i) => ({
+    text:
+      i === 0
+        ? `Punishing ${opponentMove}: ${san} is the move.`
+        : i % 2 === 1
+          ? `Their best try: ${san}.`
+          : `You continue with ${san}.`,
+    action: {
+      type: "playMove",
+      san,
+      highlight: i % 2 === 0 ? "green" : "red",
+    },
+  }));
 }
 
 function timerColor(fraction: number): string {
@@ -640,6 +668,16 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
   // Estimated time: ~1.5 min per position
   const estMinutes = Math.max(1, Math.round(positions.length * 1.5));
 
+  // Punish drills answered correctly (not auto-revealed after 2 misses) show
+  // the full punishment line instead of instantly advancing — unlike blunder
+  // drills, the lesson here IS the continuation, so first-try-correct still
+  // shows it. Single-move refutations have nothing to walk through.
+  const isPunishWalkthrough =
+    state === "explanation" &&
+    currentPosition?.source === "punish" &&
+    !revealed &&
+    (currentPosition.refutationSans?.length ?? 0) > 1;
+
   return (
     <div className="flex-1 flex flex-col bg-forge-base overflow-hidden">
       {/* Header */}
@@ -706,11 +744,13 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
             {(() => {
               const blunders = positions.filter((p) => p.source === "blunder").length;
               const deviations = positions.filter((p) => p.source === "deviation").length;
+              const punish = positions.filter((p) => p.source === "punish").length;
               const review = positions.filter((p) => p.source === "review").length;
               const repertoire = positions.filter((p) => p.source === "repertoire").length;
               const items = [
                 blunders > 0 && { label: "blunders", count: blunders, color: "text-rose-400" },
                 deviations > 0 && { label: "deviations", count: deviations, color: "text-amber-400" },
+                punish > 0 && { label: "punish", count: punish, color: "text-amber-400" },
                 review > 0 && { label: "review", count: review, color: "text-slate-400" },
                 repertoire > 0 && { label: "repertoire", count: repertoire, color: "text-indigo-400" },
               ].filter(Boolean) as { label: string; count: number; color: string }[];
@@ -817,6 +857,20 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
               </p>
             )}
 
+            {/* Punish framing strip — the opponent's book deviation to punish */}
+            {currentPosition.source === "punish" && currentPosition.opponentMove && (
+              <div className="px-4 pt-3 shrink-0">
+                <div className="flex items-center gap-2 rounded-forge-lg bg-forge-card border border-amber-500/30 px-3 py-2">
+                  <Zap size={14} className="text-amber-400 shrink-0" />
+                  <span className="text-[12px] font-bold text-slate-300">
+                    They left book:{" "}
+                    <span className="text-rose-400 font-black">{currentPosition.opponentMove}</span>
+                    {" — punish it."}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Coach hint — shown above the board */}
             <div className="flex items-start gap-3 px-4 pt-3 pb-1 shrink-0">
               {/* Avatar */}
@@ -827,7 +881,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
               <div className="flex-1 bg-forge-card border border-forge-border-default rounded-xl rounded-tl-sm px-3 py-2 min-h-[40px] flex items-center gap-2">
                 <p className="text-xs text-slate-300 leading-snug flex-1">
                   {boardOrientation === "white" ? "White" : "Black"} to move
-                  {currentPosition.source === "blunder" ? " — you missed this before" : currentPosition.source === "deviation" ? " — stay in your repertoire" : ""}
+                  {currentPosition.source === "blunder" ? " — you missed this before" : currentPosition.source === "deviation" ? " — stay in your repertoire" : currentPosition.source === "punish" ? " — find the punishment" : ""}
                 </p>
                 <PatternBadge pattern={currentPosition.pattern} />
               </div>
@@ -995,36 +1049,74 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
             )}
 
             <div className="motion-safe:animate-slideUp">
-              <BlunderExplanation
-                fen={currentPosition.fen}
-                /* IMPORTANT: pass the ORIGINAL game blunder
-                   (currentPosition.san), not the per-attempt drill miss
-                   (drill.wrongMove). The walkthrough explains the original
-                   mistake the position was queued for; the drill attempt is
-                   only surfaced in the chip row above as "PLAYED →
-                   BEST". */
-                wrongMove={currentPosition.san ?? wrongMove}
-                correctMove={currentPosition.correctSan}
-                cpLoss={currentPosition.cpLoss ?? null}
-                phase={currentPosition.phase}
-                revealed={revealed}
-                mistakeContext="drill"
-                onNext={handleNext}
-                onReplay={replayCoach}
-                onClose={() => {
-                  clearCoach();
-                  handleNext();
-                }}
-                repertoireId={repertoireId ?? undefined}
-                onDismiss={handleNext}
-                coachCallbacks={{
-                  onResetBoard: () => beatReset(currentPosition.fen),
-                  onPlayMove: (san, hl) =>
-                    beatPlayMove(currentPosition.fen, san, hl),
-                  onHighlight: (squares, color) => beatHighlight(squares, color),
-                  onArrow: (from, to, color) => beatArrow(from, to, color),
-                }}
-              />
+              {isPunishWalkthrough ? (
+                // Punish drill answered correctly — show the full punishment
+                // line client-side (no Gemini call). Reuses the same
+                // InteractiveCoach + board-callback wiring BlunderExplanation
+                // uses below, so the walkthrough animates on the drill board.
+                <div className="flex flex-col gap-3 px-4 pb-4">
+                  <InteractiveCoach
+                    steps={buildPunishSteps(
+                      currentPosition.refutationSans ?? [],
+                      currentPosition.opponentMove ?? "",
+                    )}
+                    onResetBoard={() => beatReset(currentPosition.fen)}
+                    onPlayMove={(san, hl) =>
+                      beatPlayMove(currentPosition.fen, san, hl)
+                    }
+                    onHighlight={(squares, color) => beatHighlight(squares, color)}
+                    onArrow={(from, to, color) => beatArrow(from, to, color)}
+                  />
+                  <button
+                    onClick={handleNext}
+                    className={cn(
+                      "w-full flex items-center justify-center gap-2",
+                      "bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98]",
+                      "text-white font-black uppercase tracking-widest text-sm",
+                      "py-3 rounded-xl transition-all min-h-[44px]",
+                      "border border-indigo-400/20",
+                    )}
+                  >
+                    Next <ChevronRight size={18} />
+                  </button>
+                </div>
+              ) : (
+                <BlunderExplanation
+                  fen={currentPosition.fen}
+                  /* IMPORTANT: pass the ORIGINAL game blunder
+                     (currentPosition.san), not the per-attempt drill miss
+                     (drill.wrongMove). The walkthrough explains the original
+                     mistake the position was queued for; the drill attempt is
+                     only surfaced in the chip row above as "PLAYED →
+                     BEST". */
+                  wrongMove={currentPosition.san ?? wrongMove}
+                  correctMove={currentPosition.correctSan}
+                  cpLoss={currentPosition.cpLoss ?? null}
+                  phase={currentPosition.phase}
+                  revealed={revealed}
+                  mistakeContext="drill"
+                  onNext={handleNext}
+                  onReplay={replayCoach}
+                  onClose={() => {
+                    clearCoach();
+                    handleNext();
+                  }}
+                  repertoireId={repertoireId ?? undefined}
+                  onDismiss={handleNext}
+                  framing={
+                    currentPosition.source === "punish" && currentPosition.opponentMove
+                      ? `The opponent just blundered with ${currentPosition.opponentMove} (a ${(currentPosition.cpLoss ?? 0).toFixed(1)}-pawn mistake). The student was asked to find the punishment ${currentPosition.correctSan} and played ${currentPosition.san ?? wrongMove} instead. Explain what the punishment achieves and what the student's move lets the opponent escape.`
+                      : undefined
+                  }
+                  coachCallbacks={{
+                    onResetBoard: () => beatReset(currentPosition.fen),
+                    onPlayMove: (san, hl) =>
+                      beatPlayMove(currentPosition.fen, san, hl),
+                    onHighlight: (squares, color) => beatHighlight(squares, color),
+                    onArrow: (from, to, color) => beatArrow(from, to, color),
+                  }}
+                />
+              )}
             </div>
 
             {/* Punishment banner — deviation drills only. Shows the opponent's

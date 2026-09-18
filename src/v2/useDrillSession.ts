@@ -28,7 +28,7 @@ export interface TrainPosition {
   context?: string;
   cpLoss?: number;
   phase?: string;
-  source?: "blunder" | "deviation" | "review" | "repertoire";
+  source?: "blunder" | "deviation" | "review" | "repertoire" | "punish";
   firstEncounter?: boolean;
   /** Heuristic tactical theme label assigned at session-build time. */
   pattern?: TacticalPattern;
@@ -38,6 +38,13 @@ export interface TrainPosition {
    * we display. Grade against this list.
    */
   acceptableSans?: string[];
+  /** Punish drills only — the opponent's book-deviating move to be punished. */
+  opponentMove?: string;
+  /**
+   * Punish drills only — the full punishment line, refutationSans[0] ===
+   * correctSan. Drives the client-built refutation walkthrough.
+   */
+  refutationSans?: string[];
 }
 
 export interface SessionStats {
