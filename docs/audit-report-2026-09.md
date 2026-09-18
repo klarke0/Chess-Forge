@@ -31,10 +31,20 @@ move-16 bishop-hang line should be among them.
 suspicious cluster: near-identical middlegame positions (Black Qc7 + Bg4
 structures vs White Bd3/Qe2) where the book plays quiet moves (`a6`, `e6`,
 `b6`, `h5`) while the engine measures **14–19 pawn** losses — queen-hang /
-mate-threat territory. Quiet moves don't lose 16 pawns in sound lines; this is
-the signature of **corrupted merged lines** (positions reachable by multiple
-move orders stitched to the wrong continuations — same bug family as the
-grading/import fixes shipped 2026-09-17).
+mate-threat territory. Quiet moves don't lose 16 pawns in sound lines. Candidate causes, in
+likelihood order given the data's provenance (**the Caro book was OCR-ingested
+from a physical book** — Kevin, 2026-09-17):
+
+1. **OCR transcription errors** — wrong move or wrong position recorded.
+2. **Mis-sided punish lines** — the book showed deliberately bad moves "to
+   punish"; ingestion may have stored them as repertoire moves. These aren't
+   defects to delete — they belong in punish/bait training, on the other side.
+3. **Corrupted merged lines** — multiple variations stitched to wrong
+   continuations (same bug family as the import fixes shipped 2026-09-17).
+
+Kevin is not deeply familiar with these lines, so triage must lean on engine
+evidence plus comparison against the source PGNs (`caro_kann_study.pgn`,
+`caro_kann_chapter_*.pgn`), not eyeballing.
 
 ## Masters tiebreak: blocked
 
