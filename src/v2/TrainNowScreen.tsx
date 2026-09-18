@@ -1060,6 +1060,11 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                       currentPosition.refutationSans ?? [],
                       currentPosition.opponentMove ?? "",
                     )}
+                    // Punish steps are one cumulative continuation, not
+                    // InteractiveCoach's default two-segment narrative — its
+                    // default resetIndices ([0, steps.length-2]) would rewind
+                    // the board mid-line and desync every later beat.
+                    resetIndices={[0]}
                     onResetBoard={() => beatReset(currentPosition.fen)}
                     onPlayMove={(san, hl) =>
                       beatPlayMove(currentPosition.fen, san, hl)
@@ -1105,7 +1110,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                   onDismiss={handleNext}
                   framing={
                     currentPosition.source === "punish" && currentPosition.opponentMove
-                      ? `The opponent just blundered with ${currentPosition.opponentMove} (a ${(currentPosition.cpLoss ?? 0).toFixed(1)}-pawn mistake). The student was asked to find the punishment ${currentPosition.correctSan} and played ${currentPosition.san ?? wrongMove} instead. Explain what the punishment achieves and what the student's move lets the opponent escape.`
+                      ? `The opponent just blundered with ${currentPosition.opponentMove} (a ${(currentPosition.cpLoss ?? 0).toFixed(1)}-pawn mistake). The student was asked to find the punishment ${currentPosition.correctSan} and played ${wrongMove} instead. Explain what the punishment achieves and what the student's move lets the opponent escape.`
                       : undefined
                   }
                   coachCallbacks={{
