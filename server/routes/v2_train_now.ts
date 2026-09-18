@@ -991,23 +991,31 @@ export function trainNow(req: Request): Response {
   const blunders = cappedValid.filter((p) => p.source === "blunder");
   const deviationsList = cappedValid.filter((p) => p.source === "deviation");
   const reviewList = cappedValid.filter((p) => p.source === "review");
+  // Already score-sorted (cappedValid preserves shuffledValid's order) and
+  // already capped at 3 for the whole session — reserve pulls the top 2.
+  const punishList = cappedValid.filter((p) => p.source === "punish");
 
   const session: TrainPosition[] = [];
 
+  // Reserve up to 2 slots for punish cards (highest-score first). When fewer
+  // than 2 punish candidates exist, the freed slots fall through to blunders
+  // below rather than leaving the session short.
+  const topPunish = punishList.splice(0, 2);
   // Reserve 2 slots for deviations, 2 for review
   const topDeviations = deviationsList.splice(0, 2);
   const topReviews = reviewList.splice(0, 2);
 
-  // Fill blunder slots
+  // Fill blunder slots — shrinks by however many punish slots actually seated
   const blunderSlots = Math.min(
     blunders.length,
-    SESSION_SIZE - topDeviations.length - topReviews.length,
+    SESSION_SIZE - topDeviations.length - topReviews.length - topPunish.length,
   );
   session.push(...blunders.slice(0, blunderSlots));
 
-  // Add the reserved deviations and reviews
+  // Add the reserved deviations, reviews, and punish cards
   session.push(...topDeviations);
   session.push(...topReviews);
+  session.push(...topPunish);
 
   // If we still have room (some source didn't have enough), fill from remaining highest-scored
   if (session.length < SESSION_SIZE) {
