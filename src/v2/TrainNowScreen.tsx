@@ -1093,8 +1093,16 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                      (drill.wrongMove). The walkthrough explains the original
                      mistake the position was queued for; the drill attempt is
                      only surfaced in the chip row above as "PLAYED →
-                     BEST". */
-                  wrongMove={currentPosition.san ?? wrongMove}
+                     BEST". Punish drills are the exception: `san` there holds
+                     the OPPONENT's blunder (one ply earlier, the other side),
+                     not a move of the student's — always fall back to the
+                     drill-state wrongMove so the card explains what the
+                     student actually played, not an illegal opposing move. */
+                  wrongMove={
+                    currentPosition.source === "punish"
+                      ? wrongMove
+                      : (currentPosition.san ?? wrongMove)
+                  }
                   correctMove={currentPosition.correctSan}
                   cpLoss={currentPosition.cpLoss ?? null}
                   phase={currentPosition.phase}
@@ -1110,7 +1118,11 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                   onDismiss={handleNext}
                   framing={
                     currentPosition.source === "punish" && currentPosition.opponentMove
-                      ? `The opponent just blundered with ${currentPosition.opponentMove} (a ${(currentPosition.cpLoss ?? 0).toFixed(1)}-pawn mistake). The student was asked to find the punishment ${currentPosition.correctSan} and played ${wrongMove} instead. Explain what the punishment achieves and what the student's move lets the opponent escape.`
+                      ? `The opponent just blundered with ${currentPosition.opponentMove} (a ${(currentPosition.cpLoss ?? 0).toFixed(1)}-pawn mistake). The student was asked to find the punishment ${currentPosition.correctSan} and ${
+                          wrongMove
+                            ? `played ${wrongMove} instead`
+                            : "ran out of time / revealed the answer without attempting a move"
+                        }. Explain what the punishment achieves and what the student's move lets the opponent escape.`
                       : undefined
                   }
                   coachCallbacks={{

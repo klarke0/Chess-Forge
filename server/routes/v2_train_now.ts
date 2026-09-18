@@ -777,6 +777,21 @@ export function trainNow(req: Request): Response {
     const nFen = normalizeFen(cand.drillFen);
     if (dismissedSet.has(nFen)) continue;
     if (candidates.has(nFen)) continue; // another source already owns this FEN
+
+    // SM-2 gate: skip candidates not yet due. Without this, punish has no
+    // next_review check at all, and with only a handful of harvested rows
+    // per repertoire the same 2-3 cards would reappear every session
+    // forever regardless of how well they'd been answered — the exact
+    // drill-pool staleness failure CLAUDE.md guards against.
+    const punishProgress = db
+      .query(
+        "SELECT next_review FROM progress WHERE repertoire_id = ? AND fen = ?",
+      )
+      .get(repertoireId, nFen) as { next_review: string | null } | null;
+    if (punishProgress?.next_review && punishProgress.next_review > now) {
+      continue;
+    }
+
     candidates.set(nFen, {
       san: cand.opponentMove,
       correctSan: cand.correctSan,
