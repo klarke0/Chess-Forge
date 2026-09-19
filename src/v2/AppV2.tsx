@@ -3,6 +3,7 @@ import { BottomNav, V2Tab } from "./BottomNav";
 import { HomeScreen, type TrainingMode, type PhaseFilter } from "./HomeScreen";
 import { TrainNowScreen } from "./TrainNowScreen";
 import { RepertoireRunScreen } from "./RepertoireRunScreen";
+import { LearnScreen } from "./LearnScreen";
 import { GamesTab } from "@/components/GamesTab";
 import { InsightsTab } from "@/components/InsightsTab";
 import { SettingsScreen } from "./SettingsScreen";
@@ -15,6 +16,7 @@ const AppV2: React.FC = () => {
   const [activeTab, setActiveTab] = useState<V2Tab>("train");
   const [drilling, setDrilling] = useState(false);
   const [repertoireRun, setRepertoireRun] = useState(false);
+  const [learnMode, setLearnMode] = useState(false);
   const [analyzingGame, setAnalyzingGame] = useState(false);
   const [deviationFen, setDeviationFen] = useState<string | null>(null);
   const [trainingMode, setTrainingMode] = useState<TrainingMode>("blunder");
@@ -48,6 +50,10 @@ const AppV2: React.FC = () => {
     setDeviationFen(null);
   }
 
+  function handleBackFromLearn() {
+    setLearnMode(false);
+  }
+
   function handleNavigateToGames() {
     setActiveTab("games");
   }
@@ -58,9 +64,11 @@ const AppV2: React.FC = () => {
       <div className="relative flex flex-col h-[100dvh] w-full max-w-[430px] bg-forge-base overflow-hidden shadow-2xl shadow-black/60">
         {/* Main content */}
         <div
-          className={`flex-1 min-h-0 flex flex-col overflow-hidden ${drilling || repertoireRun || analyzingGame ? "" : "mb-16"}`}
+          className={`flex-1 min-h-0 flex flex-col overflow-hidden ${drilling || repertoireRun || learnMode || analyzingGame ? "" : "mb-16"}`}
         >
-          {repertoireRun ? (
+          {learnMode ? (
+            <LearnScreen onBack={handleBackFromLearn} />
+          ) : repertoireRun ? (
             <RepertoireRunScreen onBack={handleBackFromDrill} />
           ) : drilling ? (
             <TrainNowScreen
@@ -75,6 +83,7 @@ const AppV2: React.FC = () => {
                 <HomeScreen
                   onTrainNow={handleTrainNow}
                   onGames={handleNavigateToGames}
+                  onLearn={() => setLearnMode(true)}
                 />
               )}
 
@@ -97,7 +106,7 @@ const AppV2: React.FC = () => {
         </div>
 
         {/* Bottom nav — hide during drilling or game analysis */}
-        {!drilling && !repertoireRun && !analyzingGame && (
+        {!drilling && !repertoireRun && !learnMode && !analyzingGame && (
           <BottomNav activeTab={activeTab} onNavigate={setActiveTab} />
         )}
       </div>

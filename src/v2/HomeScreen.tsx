@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Play, Film, BookOpen, Flame, RefreshCw, Loader2, Target, CheckCircle2, Circle } from "lucide-react";
+import { Play, Film, BookOpen, Flame, RefreshCw, Loader2, Target, CheckCircle2, Circle, GraduationCap } from "lucide-react";
 import { Chessboard } from "react-chessboard";
 import { cn } from "@/utils/cn";
 import { useRepertoireStore } from "@/stores/repertoireStore";
@@ -14,7 +14,14 @@ export type PhaseFilter = "all" | "opening" | "endgame";
 interface HomeScreenProps {
   onTrainNow: (mode: TrainingMode, phase: PhaseFilter) => void;
   onGames: () => void;
+  onLearn: () => void;
 }
+
+const STAGE_CHIP: Record<number, string> = {
+  0: "NEW",
+  1: "WATCHED",
+  2: "GUIDED",
+};
 
 function formatLastSeen(iso: string | null): string {
   if (!iso) return "";
@@ -28,6 +35,7 @@ function formatLastSeen(iso: string | null): string {
 export const HomeScreen: React.FC<HomeScreenProps> = ({
   onTrainNow,
   onGames,
+  onLearn,
 }) => {
   const repertoireId = useRepertoireStore((s) => s.repertoireId);
   const availableRepertoires = useRepertoireStore(
@@ -43,6 +51,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [phase, setPhase] = useState<PhaseFilter>("all");
   const [refreshing, setRefreshing] = useState(false);
   const [refreshMsg, setRefreshMsg] = useState<string | null>(null);
+  const [lessonState, setLessonState] = useState<{
+    loading: boolean;
+    lesson: api.Lesson | null;
+    learned: number;
+  }>({ loading: true, lesson: null, learned: 0 });
 
   const isAnalyzing = useBackgroundStore((s) => s.isAnalyzing);
   const analyzedCount = useBackgroundStore((s) => s.analyzedCount);
@@ -100,6 +113,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       .finally(() => setLoading(false));
   }, [repertoireId, phase]);
 
+  useEffect(() => {
+    if (!repertoireId) return;
+    setLessonState((s) => ({ ...s, loading: true }));
+    api
+      .getNextLesson(repertoireId)
+      .then((result) => {
+        setLessonState({
+          loading: false,
+          lesson: result.lesson,
+          learned: result.totals.learned,
+        });
+      })
+      .catch(() => {
+        setLessonState({ loading: false, lesson: null, learned: 0 });
+      });
+  }, [repertoireId]);
+
   const greeting = getGreeting();
   const lastSeenLabel = formatLastSeen(lastReviewed);
 
@@ -136,6 +166,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           )}
         </div>
       </div>
+
+      {/* Learn Card */}
+      <LearnCard state={lessonState} onLearn={onLearn} />
 
       {/* Train Now Card */}
       <div className="bg-forge-card border border-forge-border-subtle rounded-[2.5rem] p-8 mb-5">
@@ -335,6 +368,77 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     </div>
   );
 };
+
+// ---------------------------------------------------------------------------
+// Learn Card sub-component
+// ---------------------------------------------------------------------------
+
+interface LearnCardProps {
+  state: { loading: boolean; lesson: api.Lesson | null; learned: number };
+  onLearn: () => void;
+}
+
+function LearnCard({ state, onLearn }: LearnCardProps) {
+  const { loading, lesson, learned } = state;
+
+  if (loading) return null;
+
+  if (!lesson) {
+    if (learned === 0) return null;
+    return (
+      <div
+        className={cn(
+          "w-full flex items-center gap-4 p-4 mb-5",
+          "bg-forge-card border border-forge-success rounded-forge-xl",
+        )}
+      >
+        <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-[var(--forge-accent-success-muted)]">
+          <CheckCircle2 size={22} className="text-forge-success" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-black text-forge-success">
+            All lines learned
+          </p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {learned} line{learned !== 1 ? "s" : ""} mastered
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={onLearn}
+      className={cn(
+        "w-full flex items-center gap-4 p-4 mb-5 cursor-pointer",
+        "bg-forge-card border border-forge-border-subtle rounded-forge-xl",
+        "text-left active:scale-[0.98] transition-all duration-150",
+        "hover:border-forge-border-default",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
+      )}
+    >
+      <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-forge-elevated">
+        <GraduationCap size={22} className="text-indigo-400" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
+          <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-forge-sm bg-indigo-600 text-white shrink-0">
+            {STAGE_CHIP[lesson.stage] ?? "NEW"}
+          </span>
+          <p className="text-sm font-black text-slate-200 truncate">
+            {lesson.chapterName ?? "Learn a line"}
+          </p>
+        </div>
+        <p className="text-xs text-slate-500">
+          {lesson.frequency > 0 && `Seen in your games ${lesson.frequency}× · `}
+          ~{lesson.estMinutes} min
+        </p>
+      </div>
+      <div className="text-slate-600 shrink-0">›</div>
+    </button>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Daily Challenge sub-component
