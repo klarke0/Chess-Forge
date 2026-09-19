@@ -43,6 +43,7 @@ import {
 import {
   punishHarvestRoute, punishStatusRoute, punishListRoute,
 } from "./routes/v2_punish";
+import { learnNextRoute, learnCompleteRoute } from "./routes/v2_learn";
 
 const PORT = 3001;
 const DIST_PATH = join(import.meta.dir, "../dist");
@@ -594,6 +595,28 @@ async function route(
     segments.length === 4
   ) {
     return punishListRoute(url);
+  }
+
+  // GET /api/v2/learn/next
+  if (
+    method === "GET" &&
+    segments[1] === "v2" &&
+    segments[2] === "learn" &&
+    segments[3] === "next" &&
+    segments.length === 4
+  ) {
+    return learnNextRoute(url);
+  }
+
+  // POST /api/v2/learn/complete
+  if (
+    method === "POST" &&
+    segments[1] === "v2" &&
+    segments[2] === "learn" &&
+    segments[3] === "complete" &&
+    segments.length === 4
+  ) {
+    return learnCompleteRoute(req);
   }
 
   // POST /api/analyze/blunder

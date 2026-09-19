@@ -194,6 +194,19 @@ function runMigrations(db: Database) {
     PRIMARY KEY (fen, repertoire_id)
   )`,
   ).run();
+
+  // Learn-mode ladder state, one row per (repertoire, line). line_key is a
+  // hash of the SAN path — book edits orphan rows harmlessly.
+  db.query(
+    `CREATE TABLE IF NOT EXISTS learn_state (
+    repertoire_id INTEGER NOT NULL,
+    line_key TEXT NOT NULL,
+    stage INTEGER NOT NULL DEFAULT 0,
+    completed_at TEXT,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (repertoire_id, line_key)
+  )`,
+  ).run();
 }
 
 export function seedJobavaLondon(db: Database) {
