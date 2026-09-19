@@ -39,6 +39,7 @@ beforeAll(() => {
 afterAll(() => {
   db.query("DELETE FROM positions WHERE repertoire_id = ?").run(REP);
   db.query("DELETE FROM book_audit WHERE repertoire_id = ?").run(REP);
+  db.query("DELETE FROM chapters WHERE repertoire_id = ?").run(REP);
 });
 
 describe("enumerateLines", () => {
@@ -77,6 +78,34 @@ describe("enumerateLines", () => {
     const good = lines.find((l) => l.moves.some((m) => m.san === "Nc3"));
     expect(bad!.quarantined).toBe(true);
     expect(good!.quarantined).toBe(false);
+  });
+
+  test("attributes chapters by longest start_moves prefix match, not first_fen (which is identical across chapters in production)", () => {
+    db.query("DELETE FROM chapters WHERE repertoire_id = ?").run(REP);
+    const START_FEN_6 = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    const ins = db.prepare(
+      "INSERT INTO chapters (repertoire_id, name, sort_order, start_moves, first_fen) VALUES (?, ?, ?, ?, ?)",
+    );
+    // Both chapters share the SAME first_fen (the starting position), exactly
+    // like production data — identity must come from start_moves.
+    ins.run(REP, "Chapter E5", 0, JSON.stringify(["e4", "e5"]), START_FEN_6);
+    ins.run(REP, "Chapter C5", 1, JSON.stringify(["e4", "c5"]), START_FEN_6);
+
+    const lines = enumerateLines(REP);
+    const e5Line = lines.find((l) => l.moves.some((m) => m.san === "Nf3"))!;
+    const c5Line = lines.find((l) => l.moves.some((m) => m.san === "Nc3"))!;
+    expect(e5Line.chapterName).toBe("Chapter E5");
+    expect(c5Line.chapterName).toBe("Chapter C5");
+
+    // A line whose SAN sequence doesn't match any chapter's start_moves gets null.
+    db.query("DELETE FROM chapters WHERE repertoire_id = ?").run(REP);
+    ins.run(REP, "Chapter D4", 0, JSON.stringify(["d4"]), START_FEN_6);
+    const unmatched = enumerateLines(REP);
+    for (const l of unmatched) {
+      expect(l.chapterId).toBeNull();
+      expect(l.chapterName).toBeNull();
+    }
+    db.query("DELETE FROM chapters WHERE repertoire_id = ?").run(REP);
   });
 });
 
