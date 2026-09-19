@@ -17,10 +17,11 @@ interface HomeScreenProps {
   onLearn: () => void;
 }
 
-const STAGE_CHIP: Record<number, string> = {
-  0: "NEW",
-  1: "WATCHED",
-  2: "GUIDED",
+const STAGE_CHIP: Record<number, { label: string; className: string }> = {
+  0: { label: "NEW", className: "bg-indigo-600 text-white" },
+  1: { label: "WATCHED", className: "bg-indigo-600 text-white" },
+  2: { label: "GUIDED", className: "bg-indigo-600 text-white" },
+  3: { label: "REFRESH", className: "bg-[var(--forge-accent-success-muted)] text-forge-success" },
 };
 
 function formatLastSeen(iso: string | null): string {
@@ -423,8 +424,13 @@ function LearnCard({ state, onLearn }: LearnCardProps) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-forge-sm bg-indigo-600 text-white shrink-0">
-            {STAGE_CHIP[lesson.stage] ?? "NEW"}
+          <span
+            className={cn(
+              "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-forge-sm shrink-0",
+              (STAGE_CHIP[lesson.stage] ?? STAGE_CHIP[0]).className,
+            )}
+          >
+            {(STAGE_CHIP[lesson.stage] ?? STAGE_CHIP[0]).label}
           </span>
           <p className="text-sm font-black text-slate-200 truncate">
             {lesson.chapterName ?? "Learn a line"}
