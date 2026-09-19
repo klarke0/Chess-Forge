@@ -106,7 +106,9 @@ export function pickNextLesson(repertoireId: number): NextLessonResult {
   const nonQuarantined = lines.filter((l) => !l.quarantined);
   const learned = nonQuarantined.filter((l) => stageOf(l) >= 3);
   const totals = {
-    lines: lines.length,
+    // Denominator matches `learned`: quarantined lines can never be "mastered"
+    // through the picker, so they shouldn't count toward the total either.
+    lines: nonQuarantined.length,
     learned: learned.length,
     quarantined: lines.filter((l) => l.quarantined).length,
   };
@@ -146,8 +148,14 @@ export function completeLesson(
 
   const advances = passed && stage > current;
   const newStage = advances ? stage : current;
+  // A steady-state re-pass (already at stage 3, passes stage 3 again) doesn't
+  // advance the stage, but it must still bump completed_at — otherwise the
+  // refresh picker (sorts by completed_at ASC) serves this exact line
+  // forever once everything is learned.
+  const touchesStage3 = passed && stage === 3 && newStage === 3;
 
-  if (advances) {
+  if (advances || touchesStage3) {
+    const completedAt = newStage >= 3 ? new Date().toISOString() : null;
     db.query(
       `INSERT INTO learn_state (repertoire_id, line_key, stage, completed_at, updated_at)
        VALUES (?, ?, ?, ?, datetime('now'))
@@ -155,7 +163,7 @@ export function completeLesson(
          stage = excluded.stage,
          completed_at = excluded.completed_at,
          updated_at = excluded.updated_at`,
-    ).run(repertoireId, lineKey, newStage, newStage >= 3 ? new Date().toISOString() : null);
+    ).run(repertoireId, lineKey, newStage, completedAt);
   }
 
   let promoted = 0;
@@ -163,9 +171,12 @@ export function completeLesson(
     const lines = getCachedLines(repertoireId);
     const line = lines.find((l) => l.lineKey === lineKey);
     if (line) {
+      // next_review = now so promoted rows are immediately due through
+      // v2_train_now's source-1 predicate (total_attempts=0 alone doesn't
+      // satisfy it — these rows would otherwise never reach Train Now).
       const insertProgress = db.prepare(
-        `INSERT OR IGNORE INTO progress (repertoire_id, fen, total_attempts, correct_attempts, streak)
-         VALUES (?, ?, 0, 0, 0)`,
+        `INSERT OR IGNORE INTO progress (repertoire_id, fen, total_attempts, correct_attempts, streak, next_review)
+         VALUES (?, ?, 0, 0, 0, datetime('now'))`,
       );
       for (const move of line.moves) {
         if (!move.isKevinMove) continue;

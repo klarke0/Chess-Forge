@@ -68,11 +68,24 @@ describe("pickNextLesson / completeLesson", () => {
       .query("SELECT COUNT(*) c FROM progress WHERE repertoire_id = ?")
       .get(REP) as { c: number };
     expect(rows.c).toBe(2);
+
+    // Promoted rows must actually surface in Train Now: v2_train_now's
+    // source-1 query requires (total_attempts > 0 AND accuracy < 0.7) OR
+    // (next_review IS NOT NULL AND next_review <= now). Promoted rows start
+    // at total_attempts = 0, so they can only satisfy the second clause —
+    // next_review must be set to something already due.
+    const due = db
+      .query(
+        "SELECT COUNT(*) c FROM progress WHERE repertoire_id = ? AND next_review IS NOT NULL AND next_review <= datetime('now')",
+      )
+      .get(REP) as { c: number };
+    expect(due.c).toBe(2);
+
     // idempotent: re-pass doesn't duplicate
     expect(completeLesson(REP, key, 3, true).promoted).toBe(0);
   });
 
-  test("learned lines drop out of pickNextLesson; quarantined never appear", () => {
+  test("learned lines drop out of pickNextLesson; steady-state re-pass rotates the refresh pick; quarantined never appear", () => {
     // Exactly one line is stage 3 (learned) from the previous test; the
     // other is still stage 0. Promote it to stage 3 as well, so BOTH lines
     // are learned and pickNextLesson must fall back to a refresh pick
@@ -85,11 +98,23 @@ describe("pickNextLesson / completeLesson", () => {
     const bothLearned = pickNextLesson(REP);
     expect(bothLearned.lesson).not.toBeNull();
     expect(bothLearned.totals.learned).toBe(2);
+    expect(bothLearned.totals.lines).toBe(2); // denominator matches learned (nothing quarantined yet)
 
-    // Flag the refresh-picked line's own Kevin move -> quarantined. Even
-    // though it's a valid stage-3 line, it must never be surfaced again;
-    // the OTHER stage-3 line should be picked instead.
-    const flaggedKey = bothLearned.lesson!.lineKey;
+    // Steady-state rotation: re-passing the refresh-picked line at stage 3
+    // again (it's already stage 3, so this doesn't advance the stage) must
+    // still bump its completed_at — otherwise the refresh picker (sorted by
+    // completed_at ASC) would serve this same line forever.
+    const firstPickKey = bothLearned.lesson!.lineKey;
+    const repass = completeLesson(REP, firstPickKey, 3, true);
+    expect(repass.newStage).toBe(3);
+    const afterRepass = pickNextLesson(REP);
+    expect(afterRepass.lesson).not.toBeNull();
+    expect(afterRepass.lesson!.lineKey).not.toBe(firstPickKey);
+
+    // Flag the (now current) refresh-picked line's own Kevin move ->
+    // quarantined. Even though it's a valid stage-3 line, it must never be
+    // surfaced again; the OTHER stage-3 line should be picked instead.
+    const flaggedKey = afterRepass.lesson!.lineKey;
     const flaggedLine = enumerateLines(REP, 2000).find((l) => l.lineKey === flaggedKey)!;
     const flaggedMove = [...flaggedLine.moves].reverse().find((m) => m.isKevinMove)!;
     db.prepare(
@@ -103,5 +128,7 @@ describe("pickNextLesson / completeLesson", () => {
 
     const r = pickNextLesson(REP);
     expect(r.lesson === null || r.lesson.lineKey !== flaggedKey).toBe(true);
+    expect(r.totals.lines).toBe(1); // quarantined line drops out of the denominator too
+    expect(r.totals.quarantined).toBe(1);
   });
 });
