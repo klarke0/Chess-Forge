@@ -558,3 +558,54 @@ export function deleteRepertoireProgress(repertoireId: number): Promise<DeletePr
     method: "DELETE",
   });
 }
+
+// --- Learn (watch / guided / blind ladder) ---
+
+export interface LearnMove {
+  fen: string;
+  san: string;
+  comment: string | null;
+  isKevinMove: boolean;
+}
+
+export interface Lesson {
+  lineKey: string;
+  chapterName: string | null;
+  stage: number;
+  moves: LearnMove[];
+  kevinMoveCount: number;
+  frequency: number;
+  estMinutes: number;
+}
+
+export interface NextLessonResult {
+  lesson: Lesson | null;
+  totals: { lines: number; learned: number; quarantined: number };
+}
+
+export interface CompleteLessonResult {
+  newStage: number;
+  promoted: number;
+}
+
+// v2_learn routes respond through the { ok, data } envelope (server/utils/response.ts),
+// unlike the bare-body v2_train_now / v2_challenge routes — unwrap .data here.
+export async function getNextLesson(repertoireId: number): Promise<NextLessonResult> {
+  const res = await request<{ ok: true; data: NextLessonResult }>(
+    `/v2/learn/next?repertoireId=${repertoireId}`,
+  );
+  return res.data;
+}
+
+export async function completeLesson(
+  repertoireId: number,
+  lineKey: string,
+  stage: 1 | 2 | 3,
+  passed: boolean,
+): Promise<CompleteLessonResult> {
+  const res = await request<{ ok: true; data: CompleteLessonResult }>("/v2/learn/complete", {
+    method: "POST",
+    body: JSON.stringify({ repertoireId, lineKey, stage, passed }),
+  });
+  return res.data;
+}
