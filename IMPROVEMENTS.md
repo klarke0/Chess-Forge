@@ -71,6 +71,35 @@ Polish sweep across all 5 V2 target files. Build passes, no new lint errors.
 
 ---
 
+## Sept 2026 Mega-Session — ✅ Shipped 2026-09-17→19
+
+Three-day arc (specs/plans/reports all committed under `docs/`):
+- **Repo rescue + review:** 4 months of uncommitted work checkpointed; 15 verified
+  review findings fixed (fresh-DB migrations, server-authoritative SM-2, engine
+  request queue, challenge `drill_corrections` split, RepertoireRun/coach bugs).
+- **Audit & punish foundation:** native Stockfish service (`engine_native.ts`),
+  `book_audit` sweep of both books (7,212 moves, 0 errors), opponent-deviation
+  harvest (669 judged, 26 punishable with refutation PVs), punish drill cards in
+  Train Now (2 reserved slots, walkthrough on correct, Gemini framing on miss).
+- **Caro triage:** 74 junk book moves deleted (OCR-era ingest artifacts; report
+  `docs/caro-triage-2026-09.md`); source traced to lichess study BR22mPv3.
+- **Learn front door:** line enumerator + quarantine, `learn_state` ladder
+  (watch→guided→blind), reality-ranked next-lesson picker, blind-pass promotion
+  into SM-2 (verified end-to-end into Train Now), Home learn card.
+
+**Open follow-ups (queue-worthy):**
+- 🔴 **Lichess course importer** (plug-and-play study URL → repertoire + auto-audit).
+  First import: Shreksify MBQ3N0F8 to replace damaged Caro data — candidates in
+  `docs/caro-course-candidates.md`. Sharpened Track 2; next up.
+- 🟡 Lichess API token → rerun masters tiebreak (explorer 401s anonymously; 265 gray rows).
+- 🟡 705 mis-graded `analysis_json` moves (grade 'best' + blunder cpLoss) need a
+  targeted re-analysis script (refresh-analysis filter can't catch them).
+- 🟡 29 Jobava Kevin-side flagged moves (`book_audit`, rep 3) — eyeball + excise
+  (includes the known move-16 bishop-hang).
+- 🟢 Punish injection into repertoire runs (spec Pillar 5 phase 2); explorer-sourced
+  "likely mistakes"; HomeScreen backlog counts omit punish (countOnly branch).
+- 🟢 Mobile smoke of punish drills + Learn ladder still pending (Kevin).
+
 ## Improvement Queue
 
 Priority order: 🔴 Ready to build → 🟡 Needs design decision → ⚪ Future
