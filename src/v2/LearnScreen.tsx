@@ -378,16 +378,16 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
       <div className="flex items-center gap-3 px-4 py-3 bg-forge-surface border-b border-forge-border-subtle shrink-0">
         <button
           onClick={onBack}
-          className="p-2 -ml-2 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95"
+          className="p-2 -ml-2 rounded-xl text-forge-text-secondary hover:text-white transition-all active:scale-95"
         >
           <ArrowLeft size={20} />
         </button>
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-black text-slate-200 uppercase tracking-wider truncate">
+          <h2 className="text-sm font-black text-forge-text-primary uppercase tracking-wider truncate">
             {lesson?.chapterName ?? "Learn"}
           </h2>
           {lesson && (
-            <p className="text-[10px] text-slate-500 font-semibold truncate">
+            <p className="text-[10px] text-forge-text-inactive font-semibold truncate">
               {lesson.moves.slice(0, 3).map((m) => m.san).join(" ")}
               {lesson.moves.length > 3 ? "…" : ""}
             </p>
@@ -411,8 +411,8 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
                       className={cn(
                         "text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-forge-sm",
                         active
-                          ? "text-white bg-indigo-600"
-                          : "text-slate-500 bg-forge-card",
+                          ? "text-white bg-forge-primary"
+                          : "text-forge-text-inactive bg-forge-card",
                       )}
                     >
                       {s.label}
@@ -421,7 +421,7 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
                 );
               })}
             </div>
-            <div className="flex items-center justify-center gap-3 mt-2 text-[10px] text-slate-500 font-semibold">
+            <div className="flex items-center justify-center gap-3 mt-2 text-[10px] text-forge-text-inactive font-semibold">
               {lesson.frequency > 0 && <span>Seen in your games {lesson.frequency}×</span>}
               <span>~{lesson.estMinutes} min</span>
             </div>
@@ -432,16 +432,16 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
       <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
         {phase === "loading" && (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Loading…</p>
+            <p className="text-xs text-forge-text-inactive font-semibold uppercase tracking-wider">Loading…</p>
           </div>
         )}
 
         {phase === "error" && (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
-            <p className="text-xs text-rose-400 font-semibold text-center">{errorMsg}</p>
+            <p className="text-xs text-forge-danger font-semibold text-center">{errorMsg}</p>
             <button
               onClick={loadLesson}
-              className="px-4 py-2 rounded-forge-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95"
+              className="px-4 py-2 rounded-forge-md bg-forge-primary hover:bg-forge-primary text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95"
             >
               Retry
             </button>
@@ -450,21 +450,21 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
 
         {phase === "empty" && (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
-            <div className="w-20 h-20 rounded-[2rem] border-2 flex items-center justify-center bg-emerald-400/10 border-emerald-400/30">
-              <PartyPopper size={36} className="text-emerald-400" />
+            <div className="w-20 h-20 rounded-[2rem] border-2 flex items-center justify-center bg-forge-success-muted border-forge-success-border">
+              <PartyPopper size={36} className="text-forge-success" />
             </div>
-            <p className="text-sm font-black uppercase tracking-wider text-emerald-400">
+            <p className="text-sm font-black uppercase tracking-wider text-forge-success">
               All lines learned
             </p>
             {totals && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-forge-text-inactive">
                 {totals.learned} of {totals.lines} lines mastered
                 {totals.quarantined > 0 ? ` · ${totals.quarantined} flagged` : ""}
               </p>
             )}
             <button
               onClick={onBack}
-              className="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-black uppercase tracking-widest transition-all active:scale-95"
+              className="px-6 py-3 rounded-2xl bg-forge-primary hover:bg-forge-primary text-white text-sm font-black uppercase tracking-widest transition-all active:scale-95"
             >
               Done
             </button>
@@ -473,15 +473,15 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
 
         {phase === "blind-failed" && (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
-            <div className="w-20 h-20 rounded-[2rem] border-2 flex items-center justify-center bg-rose-400/10 border-rose-400/30">
-              <RotateCcw size={32} className="text-rose-400" />
+            <div className="w-20 h-20 rounded-[2rem] border-2 flex items-center justify-center bg-forge-danger-muted border-forge-danger-border">
+              <RotateCcw size={32} className="text-forge-danger" />
             </div>
-            <p className="text-sm font-black uppercase tracking-wider text-rose-400">
+            <p className="text-sm font-black uppercase tracking-wider text-forge-danger">
               Line broken — again?
             </p>
             <button
               onClick={handleBlindRetry}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-black uppercase tracking-widest transition-all active:scale-95"
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-forge-primary hover:bg-forge-primary text-white text-sm font-black uppercase tracking-widest transition-all active:scale-95"
             >
               <RotateCcw size={16} />
               Retry blind
@@ -491,13 +491,13 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
 
         {phase === "success" && (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
-            <div className="w-20 h-20 rounded-[2rem] border-2 flex items-center justify-center bg-emerald-400/10 border-emerald-400/30">
-              <Trophy size={36} className="text-emerald-400" />
+            <div className="w-20 h-20 rounded-[2rem] border-2 flex items-center justify-center bg-forge-success-muted border-forge-success-border">
+              <Trophy size={36} className="text-forge-success" />
             </div>
-            <p className="text-sm font-black uppercase tracking-wider text-emerald-400">
+            <p className="text-sm font-black uppercase tracking-wider text-forge-success">
               Line learned
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-forge-text-inactive">
               {promoted > 0
                 ? `${promoted} position${promoted === 1 ? "" : "s"} promoted to your drill rotation.`
                 : "This line is holding steady."}
@@ -505,13 +505,13 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
             <div className="flex flex-col gap-3 w-full max-w-xs">
               <button
                 onClick={handleNextLesson}
-                className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-indigo-600/30 border border-indigo-400/20 transition-all"
+                className="w-full py-4 rounded-2xl bg-forge-primary hover:bg-forge-primary active:scale-[0.98] text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-indigo-600/30 border border-forge-primary-border transition-all"
               >
                 Next lesson
               </button>
               <button
                 onClick={onBack}
-                className="w-full py-3 rounded-2xl bg-forge-card border border-forge-border-subtle text-slate-300 font-black text-sm uppercase tracking-widest transition-all active:scale-95"
+                className="w-full py-3 rounded-2xl bg-forge-card border border-forge-border-subtle text-forge-text-primary font-black text-sm uppercase tracking-widest transition-all active:scale-95"
               >
                 Done
               </button>
@@ -551,7 +551,7 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
             {/* Caption / status bar */}
             <div className="px-6 py-3 bg-forge-surface border-t border-forge-border-subtle shrink-0">
               {phase === "watch" && caption && (
-                <div className="mb-2 px-3 py-2 rounded-forge-md bg-forge-card border border-forge-border-subtle text-xs text-slate-300 italic">
+                <div className="mb-2 px-3 py-2 rounded-forge-md bg-forge-card border border-forge-border-subtle text-xs text-forge-text-primary italic">
                   {caption}
                 </div>
               )}
@@ -560,19 +560,19 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleWatchTogglePause}
-                      className="p-2 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95"
+                      className="p-2 rounded-xl text-forge-text-secondary hover:text-white transition-all active:scale-95"
                     >
                       {watchPaused ? <Play size={16} /> : <Pause size={16} />}
                     </button>
                     <button
                       onClick={handleWatchRestart}
-                      className="p-2 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95"
+                      className="p-2 rounded-xl text-forge-text-secondary hover:text-white transition-all active:scale-95"
                     >
                       <RotateCcw size={16} />
                     </button>
                     <button
                       onClick={handleSkipToGuided}
-                      className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-all"
+                      className="flex items-center gap-1.5 text-xs text-forge-text-inactive hover:text-forge-text-primary transition-all"
                     >
                       Skip to guided
                       <ChevronsRight size={14} />
@@ -580,14 +580,14 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
                   </div>
                 ) : isKevinTurn ? (
                   missCount > 0 ? (
-                    <p className="text-xs text-rose-400 font-semibold">Not quite — try again</p>
+                    <p className="text-xs text-forge-danger font-semibold">Not quite — try again</p>
                   ) : (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-forge-text-inactive">
                       {repertoireSide === "white" ? "Play White's move" : "Play Black's move"}
                     </p>
                   )
                 ) : (
-                  <p className="text-xs text-slate-500 italic">Opponent replying…</p>
+                  <p className="text-xs text-forge-text-inactive italic">Opponent replying…</p>
                 )}
 
                 {phase === "guided" && isKevinTurn && (
@@ -595,7 +595,7 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
                     onClick={() => setHintShown((h) => !h)}
                     className={cn(
                       "flex items-center gap-1.5 text-xs font-semibold transition-all ml-auto",
-                      hintShown ? "text-indigo-400" : "text-slate-500 hover:text-slate-300",
+                      hintShown ? "text-forge-primary-hover" : "text-forge-text-inactive hover:text-forge-text-primary",
                     )}
                   >
                     <Lightbulb size={14} />
@@ -603,7 +603,7 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
                   </button>
                 )}
                 {phase === "blind" && isKevinTurn && (
-                  <span className="flex items-center gap-1.5 text-xs text-slate-600 ml-auto">
+                  <span className="flex items-center gap-1.5 text-xs text-forge-text-muted ml-auto">
                     <Check size={12} />
                     No hints
                   </span>

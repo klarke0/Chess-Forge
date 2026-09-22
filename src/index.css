@@ -114,8 +114,12 @@ html[data-theme="dark"] {
   --forge-accent-primary: #4f46e5;
   --forge-accent-primary-hover: #6366f1;
   --forge-accent-primary-shadow: rgba(79, 70, 229, 0.3);
+  --forge-accent-primary-muted: rgba(79, 70, 229, 0.1);
+  --forge-accent-primary-border: rgba(79, 70, 229, 0.2);
   --forge-accent-warm: #f97316;
   --forge-accent-warm-muted: #fb923c;
+  --forge-accent-warm-bg: rgba(249, 115, 22, 0.1);
+  --forge-accent-warm-border: rgba(249, 115, 22, 0.2);
   --forge-accent-success: #34d399;
   --forge-accent-success-muted: rgba(52, 211, 153, 0.1);
   --forge-accent-success-border: rgba(52, 211, 153, 0.2);
@@ -142,6 +146,27 @@ html[data-theme="dark"] {
   --forge-radius-lg: 1.5rem;
   --forge-radius-xl: 2rem;
   --forge-radius-pill: 9999px;
+
+  --forge-label-sm-size: 0.5rem;
+  --forge-label-sm-tracking: 0.1em;
+  --forge-label-size: 0.625rem;
+  --forge-label-tracking: 0.1em;
+  --forge-label-lg-size: 0.6875rem;
+  --forge-label-lg-tracking: 0.08em;
+
+  --forge-motion-fast: 150ms;
+  --forge-motion-base: 300ms;
+  --forge-motion-easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --forge-grade-best: #34d399;
+  --forge-grade-inaccuracy: #fbbf24;
+  --forge-grade-mistake: #f97316;
+  --forge-grade-blunder: #fb7185;
+
+  --forge-drill-blunder: #fb7185;
+  --forge-drill-deviation: #fbbf24;
+  --forge-drill-review: #94a3b8;
+  --forge-drill-punish: #a78bfa;
 }
 
 /* ── Theme: Night ── */

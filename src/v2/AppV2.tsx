@@ -59,7 +59,7 @@ const AppV2: React.FC = () => {
   }
 
   return (
-    <div className="flex items-start justify-center h-[100dvh] bg-forge-shell text-slate-200 font-outfit overflow-hidden">
+    <div className="flex items-start justify-center h-[100dvh] bg-forge-shell text-forge-text-primary font-outfit overflow-hidden">
       {/* Phone-width container — centered on desktop, full-width on mobile */}
       <div className="relative flex flex-col h-[100dvh] w-full max-w-[430px] bg-forge-base overflow-hidden shadow-2xl shadow-black/60">
         {/* Main content */}

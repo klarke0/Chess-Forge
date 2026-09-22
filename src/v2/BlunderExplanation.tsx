@@ -255,19 +255,19 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
   // Clean correct — no explanation needed
   if (!needsExplanation) {
     return (
-      <div className="flex flex-col gap-4 p-6 bg-emerald-950/20 border-t border-emerald-500/20 rounded-[2.5rem]">
+      <div className="flex flex-col gap-4 p-6 bg-forge-success-muted border-t border-forge-success-border rounded-[2.5rem]">
         <div className="flex items-center gap-2">
-          <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
-          <p className="text-sm font-semibold text-emerald-300">First try — nice work.</p>
+          <CheckCircle2 size={18} className="text-forge-success shrink-0" />
+          <p className="text-sm font-semibold text-forge-success">First try — nice work.</p>
         </div>
         <button
           onClick={onClose ?? onNext}
           className={cn(
             "w-full flex items-center justify-center gap-2",
-            "bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98]",
+            "bg-forge-primary hover:bg-forge-primary active:scale-[0.98]",
             "text-white font-black uppercase tracking-widest text-sm",
             "py-4 rounded-xl transition-all min-h-[44px]",
-            "border border-indigo-400/20",
+            "border border-forge-primary-border",
           )}
         >
           {nextLabel} <ChevronRight size={18} />
@@ -285,21 +285,21 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
           long ("Why your original move failed" + "PROPHYLAXIS"). The badge is
           intentionally small enough to fit on the same row at iPhone widths. */}
       <div className="flex items-center gap-1.5 min-w-0">
-        <Sparkles size={16} className="text-indigo-400 shrink-0" />
-        <span className="text-xs font-black uppercase tracking-wider text-slate-100 min-w-0 truncate">
+        <Sparkles size={16} className="text-forge-primary-hover shrink-0" />
+        <span className="text-xs font-black uppercase tracking-wider text-forge-text-primary min-w-0 truncate">
           {mistakeContext === "original"
             ? "Why your original move failed"
             : "Why your drill move failed"}
         </span>
         {moveNumber != null ? (
-          <span className="ml-auto text-[10px] font-bold text-slate-500 shrink-0">
+          <span className="ml-auto text-[10px] font-bold text-forge-text-inactive shrink-0">
             Move {moveNumber}
           </span>
         ) : analysis?.concept ? (
           <span
             className={cn(
               "ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0",
-              "bg-amber-500/10 text-amber-400 border border-amber-500/20",
+              "bg-forge-warning-muted text-forge-warning border border-forge-warning-border",
             )}
           >
             {analysis.concept}
@@ -310,39 +310,39 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
       {/* Move comparison with explicit context label — Played → Best on one row */}
       <div className="flex items-center gap-3 text-sm flex-wrap">
         {wrongMove && (
-          <span className="flex items-center gap-1.5 text-rose-400 font-mono font-bold">
-            <span className="w-2 h-2 rounded-full bg-rose-500" />
-            <span className="text-[10px] uppercase tracking-wider text-rose-300/70 font-sans">
+          <span className="flex items-center gap-1.5 text-forge-danger font-mono font-bold">
+            <span className="w-2 h-2 rounded-full bg-forge-danger" />
+            <span className="text-[10px] uppercase tracking-wider text-forge-danger font-sans">
               {mistakeContext === "original" ? "Played:" : "Played:"}
             </span>
             {wrongMove}
           </span>
         )}
-        {wrongMove && <ChevronRight size={14} className="text-slate-600" />}
-        <span className="flex items-center gap-1.5 text-emerald-400 font-mono font-bold">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span className="text-[10px] uppercase tracking-wider text-emerald-300/70 font-sans">
+        {wrongMove && <ChevronRight size={14} className="text-forge-text-muted" />}
+        <span className="flex items-center gap-1.5 text-forge-success font-mono font-bold">
+          <span className="w-2 h-2 rounded-full bg-forge-success" />
+          <span className="text-[10px] uppercase tracking-wider text-forge-success font-sans">
             Best:
           </span>
           {correctMove}
         </span>
         {/* Eval bar inline with chips — pushed to the right; saves a full row */}
         {cpLoss !== null && cpLoss > 0 && !loading && (
-          <div className="flex items-center gap-2 text-xs text-slate-500 ml-auto min-w-[110px]">
+          <div className="flex items-center gap-2 text-xs text-forge-text-inactive ml-auto min-w-[110px]">
             <div className="flex-1 h-1.5 rounded-full bg-forge-border-subtle overflow-hidden">
               <div
                 className={cn(
                   "h-full rounded-full",
                   cpLoss > 2
-                    ? "bg-rose-500"
+                    ? "bg-forge-danger"
                     : cpLoss > 1
-                      ? "bg-amber-500"
+                      ? "bg-forge-warning"
                       : "bg-slate-600",
                 )}
                 style={{ width: `${Math.min(100, Math.abs(cpLoss) * 20)}%` }}
               />
             </div>
-            <span className="tabular-nums text-slate-400 shrink-0">-{Math.abs(cpLoss).toFixed(1)}</span>
+            <span className="tabular-nums text-forge-text-secondary shrink-0">-{Math.abs(cpLoss).toFixed(1)}</span>
           </div>
         )}
       </div>
@@ -362,9 +362,9 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
           {/* (concept badge promoted to header row above to save vertical space) */}
           {/* Ambiguity hedge — surfaced when Challenge flagged the position */}
           {challengeState === "ambiguous" && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex items-start gap-2">
-              <AlertTriangle size={14} className="text-amber-400 mt-0.5 shrink-0" />
-              <p className="text-xs text-amber-200 leading-relaxed">
+            <div className="rounded-xl border border-forge-warning-border bg-forge-warning-muted px-4 py-3 flex items-start gap-2">
+              <AlertTriangle size={14} className="text-forge-warning mt-0.5 shrink-0" />
+              <p className="text-xs text-forge-warning leading-relaxed">
                 <span className="font-black uppercase tracking-wider">Heads up — </span>
                 the engine isn't confident here. The coach analysis below assumes{" "}
                 <span className="font-mono font-bold">{correctMove}</span> is best, but
@@ -392,16 +392,16 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
                 "rounded-xl border px-4 py-3 transition-opacity",
                 challengeState === "ambiguous"
                   ? "border-forge-border-default bg-forge-elevated opacity-80"
-                  : "border-indigo-500/20 bg-indigo-950/30",
+                  : "border-forge-primary-border bg-forge-primary-muted",
               )}
             >
               <div className="flex items-center gap-1.5 mb-2">
-                <Sparkles size={12} className={cn("shrink-0", challengeState === "ambiguous" ? "text-slate-500" : "text-indigo-400")} />
-                <span className={cn("text-[10px] font-black uppercase tracking-widest", challengeState === "ambiguous" ? "text-slate-500" : "text-indigo-400")}>
+                <Sparkles size={12} className={cn("shrink-0", challengeState === "ambiguous" ? "text-forge-text-inactive" : "text-forge-primary-hover")} />
+                <span className={cn("text-[10px] font-black uppercase tracking-widest", challengeState === "ambiguous" ? "text-forge-text-inactive" : "text-forge-primary-hover")}>
                   Coach Analysis{challengeState === "ambiguous" ? " (low confidence)" : ""}
                 </span>
               </div>
-              <p className="text-sm text-slate-300 leading-relaxed">
+              <p className="text-sm text-forge-text-primary leading-relaxed">
                 {analysis.analysis}
               </p>
             </div>
@@ -411,16 +411,16 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
 
       {/* Error fallback */}
       {!loading && error && (
-        <div className="flex items-start gap-2 text-sm text-slate-400">
-          <AlertTriangle size={16} className="text-amber-500 mt-0.5 shrink-0" />
+        <div className="flex items-start gap-2 text-sm text-forge-text-secondary">
+          <AlertTriangle size={16} className="text-forge-warning mt-0.5 shrink-0" />
           <p>
             {cpLoss !== null && (
-              <span className="text-rose-400 font-semibold">
+              <span className="text-forge-danger font-semibold">
                 -{Math.abs(cpLoss).toFixed(1)} pawns.{" "}
               </span>
             )}
             Engine recommends{" "}
-            <span className="text-emerald-400 font-mono font-bold">
+            <span className="text-forge-success font-mono font-bold">
               {correctMove}
             </span>
           </p>
@@ -433,11 +433,11 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
       {needsExplanation && (mastersLoading || (mastersData && mastersData.moves.length > 0)) && (
         <div className="rounded-2xl border border-forge-border-subtle bg-forge-elevated p-4">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+            <span className="text-[10px] font-black uppercase tracking-widest text-forge-text-inactive">
               Masters Database
             </span>
             {mastersData && (
-              <span className="text-[10px] text-slate-600">
+              <span className="text-[10px] text-forge-text-muted">
                 {mastersData.white + mastersData.draws + mastersData.black < 10
                   ? "Limited data"
                   : `${(mastersData.white + mastersData.draws + mastersData.black).toLocaleString()} games`}
@@ -476,7 +476,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
                       <span
                         className={cn(
                           "font-mono font-bold w-10 shrink-0",
-                          isCorrect ? "text-emerald-400" : "text-slate-400",
+                          isCorrect ? "text-forge-success" : "text-forge-text-secondary",
                         )}
                       >
                         {m.san}
@@ -490,8 +490,8 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
                           style={{ width: `${barW}%` }}
                         />
                       </div>
-                      <span className="text-slate-500 w-7 text-right tabular-nums">{pct}%</span>
-                      <span className="text-slate-600 tabular-nums text-[10px] w-20 text-right">
+                      <span className="text-forge-text-inactive w-7 text-right tabular-nums">{pct}%</span>
+                      <span className="text-forge-text-muted tabular-nums text-[10px] w-20 text-right">
                         W{wPct} D{dPct} L{lPct}
                       </span>
                     </div>
@@ -511,13 +511,13 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
             challengeState === "loading" &&
               "bg-forge-border-subtle border-forge-border-default animate-pulse",
             challengeState === "confirmed" &&
-              "bg-emerald-500/10 border-emerald-500/20",
+              "bg-forge-success-muted border-forge-success-border",
             challengeState === "ambiguous" &&
-              "bg-amber-500/10 border-amber-500/20",
+              "bg-forge-warning-muted border-forge-warning-border",
           )}
         >
           {challengeState === "loading" && (
-            <div className="flex items-center gap-2 text-slate-400 text-sm">
+            <div className="flex items-center gap-2 text-forge-text-secondary text-sm">
               <Loader2 size={14} className="animate-spin shrink-0" />
               <span>Verifying at depth 20...</span>
             </div>
@@ -528,16 +528,16 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
             <>
               <div className="flex items-center gap-2">
                 {challengeState === "confirmed" ? (
-                  <CheckCircle2 size={16} className="text-emerald-400" />
+                  <CheckCircle2 size={16} className="text-forge-success" />
                 ) : (
-                  <AlertTriangle size={16} className="text-amber-400" />
+                  <AlertTriangle size={16} className="text-forge-warning" />
                 )}
                 <span
                   className={cn(
                     "text-xs font-black uppercase tracking-wider",
                     challengeState === "confirmed"
-                      ? "text-emerald-400"
-                      : "text-amber-400",
+                      ? "text-forge-success"
+                      : "text-forge-warning",
                   )}
                 >
                   {challengeState === "confirmed"
@@ -556,14 +556,14 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
                       key={line.rank}
                       className={cn(
                         "flex items-center gap-2 text-xs font-mono",
-                        line.rank === 1 ? "text-slate-200" : "text-slate-500",
+                        line.rank === 1 ? "text-forge-text-primary" : "text-forge-text-inactive",
                       )}
                     >
-                      <span className="text-slate-600 w-4">#{line.rank}</span>
+                      <span className="text-forge-text-muted w-4">#{line.rank}</span>
                       <span
                         className={cn(
                           "font-bold w-10",
-                          isCorrect && "text-emerald-400",
+                          isCorrect && "text-forge-success",
                         )}
                       >
                         {line.firstSan || "—"}
@@ -571,12 +571,12 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
                       <span
                         className={cn(
                           "w-12",
-                          line.rank === 1 ? "text-slate-400" : "text-slate-600",
+                          line.rank === 1 ? "text-forge-text-secondary" : "text-forge-text-muted",
                         )}
                       >
                         ({formatCp(line.cp, line.mate)})
                       </span>
-                      <span className="text-slate-600 truncate">
+                      <span className="text-forge-text-muted truncate">
                         {line.pvSan}
                       </span>
                     </div>
@@ -586,7 +586,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
 
               {/* Deeper coach analysis triggered by challenge */}
               {challengeCoachLoading && (
-                <div className="flex items-center gap-2 text-slate-400 text-xs pt-1">
+                <div className="flex items-center gap-2 text-forge-text-secondary text-xs pt-1">
                   <Loader2 size={12} className="animate-spin shrink-0" />
                   <span>Coach is going deeper...</span>
                 </div>
@@ -596,8 +596,8 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
                   className={cn(
                     "rounded-xl border px-3 py-2.5 mt-1",
                     challengeCoach.outcome === "confirmed"
-                      ? "border-emerald-500/30 bg-emerald-950/30"
-                      : "border-amber-500/30 bg-amber-950/30",
+                      ? "border-forge-success-border bg-forge-success-muted"
+                      : "border-forge-warning-border bg-forge-warning-muted",
                   )}
                 >
                   <div className="flex items-center gap-1.5 mb-1.5">
@@ -606,16 +606,16 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
                       className={cn(
                         "shrink-0",
                         challengeCoach.outcome === "confirmed"
-                          ? "text-emerald-400"
-                          : "text-amber-400",
+                          ? "text-forge-success"
+                          : "text-forge-warning",
                       )}
                     />
                     <span
                       className={cn(
                         "text-[10px] font-black uppercase tracking-widest",
                         challengeCoach.outcome === "confirmed"
-                          ? "text-emerald-400"
-                          : "text-amber-400",
+                          ? "text-forge-success"
+                          : "text-forge-warning",
                       )}
                     >
                       {challengeCoach.outcome === "confirmed"
@@ -623,19 +623,19 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
                         : `Better move — ${challengeCoach.newCorrectSan ?? ""}`}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="text-xs text-forge-text-primary leading-relaxed">
                     {challengeCoach.deeperAnalysis}
                   </p>
                   {challengeCoach.outcome === "corrected" &&
                     challengeCoach.drillAdjusted && (
-                      <p className="text-[10px] mt-2 font-bold uppercase tracking-wider text-emerald-400">
+                      <p className="text-[10px] mt-2 font-bold uppercase tracking-wider text-forge-success">
                         ✓ Drill updated — future sessions will test{" "}
                         {challengeCoach.newCorrectSan}
                       </p>
                     )}
                   {challengeCoach.outcome === "corrected" &&
                     !challengeCoach.drillAdjusted && (
-                      <p className="text-[10px] mt-2 text-slate-500">
+                      <p className="text-[10px] mt-2 text-forge-text-inactive">
                         (Drill not adjusted — repertoire context missing)
                       </p>
                     )}
@@ -647,7 +647,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
                   onClick={handleDismiss}
                   className={cn(
                     "mt-1 w-full flex items-center justify-center gap-2",
-                    "bg-amber-500/15 border border-amber-500/30 text-amber-300",
+                    "bg-forge-warning-muted border border-forge-warning-border text-forge-warning",
                     "text-xs font-black uppercase tracking-wider",
                     "py-2.5 rounded-xl transition-all min-h-[44px]",
                     "active:scale-[0.98]",
@@ -657,7 +657,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
                 </button>
               )}
               {dismissed && (
-                <p className="text-xs text-slate-500 text-center">
+                <p className="text-xs text-forge-text-inactive text-center">
                   Position removed from future sessions
                 </p>
               )}
@@ -673,10 +673,10 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
             onClick={onReplay}
             className={cn(
               "flex items-center justify-center gap-2 px-4",
-              "bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98]",
+              "bg-forge-primary hover:bg-forge-primary active:scale-[0.98]",
               "text-white font-bold text-sm",
               "py-3 rounded-xl transition-all min-h-[44px]",
-              "border border-indigo-400/20",
+              "border border-forge-primary-border",
             )}
           >
             <RotateCcw size={16} />
@@ -689,8 +689,8 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
             onClick={handleChallenge}
             className={cn(
               "flex items-center justify-center gap-1.5 px-3",
-              "bg-forge-border-subtle border border-forge-border-default text-slate-400",
-              "hover:text-slate-200 hover:bg-forge-border-default",
+              "bg-forge-border-subtle border border-forge-border-default text-forge-text-secondary",
+              "hover:text-forge-text-primary hover:bg-forge-border-default",
               "text-xs font-bold",
               "py-3 rounded-xl transition-all min-h-[44px]",
               "active:scale-[0.98]",
@@ -706,8 +706,8 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
           className={cn(
             "flex-1 flex items-center justify-center gap-2",
             onReplay
-              ? "bg-forge-border-subtle border border-forge-border-default text-slate-300 hover:bg-forge-border-default"
-              : "bg-indigo-600 hover:bg-indigo-500 border border-indigo-400/20 text-white",
+              ? "bg-forge-border-subtle border border-forge-border-default text-forge-text-primary hover:bg-forge-border-default"
+              : "bg-forge-primary hover:bg-forge-primary border border-forge-primary-border text-white",
             onReplay ? "font-bold text-sm" : "font-black uppercase tracking-widest text-sm",
             "py-3 rounded-xl transition-all min-h-[44px]",
             "active:scale-[0.98]",

@@ -7,6 +7,7 @@ import { useBackgroundStore } from "@/stores/backgroundStore";
 import { BackgroundAnalysisQueue } from "@/services/background_analysis";
 import * as api from "@/services/api";
 import { BOARD_THEME_MUTED } from "@/design/tokens";
+import { StatusChip, type ChipTone } from "@/v2/components/StatusChip";
 
 export type TrainingMode = "blunder" | "repertoire";
 export type PhaseFilter = "all" | "opening" | "endgame";
@@ -17,11 +18,11 @@ interface HomeScreenProps {
   onLearn: () => void;
 }
 
-const STAGE_CHIP: Record<number, { label: string; className: string }> = {
-  0: { label: "NEW", className: "bg-indigo-600 text-white" },
-  1: { label: "WATCHED", className: "bg-indigo-600 text-white" },
-  2: { label: "GUIDED", className: "bg-indigo-600 text-white" },
-  3: { label: "REFRESH", className: "bg-[var(--forge-accent-success-muted)] text-forge-success" },
+const STAGE_CHIP: Record<number, { label: string; tone: ChipTone; className?: string }> = {
+  0: { label: "NEW", tone: "primary", className: "text-white" },
+  1: { label: "WATCHED", tone: "primary", className: "text-white" },
+  2: { label: "GUIDED", tone: "primary", className: "text-white" },
+  3: { label: "REFRESH", tone: "success" },
 };
 
 function formatLastSeen(iso: string | null): string {
@@ -138,25 +139,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     <div className="flex-1 flex flex-col px-6 pt-10 pb-24 overflow-y-auto">
       {/* Greeting + meta row */}
       <div className="mb-8">
-        <h1 className="text-2xl font-black text-slate-100 tracking-tight">
+        <h1 className="text-2xl font-black text-forge-text-primary tracking-tight">
           {greeting}
         </h1>
         <div className="flex items-center gap-3 mt-2 flex-wrap">
           {streak > 0 && (
             <div className="flex items-center gap-1.5 bg-forge-card border border-forge-border-subtle rounded-full px-3 py-1">
               <Flame size={13} className="text-forge-warm" />
-              <span className="text-xs font-black text-slate-200">{streak}</span>
-              <span className="text-xs text-slate-500">day streak</span>
+              <span className="text-xs font-black text-forge-text-primary">{streak}</span>
+              <span className="text-xs text-forge-text-inactive">day streak</span>
             </div>
           )}
           {lastSeenLabel && (
-            <span className="text-xs text-slate-600">{lastSeenLabel}</span>
+            <span className="text-xs text-forge-text-muted">{lastSeenLabel}</span>
           )}
           {availableRepertoires.length > 1 && (
             <select
               value={repertoireId}
               onChange={(e) => setActiveRepertoire(Number(e.target.value))}
-              className="ml-auto text-xs font-semibold bg-forge-border-subtle border border-forge-border-default text-slate-300 rounded-lg px-2 py-1 appearance-none cursor-pointer"
+              className="ml-auto text-xs font-semibold bg-forge-border-subtle border border-forge-border-default text-forge-text-primary rounded-lg px-2 py-1 appearance-none cursor-pointer"
             >
               {availableRepertoires.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -180,8 +181,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         ) : count && count.total > 0 ? (
           <div className="mb-6">
-            <p className="text-sm font-black text-slate-200 mb-1">12-position session</p>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p className="text-sm font-black text-forge-text-primary mb-1">12-position session</p>
+            <p className="text-xs text-forge-text-inactive leading-relaxed">
               Pool:{" "}
               {[
                 count.blunders > 0 && (
@@ -216,7 +217,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </p>
           </div>
         ) : (
-          <p className="text-sm text-slate-400 mb-6">
+          <p className="text-sm text-forge-text-secondary mb-6">
             No positions due — check back after your next game
           </p>
         )}
@@ -229,7 +230,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             "text-white font-black text-lg uppercase tracking-widest",
             "py-5 rounded-forge-md transition-all duration-150",
             "shadow-xl shadow-[var(--forge-accent-primary-shadow)]",
-            "border border-indigo-400/20",
+            "border border-forge-primary-border",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-forge-card",
           )}
         >
@@ -257,7 +258,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
               phase === v
                 ? "bg-forge-primary text-white"
-                : "bg-forge-card text-slate-500 border border-forge-border-subtle hover:text-slate-300 hover:border-forge-border-default",
+                : "bg-forge-card text-forge-text-inactive border border-forge-border-subtle hover:text-forge-text-primary hover:border-forge-border-default",
             )}
           >
             {v === "opening" ? "Opening/Mid" : v === "endgame" ? "Endgame" : "All"}
@@ -288,19 +289,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <Target size={12} className="text-rose-400 shrink-0" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+              <Target size={12} className="text-forge-danger shrink-0" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-forge-text-inactive">
                 Weakest position
               </span>
             </div>
-            <p className="text-sm font-black text-slate-200">
+            <p className="text-sm font-black text-forge-text-primary">
               {weakest.correctSan}
             </p>
-            <p className="text-xs text-rose-400 font-semibold mt-0.5">
+            <p className="text-xs text-forge-danger font-semibold mt-0.5">
               {weakest.accuracy}% accuracy
             </p>
           </div>
-          <div className="text-slate-600 shrink-0">›</div>
+          <div className="text-forge-text-muted shrink-0">›</div>
         </button>
       )}
 
@@ -311,7 +312,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           className={cn(
             "flex flex-col items-center justify-center gap-3 p-6 min-h-[88px] cursor-pointer",
             "bg-forge-card border border-forge-border-subtle rounded-forge-xl",
-            "text-slate-400 hover:text-slate-200 hover:border-forge-border-default",
+            "text-forge-text-secondary hover:text-forge-text-primary hover:border-forge-border-default",
             "transition-colors duration-150 active:scale-[0.98]",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
           )}
@@ -327,7 +328,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           className={cn(
             "flex flex-col items-center justify-center gap-3 p-6 min-h-[88px] cursor-pointer",
             "bg-forge-card border border-forge-border-subtle rounded-forge-xl",
-            "text-slate-400 hover:text-slate-200 hover:border-forge-border-default",
+            "text-forge-text-secondary hover:text-forge-text-primary hover:border-forge-border-default",
             "transition-colors duration-150 active:scale-[0.98]",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
           )}
@@ -341,8 +342,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
       {/* Analysis status + refresh */}
       {isAnalyzing ? (
-        <div className="flex items-center gap-2 px-2 py-2 text-xs text-slate-500">
-          <Loader2 size={12} className="motion-safe:animate-spin text-indigo-400 shrink-0" />
+        <div className="flex items-center gap-2 px-2 py-2 text-xs text-forge-text-inactive">
+          <Loader2 size={12} className="motion-safe:animate-spin text-forge-primary-hover shrink-0" />
           <span className="truncate">
             {activeGameName
               ? `Analyzing ${analyzedCount}/${totalInQueue} — ${activeGameName}`
@@ -354,7 +355,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <button
             onClick={handleRefreshAnalysis}
             disabled={refreshing}
-            className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-400 transition-colors duration-150 disabled:opacity-40 cursor-pointer min-h-[44px] px-2"
+            className="flex items-center gap-1.5 text-xs text-forge-text-muted hover:text-forge-text-secondary transition-colors duration-150 disabled:opacity-40 cursor-pointer min-h-[44px] px-2"
           >
             {refreshing
               ? <Loader2 size={11} className="motion-safe:animate-spin" />
@@ -362,7 +363,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             Refresh analysis
           </button>
           {refreshMsg && (
-            <span className="text-xs text-slate-500">{refreshMsg}</span>
+            <span className="text-xs text-forge-text-inactive">{refreshMsg}</span>
           )}
         </div>
       )}
@@ -400,7 +401,7 @@ function LearnCard({ state, onLearn }: LearnCardProps) {
           <p className="text-sm font-black text-forge-success">
             All lines learned
           </p>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-forge-text-inactive mt-0.5">
             {learned} line{learned !== 1 ? "s" : ""} mastered
           </p>
         </div>
@@ -420,28 +421,26 @@ function LearnCard({ state, onLearn }: LearnCardProps) {
       )}
     >
       <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-forge-elevated">
-        <GraduationCap size={22} className="text-indigo-400" />
+        <GraduationCap size={22} className="text-forge-primary-hover" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <span
-            className={cn(
-              "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-forge-sm shrink-0",
-              (STAGE_CHIP[lesson.stage] ?? STAGE_CHIP[0]).className,
-            )}
+          <StatusChip
+            tone={(STAGE_CHIP[lesson.stage] ?? STAGE_CHIP[0]).tone}
+            className={(STAGE_CHIP[lesson.stage] ?? STAGE_CHIP[0]).className}
           >
             {(STAGE_CHIP[lesson.stage] ?? STAGE_CHIP[0]).label}
-          </span>
-          <p className="text-sm font-black text-slate-200 truncate">
+          </StatusChip>
+          <p className="text-sm font-black text-forge-text-primary truncate">
             {lesson.chapterName ?? "Learn a line"}
           </p>
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-forge-text-inactive">
           {lesson.frequency > 0 && `Seen in your games ${lesson.frequency}× · `}
           ~{lesson.estMinutes} min
         </p>
       </div>
-      <div className="text-slate-600 shrink-0">›</div>
+      <div className="text-forge-text-muted shrink-0">›</div>
     </button>
   );
 }
@@ -467,7 +466,7 @@ function DailyChallenge({ streak, done, onTrain }: DailyChallengeProps) {
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
         done
           ? "bg-forge-card border-forge-success cursor-default transition-colors duration-150"
-          : "bg-forge-card border-forge-border-subtle cursor-pointer active:scale-[0.98] hover:border-indigo-400/30 transition-all duration-150",
+          : "bg-forge-card border-forge-border-subtle cursor-pointer active:scale-[0.98] hover:border-forge-primary-border transition-all duration-150",
       )}
     >
       {/* Icon */}
@@ -482,7 +481,7 @@ function DailyChallenge({ streak, done, onTrain }: DailyChallengeProps) {
         {done ? (
           <CheckCircle2 size={22} className="text-forge-success" />
         ) : (
-          <Circle size={22} className="text-slate-500" />
+          <Circle size={22} className="text-forge-text-inactive" />
         )}
       </div>
 
@@ -491,12 +490,12 @@ function DailyChallenge({ streak, done, onTrain }: DailyChallengeProps) {
         <p
           className={cn(
             "text-sm font-black",
-            done ? "text-forge-success" : "text-slate-200",
+            done ? "text-forge-success" : "text-forge-text-primary",
           )}
         >
           {done ? "Daily goal complete!" : "Daily goal"}
         </p>
-        <p className="text-xs text-slate-500 mt-0.5">
+        <p className="text-xs text-forge-text-inactive mt-0.5">
           {done
             ? "Come back tomorrow to keep the streak going"
             : "Complete 1 training session today"}
@@ -508,12 +507,12 @@ function DailyChallenge({ streak, done, onTrain }: DailyChallengeProps) {
         <div className="flex flex-col items-center shrink-0">
           <Flame
             size={18}
-            className={cn(done ? "text-forge-warm" : "text-slate-600")}
+            className={cn(done ? "text-forge-warm" : "text-forge-text-muted")}
           />
           <span
             className={cn(
               "text-xs font-black mt-0.5 tabular-nums",
-              done ? "text-forge-warm" : "text-slate-600",
+              done ? "text-forge-warm" : "text-forge-text-muted",
             )}
           >
             {streak}

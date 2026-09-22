@@ -51,10 +51,10 @@ interface InteractiveCoachProps extends InteractiveCoachCallbacks {
 }
 
 const STEP_INDEX_BG: Record<string, string> = {
-  red: "bg-rose-500/15 border-rose-500/30 text-rose-200",
-  green: "bg-emerald-500/15 border-emerald-500/30 text-emerald-200",
-  amber: "bg-amber-500/15 border-amber-500/30 text-amber-200",
-  blue: "bg-indigo-500/15 border-indigo-500/30 text-indigo-200",
+  red: "bg-forge-danger-muted border-forge-danger-border text-forge-danger",
+  green: "bg-forge-success-muted border-forge-success-border text-forge-success",
+  amber: "bg-forge-warning-muted border-forge-warning-border text-forge-warning",
+  blue: "bg-forge-primary-muted border-forge-primary-border text-forge-primary-hover",
 };
 
 function resolveBeatTone(step: CoachStep): "red" | "green" | "amber" | "blue" {
@@ -184,14 +184,14 @@ export const InteractiveCoach: React.FC<InteractiveCoachProps> = ({
   const tone = resolveBeatTone(step);
 
   return (
-    <div className="rounded-2xl border border-indigo-500/20 bg-indigo-950/30 px-3 py-3 flex flex-col gap-2.5">
+    <div className="rounded-2xl border border-forge-primary-border bg-forge-primary-muted px-3 py-3 flex flex-col gap-2.5">
       {/* Header: Coach Walkthrough label + step counter */}
       <div className="flex items-center gap-1.5">
-        <Sparkles size={11} className="text-indigo-400 shrink-0" />
-        <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">
+        <Sparkles size={11} className="text-forge-primary-hover shrink-0" />
+        <span className="text-[9px] font-black uppercase tracking-widest text-forge-primary-hover">
           Coach Walkthrough
         </span>
-        <span className="ml-auto text-[10px] tabular-nums text-slate-500 font-semibold">
+        <span className="ml-auto text-[10px] tabular-nums text-forge-text-inactive font-semibold">
           {currentStep + 1}/{steps.length}
         </span>
       </div>
@@ -221,7 +221,7 @@ export const InteractiveCoach: React.FC<InteractiveCoachProps> = ({
           disabled={currentStep === 0}
           aria-label="Previous beat"
           className={cn(
-            "p-1.5 rounded-lg text-slate-400 hover:text-slate-200 disabled:opacity-30 transition-all active:scale-95",
+            "p-1.5 rounded-lg text-forge-text-secondary hover:text-forge-text-primary disabled:opacity-30 transition-all active:scale-95",
             "border border-forge-border-subtle bg-forge-card",
           )}
         >
@@ -238,7 +238,7 @@ export const InteractiveCoach: React.FC<InteractiveCoachProps> = ({
               className={cn(
                 "rounded-full transition-all",
                 i === currentStep
-                  ? "w-6 h-2 bg-indigo-400"
+                  ? "w-6 h-2 bg-forge-primary-hover"
                   : "w-2 h-2 bg-slate-600 hover:bg-slate-500",
               )}
             />
@@ -251,7 +251,7 @@ export const InteractiveCoach: React.FC<InteractiveCoachProps> = ({
           disabled={currentStep === steps.length - 1}
           aria-label="Next beat"
           className={cn(
-            "p-1.5 rounded-lg text-slate-400 hover:text-slate-200 disabled:opacity-30 transition-all active:scale-95",
+            "p-1.5 rounded-lg text-forge-text-secondary hover:text-forge-text-primary disabled:opacity-30 transition-all active:scale-95",
             "border border-forge-border-subtle bg-forge-card",
           )}
         >

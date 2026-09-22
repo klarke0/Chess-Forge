@@ -36,7 +36,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 "flex flex-col items-center gap-1 min-w-[64px] min-h-[44px] justify-center cursor-pointer",
                 "transition-colors duration-150",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-forge-nav rounded-lg",
-                active ? "text-indigo-400" : "text-slate-500 hover:text-slate-300",
+                active ? "text-forge-primary-hover" : "text-forge-text-inactive hover:text-forge-text-primary",
               )}
             >
               <Icon size={22} />

@@ -279,10 +279,10 @@ Valid types: "blunder", "best", "missed", "turning_point"`;
 
 const MOMENT_STYLES: Record<string, { bg: string; text: string; icon: string; border: string }> = {
   blunder: {
-    bg: "bg-rose-500/10",
-    text: "text-rose-400",
+    bg: "bg-forge-danger-muted",
+    text: "text-forge-danger",
     icon: "??",
-    border: "border-rose-500/20",
+    border: "border-forge-danger-border",
   },
   best: {
     bg: "bg-green-500/10",
@@ -291,16 +291,16 @@ const MOMENT_STYLES: Record<string, { bg: string; text: string; icon: string; bo
     border: "border-green-500/20",
   },
   missed: {
-    bg: "bg-yellow-500/10",
-    text: "text-yellow-300",
+    bg: "bg-forge-warning-muted",
+    text: "text-forge-warning",
     icon: "?!",
-    border: "border-yellow-500/20",
+    border: "border-forge-warning-border",
   },
   turning_point: {
-    bg: "bg-indigo-500/10",
-    text: "text-indigo-400",
+    bg: "bg-forge-primary-muted",
+    text: "text-forge-primary-hover",
     icon: "⚡",
-    border: "border-indigo-500/20",
+    border: "border-forge-primary-border",
   },
 };
 
@@ -343,14 +343,14 @@ const AICoachSummary: React.FC<{
       <div className="bg-forge-surface rounded-2xl border border-forge-border-subtle overflow-hidden">
         {/* Header */}
         <div className="flex items-center gap-2.5 px-4 py-3 border-b border-forge-border-subtle">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600/30 to-indigo-600/30 border border-violet-500/20 flex items-center justify-center shrink-0">
-            <Brain size={14} className="text-violet-400" />
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600/30 to-indigo-600/30 border border-forge-insight-border flex items-center justify-center shrink-0">
+            <Brain size={14} className="text-forge-insight" />
           </div>
           <div>
-            <p className="text-[11px] font-black uppercase tracking-widest text-slate-300">
+            <p className="text-[11px] font-black uppercase tracking-widest text-forge-text-primary">
               AI Coach Summary
             </p>
-            <p className="text-[9px] text-slate-600 font-medium">
+            <p className="text-[9px] text-forge-text-muted font-medium">
               Key moments from your game
             </p>
           </div>
@@ -360,18 +360,18 @@ const AICoachSummary: React.FC<{
         <div className="p-3 space-y-2">
           {loading ? (
             <div className="flex flex-col items-center gap-3 py-6 animate-pulse">
-              <Brain size={28} className="text-violet-500/60" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+              <Brain size={28} className="text-forge-insight" />
+              <p className="text-[10px] font-black uppercase tracking-widest text-forge-text-muted">
                 Analyzing key moments...
               </p>
             </div>
           ) : error ? (
             <div className="py-4 text-center">
-              <p className="text-[11px] text-slate-500 italic">{error}</p>
+              <p className="text-[11px] text-forge-text-inactive italic">{error}</p>
             </div>
           ) : moments.length === 0 && !loading ? (
             <div className="py-4 text-center">
-              <p className="text-[11px] text-slate-600 italic">
+              <p className="text-[11px] text-forge-text-muted italic">
                 {reviewedMoves.length
                   ? "No key moments identified."
                   : "Run analysis first to get AI insights."}
@@ -412,11 +412,11 @@ const AICoachSummary: React.FC<{
                       <span className={cn("text-[13px] font-black", style.text)}>
                         {moment.san}
                       </span>
-                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-600">
+                      <span className="text-[9px] font-black uppercase tracking-wider text-forge-text-muted">
                         {moment.type.replace("_", " ")}
                       </span>
                     </div>
-                    <p className="text-[12px] text-slate-300 leading-snug">
+                    <p className="text-[12px] text-forge-text-primary leading-snug">
                       {moment.insight}
                     </p>
                   </div>
@@ -429,8 +429,8 @@ const AICoachSummary: React.FC<{
         {/* Powered by tag */}
         {!loading && !error && moments.length > 0 && (
           <div className="flex items-center justify-center gap-1.5 py-2 border-t border-forge-border-subtle">
-            <Lightbulb size={9} className="text-slate-700" />
-            <span className="text-[8px] text-slate-700 uppercase tracking-widest font-black">
+            <Lightbulb size={9} className="text-forge-text-muted" />
+            <span className="text-[8px] text-forge-text-muted uppercase tracking-widest font-black">
               Powered by Gemini
             </span>
           </div>
@@ -492,13 +492,13 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
   }, [reviewedMoves, hasAnalysis]);
 
   return (
-    <div className="absolute inset-0 z-50 bg-forge-base text-slate-200 font-outfit flex flex-col animate-in fade-in duration-300 overflow-y-auto">
+    <div className="absolute inset-0 z-50 bg-forge-base text-forge-text-primary font-outfit flex flex-col animate-in fade-in duration-300 overflow-y-auto">
       {/* ── Header ── */}
       <div className="shrink-0 px-4 pt-4 pb-2">
         <div className="flex items-center justify-between mb-3">
           <button
             onClick={onClose}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-forge-border-subtle hover:bg-forge-border-default text-slate-400 hover:text-white transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-forge-border-subtle hover:bg-forge-border-default text-forge-text-secondary hover:text-white transition-colors"
           >
             <X size={18} />
           </button>
@@ -506,7 +506,7 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
             Game Review
           </h1>
           <div className="flex items-center gap-2">
-            <button className="w-9 h-9 flex items-center justify-center rounded-full bg-forge-border-subtle hover:bg-forge-border-default text-slate-400 hover:text-white transition-colors">
+            <button className="w-9 h-9 flex items-center justify-center rounded-full bg-forge-border-subtle hover:bg-forge-border-default text-forge-text-secondary hover:text-white transition-colors">
               <Settings size={16} />
             </button>
           </div>
@@ -517,13 +517,13 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
           <div className="flex items-center justify-center">
             <div className="flex bg-forge-base rounded-xl p-0.5 gap-0.5 border border-forge-border-subtle">
               <button
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all bg-forge-primary text-white shadow-lg shadow-indigo-600/20"
               >
                 Summary
               </button>
               <button
                 onClick={onSwitchToReview}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all text-slate-500 hover:text-slate-300"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all text-forge-text-inactive hover:text-forge-text-primary"
               >
                 Review
               </button>
@@ -535,7 +535,7 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
       {/* ── Coach section ── */}
       <div className="flex items-start gap-3 px-4 pt-2 pb-4 shrink-0">
         {/* Coach avatar */}
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600/30 to-violet-600/30 border border-indigo-500/20 flex items-center justify-center shrink-0 text-2xl">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600/30 to-violet-600/30 border border-forge-primary-border flex items-center justify-center shrink-0 text-2xl">
           🧙
         </div>
 
@@ -543,7 +543,7 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
         <div className="relative flex-1 min-w-0">
           {/* Tail pointing left */}
           <div className="absolute -left-2 top-4 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px] border-r-white" />
-          <div className="bg-white text-slate-900 rounded-2xl rounded-tl-sm px-4 py-3 shadow-lg">
+          <div className="bg-white text-forge-text-muted rounded-2xl rounded-tl-sm px-4 py-3 shadow-lg">
             <p className="text-[13px] font-semibold leading-snug">{coachMessage}</p>
           </div>
         </div>
@@ -586,7 +586,7 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
             </svg>
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
-              <p className="text-[11px] text-slate-600 uppercase tracking-widest font-black">
+              <p className="text-[11px] text-forge-text-muted uppercase tracking-widest font-black">
                 Analysis not yet available
               </p>
             </div>
@@ -599,11 +599,11 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
         <div className="bg-forge-surface rounded-2xl border border-forge-border-subtle p-4">
           {/* Labels row */}
           <div className="grid grid-cols-[1fr_auto_1fr] items-center mb-3">
-            <p className="text-[11px] font-black text-slate-500 uppercase tracking-wider truncate text-center">
+            <p className="text-[11px] font-black text-forge-text-inactive uppercase tracking-wider truncate text-center">
               {opponentUsername}
             </p>
             <div className="w-16" />
-            <p className="text-[11px] font-black text-slate-500 uppercase tracking-wider truncate text-center">
+            <p className="text-[11px] font-black text-forge-text-inactive uppercase tracking-wider truncate text-center">
               {userUsername}
             </p>
           </div>
@@ -613,7 +613,7 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
             <div className="flex justify-center">
               <PlayerAvatar username={opponentUsername} isUser={false} />
             </div>
-            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest text-center w-16">
+            <p className="text-[10px] font-black text-forge-text-muted uppercase tracking-widest text-center w-16">
               Players
             </p>
             <div className="flex justify-center">
@@ -632,13 +632,13 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
               <p
                 className={cn(
                   "text-2xl font-black tabular-nums",
-                  hasAnalysis ? "text-white" : "text-slate-600",
+                  hasAnalysis ? "text-white" : "text-forge-text-muted",
                 )}
               >
                 {hasAnalysis ? opponentAccuracy.toFixed(1) : "—"}
               </p>
             </div>
-            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest text-center w-16">
+            <p className="text-[10px] font-black text-forge-text-muted uppercase tracking-widest text-center w-16">
               Accuracy
             </p>
             <div
@@ -650,7 +650,7 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
               <p
                 className={cn(
                   "text-2xl font-black tabular-nums",
-                  hasAnalysis ? "text-[#6eb966]" : "text-slate-600",
+                  hasAnalysis ? "text-[#6eb966]" : "text-forge-text-muted",
                 )}
               >
                 {hasAnalysis ? userAccuracy.toFixed(1) : "—"}
@@ -680,7 +680,7 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
                 <p
                   className={cn(
                     "text-lg font-black tabular-nums text-center",
-                    opponentCount > 0 ? cat.text : "text-slate-700",
+                    opponentCount > 0 ? cat.text : "text-forge-text-muted",
                   )}
                 >
                   {opponentCount}
@@ -699,7 +699,7 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
                       {cat.symbol}
                     </span>
                   </div>
-                  <span className="text-[8px] font-black uppercase tracking-wider text-slate-600">
+                  <span className="text-[8px] font-black uppercase tracking-wider text-forge-text-muted">
                     {cat.label}
                   </span>
                 </div>
@@ -708,7 +708,7 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
                 <p
                   className={cn(
                     "text-lg font-black tabular-nums text-center",
-                    userCount > 0 ? cat.text : "text-slate-700",
+                    userCount > 0 ? cat.text : "text-forge-text-muted",
                   )}
                 >
                   {userCount}

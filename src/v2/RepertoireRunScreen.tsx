@@ -440,21 +440,21 @@ export const RepertoireRunScreen: React.FC<RepertoireRunScreenProps> = ({ onBack
       <div className="flex items-center gap-3 px-4 py-3 bg-forge-surface border-b border-forge-border-subtle shrink-0">
         <button
           onClick={onBack}
-          className="p-2 -ml-2 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95"
+          className="p-2 -ml-2 rounded-xl text-forge-text-secondary hover:text-white transition-all active:scale-95"
         >
           <ArrowLeft size={20} />
         </button>
         <div className="flex-1">
-          <h2 className="text-sm font-black text-slate-200 uppercase tracking-wider">
+          <h2 className="text-sm font-black text-forge-text-primary uppercase tracking-wider">
             {repertoireName}
           </h2>
-          <p className="text-[10px] text-slate-500 font-semibold">Move {depth}</p>
+          <p className="text-[10px] text-forge-text-inactive font-semibold">Move {depth}</p>
         </div>
         {stats.moves > 0 && (
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-emerald-400 font-black">{stats.correct}</span>
-            <span className="text-slate-600">/</span>
-            <span className="text-slate-400 font-semibold">{stats.moves}</span>
+            <span className="text-forge-success font-black">{stats.correct}</span>
+            <span className="text-forge-text-muted">/</span>
+            <span className="text-forge-text-secondary font-semibold">{stats.moves}</span>
           </div>
         )}
       </div>
@@ -464,29 +464,29 @@ export const RepertoireRunScreen: React.FC<RepertoireRunScreenProps> = ({ onBack
         {state === "complete" ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6 pt-8 pb-24">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-20 h-20 rounded-[2rem] border-2 flex items-center justify-center bg-emerald-400/10 border-emerald-400/30">
-                <Check size={36} className="text-emerald-400" />
+              <div className="w-20 h-20 rounded-[2rem] border-2 flex items-center justify-center bg-forge-success-muted border-forge-success-border">
+                <Check size={36} className="text-forge-success" />
               </div>
-              <p className="text-sm font-black uppercase tracking-wider text-emerald-400">
+              <p className="text-sm font-black uppercase tracking-wider text-forge-success">
                 Line complete
               </p>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-forge-text-inactive">
                 {depth} moves · {acc}% accuracy
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4 text-center w-full">
               <div className="bg-forge-card border border-forge-border-subtle rounded-2xl py-4">
-                <p className="text-2xl font-black text-slate-200">{depth}</p>
-                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">moves</p>
+                <p className="text-2xl font-black text-forge-text-primary">{depth}</p>
+                <p className="text-[10px] text-forge-text-inactive font-semibold uppercase tracking-wider mt-1">moves</p>
               </div>
               <div className="bg-forge-card border border-forge-border-subtle rounded-2xl py-4">
-                <p className="text-2xl font-black text-emerald-400">{stats.correct}</p>
-                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">correct</p>
+                <p className="text-2xl font-black text-forge-success">{stats.correct}</p>
+                <p className="text-[10px] text-forge-text-inactive font-semibold uppercase tracking-wider mt-1">correct</p>
               </div>
               <div className="bg-forge-card border border-forge-border-subtle rounded-2xl py-4">
-                <p className="text-2xl font-black text-rose-400">{stats.wrong}</p>
-                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">missed</p>
+                <p className="text-2xl font-black text-forge-danger">{stats.wrong}</p>
+                <p className="text-[10px] text-forge-text-inactive font-semibold uppercase tracking-wider mt-1">missed</p>
               </div>
             </div>
 
@@ -494,9 +494,9 @@ export const RepertoireRunScreen: React.FC<RepertoireRunScreenProps> = ({ onBack
               onClick={handleRestart}
               className={cn(
                 "w-full max-w-xs flex items-center justify-center gap-2 py-4 rounded-2xl",
-                "bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98]",
+                "bg-forge-primary hover:bg-forge-primary active:scale-[0.98]",
                 "text-white font-black text-base uppercase tracking-widest",
-                "shadow-xl shadow-indigo-600/30 border border-indigo-400/20 transition-all",
+                "shadow-xl shadow-indigo-600/30 border border-forge-primary-border transition-all",
               )}
             >
               <RotateCcw size={16} />
@@ -529,25 +529,25 @@ export const RepertoireRunScreen: React.FC<RepertoireRunScreenProps> = ({ onBack
             {/* Status bar */}
             <div className="flex items-center justify-between px-6 py-3 bg-forge-surface border-t border-forge-border-subtle shrink-0">
               {state === "opponent" ? (
-                <p className="text-xs text-slate-500 italic">Opponent thinking...</p>
+                <p className="text-xs text-forge-text-inactive italic">Opponent thinking...</p>
               ) : isKevinsTurn ? (
                 wrongMove ? (
                   <div className="flex items-center gap-2 text-sm">
-                    <X size={14} className="text-rose-400" />
-                    <span className="text-rose-400 font-semibold">Not in repertoire</span>
+                    <X size={14} className="text-forge-danger" />
+                    <span className="text-forge-danger font-semibold">Not in repertoire</span>
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-forge-text-inactive">
                     {repertoireSide === "white" ? "Play White's move" : "Play Black's move"}
                   </p>
                 )
               ) : (
-                <p className="text-xs text-slate-500">Waiting...</p>
+                <p className="text-xs text-forge-text-inactive">Waiting...</p>
               )}
               {wrongMove && !revealMode && isKevinsTurn && (
                 <button
                   onClick={handleReveal}
-                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-all ml-auto"
+                  className="flex items-center gap-1.5 text-xs text-forge-text-inactive hover:text-forge-text-primary transition-all ml-auto"
                 >
                   Show correct
                 </button>

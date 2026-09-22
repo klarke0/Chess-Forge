@@ -31,15 +31,15 @@ import { useDrillSession, type TrainPosition, type TacticalPattern } from "./use
 
 /** Human-readable label + colour for each tactical pattern. */
 const PATTERN_META: Record<TacticalPattern, { label: string; className: string }> = {
-  "back-rank": { label: "Back Rank", className: "bg-rose-500/15 text-rose-400 border-rose-500/25" },
-  "fork":       { label: "Fork",      className: "bg-amber-500/15 text-amber-400 border-amber-500/25" },
-  "pin":        { label: "Pin",        className: "bg-violet-500/15 text-violet-400 border-violet-500/25" },
-  "discovered-attack": { label: "Discovery", className: "bg-orange-500/15 text-orange-400 border-orange-500/25" },
-  "promotion":  { label: "Promotion", className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25" },
+  "back-rank": { label: "Back Rank", className: "bg-forge-danger-muted text-forge-danger border-forge-danger-border" },
+  "fork":       { label: "Fork",      className: "bg-forge-warning-muted text-forge-warning border-forge-warning-border" },
+  "pin":        { label: "Pin",        className: "bg-forge-insight-muted text-forge-insight border-forge-insight-border" },
+  "discovered-attack": { label: "Discovery", className: "bg-forge-warm-bg text-forge-warm border-forge-warm-border" },
+  "promotion":  { label: "Promotion", className: "bg-forge-success-muted text-forge-success border-forge-success-border" },
   "endgame":    { label: "Endgame",   className: "bg-sky-500/15 text-sky-400 border-sky-500/25" },
-  "opening":    { label: "Opening",   className: "bg-indigo-500/15 text-indigo-400 border-indigo-500/25" },
-  "middlegame": { label: "Middlegame", className: "bg-slate-500/15 text-slate-400 border-slate-500/25" },
-  "other":      { label: "Tactics",   className: "bg-slate-500/15 text-slate-400 border-slate-500/25" },
+  "opening":    { label: "Opening",   className: "bg-forge-primary-muted text-forge-primary-hover border-forge-primary-border" },
+  "middlegame": { label: "Middlegame", className: "bg-slate-500/15 text-forge-text-secondary border-forge-border-default" },
+  "other":      { label: "Tactics",   className: "bg-slate-500/15 text-forge-text-secondary border-forge-border-default" },
 };
 
 function PatternBadge({ pattern, className }: { pattern?: TacticalPattern; className?: string }) {
@@ -684,12 +684,12 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
       <div className="flex items-center gap-3 px-4 py-3 bg-forge-surface border-b border-forge-border-subtle shrink-0">
         <button
           onClick={onBack}
-          className="p-2 -ml-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-white cursor-pointer transition-colors duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+          className="p-2 -ml-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-forge-text-secondary hover:text-white cursor-pointer transition-colors duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
         >
           <ArrowLeft size={20} />
         </button>
         <div className="flex-1">
-          <h2 className="text-sm font-black text-slate-200 uppercase tracking-wider">
+          <h2 className="text-sm font-black text-forge-text-primary uppercase tracking-wider">
             {state === "complete"
               ? "Session Complete"
               : singlePositionFen
@@ -704,11 +704,11 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
             <div className="flex items-center gap-1 w-32">
               <div className="flex-1 h-1.5 bg-forge-border-default rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-indigo-500 rounded-full transition-all duration-300"
+                  className="h-full bg-forge-primary rounded-full transition-all duration-300"
                   style={{ width: `${((currentIdx + 1) / positions.length) * 100}%` }}
                 />
               </div>
-              <span className="text-[10px] text-slate-500 tabular-nums shrink-0">
+              <span className="text-[10px] text-forge-text-inactive tabular-nums shrink-0">
                 {currentIdx + 1}/{positions.length}
               </span>
             </div>
@@ -723,8 +723,8 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
         {/* LOADING state */}
         {state === "loading" && (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
-            <Loader2 size={32} className="text-indigo-400 motion-safe:animate-spin" />
-            <p className="text-sm text-slate-400 font-semibold motion-safe:animate-pulse">
+            <Loader2 size={32} className="text-forge-primary-hover motion-safe:animate-spin" />
+            <p className="text-sm text-forge-text-secondary font-semibold motion-safe:animate-pulse">
               Building your session...
             </p>
           </div>
@@ -734,10 +734,10 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
         {state === "queued" && (
           <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6 motion-safe:animate-fadeIn">
             <div className="text-center">
-              <p className="text-3xl font-black text-slate-100">
+              <p className="text-3xl font-black text-forge-text-primary">
                 {positions.length} positions
               </p>
-              <p className="text-sm text-slate-500 mt-1">~{estMinutes} min</p>
+              <p className="text-sm text-forge-text-inactive mt-1">~{estMinutes} min</p>
             </div>
 
             {/* Session composition breakdown */}
@@ -748,11 +748,15 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
               const review = positions.filter((p) => p.source === "review").length;
               const repertoire = positions.filter((p) => p.source === "repertoire").length;
               const items = [
-                blunders > 0 && { label: "blunders", count: blunders, color: "text-rose-400" },
-                deviations > 0 && { label: "deviations", count: deviations, color: "text-amber-400" },
-                punish > 0 && { label: "punish", count: punish, color: "text-amber-400" },
-                review > 0 && { label: "review", count: review, color: "text-slate-400" },
-                repertoire > 0 && { label: "repertoire", count: repertoire, color: "text-indigo-400" },
+                blunders > 0 && { label: "blunders", count: blunders, color: "text-forge-drill-blunder" },
+                deviations > 0 && { label: "deviations", count: deviations, color: "text-forge-drill-deviation" },
+                // Previously shared the same amber as `deviations` — an
+                // unintentional collision, not a deliberate choice. Punish
+                // drills get their own identity via the insight/violet
+                // drillSource token (src/design/tokens.ts).
+                punish > 0 && { label: "punish", count: punish, color: "text-forge-drill-punish" },
+                review > 0 && { label: "review", count: review, color: "text-forge-drill-review" },
+                repertoire > 0 && { label: "repertoire", count: repertoire, color: "text-forge-primary-hover" },
               ].filter(Boolean) as { label: string; count: number; color: string }[];
               if (items.length === 0) return null;
               return (
@@ -760,7 +764,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                   {items.map((item) => (
                     <div key={item.label} className="flex flex-col items-center gap-0.5">
                       <span className={cn("text-xl font-black", item.color)}>{item.count}</span>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">{item.label}</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-forge-text-muted">{item.label}</span>
                     </div>
                   ))}
                 </div>
@@ -806,8 +810,8 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 "border transition-colors duration-150",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
                 speedMode
-                  ? "bg-indigo-600/20 border-indigo-500/40 text-indigo-300"
-                  : "bg-forge-border-subtle border-forge-border-default text-slate-400 hover:border-forge-border-default",
+                  ? "bg-forge-primary-muted border-forge-primary-border text-forge-primary-hover"
+                  : "bg-forge-border-subtle border-forge-border-default text-forge-text-secondary hover:border-forge-border-default",
               )}
             >
               <Timer size={18} />
@@ -818,7 +822,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
               <div
                 className={cn(
                   "ml-auto w-9 h-5 rounded-full transition-all flex items-center px-0.5",
-                  speedMode ? "bg-indigo-500" : "bg-forge-border-default",
+                  speedMode ? "bg-forge-primary" : "bg-forge-border-default",
                 )}
               >
                 <div
@@ -834,11 +838,11 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
               onClick={startDrilling}
               className={cn(
                 "w-full max-w-xs flex items-center justify-center gap-3 cursor-pointer",
-                "bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98]",
+                "bg-forge-primary hover:bg-forge-primary active:scale-[0.98]",
                 "text-white font-black text-lg uppercase tracking-widest",
                 "py-5 rounded-2xl transition-colors duration-150",
                 "shadow-xl shadow-indigo-600/30",
-                "border border-indigo-400/20",
+                "border border-forge-primary-border",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-forge-base",
               )}
             >
@@ -852,7 +856,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
           <div className="flex-1 flex flex-col min-h-0">
             {/* Context line */}
             {currentPosition.context && (
-              <p className="text-xs text-slate-500 px-4 py-2 bg-forge-surface border-b border-forge-border-subtle shrink-0">
+              <p className="text-xs text-forge-text-inactive px-4 py-2 bg-forge-surface border-b border-forge-border-subtle shrink-0">
                 {currentPosition.context}
               </p>
             )}
@@ -860,11 +864,11 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
             {/* Punish framing strip — the opponent's book deviation to punish */}
             {currentPosition.source === "punish" && currentPosition.opponentMove && (
               <div className="px-4 pt-3 shrink-0">
-                <div className="flex items-center gap-2 rounded-forge-lg bg-forge-card border border-amber-500/30 px-3 py-2">
-                  <Zap size={14} className="text-amber-400 shrink-0" />
-                  <span className="text-[12px] font-bold text-slate-300">
+                <div className="flex items-center gap-2 rounded-forge-lg bg-forge-card border border-forge-warning-border px-3 py-2">
+                  <Zap size={14} className="text-forge-warning shrink-0" />
+                  <span className="text-[12px] font-bold text-forge-text-primary">
                     They left book:{" "}
-                    <span className="text-rose-400 font-black">{currentPosition.opponentMove}</span>
+                    <span className="text-forge-danger font-black">{currentPosition.opponentMove}</span>
                     {" — punish it."}
                   </span>
                 </div>
@@ -874,12 +878,12 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
             {/* Coach hint — shown above the board */}
             <div className="flex items-start gap-3 px-4 pt-3 pb-1 shrink-0">
               {/* Avatar */}
-              <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0 text-lg select-none">
+              <div className="w-10 h-10 rounded-xl bg-forge-primary-muted border border-forge-primary-border flex items-center justify-center shrink-0 text-lg select-none">
                 🧙
               </div>
               {/* Speech bubble */}
               <div className="flex-1 bg-forge-card border border-forge-border-default rounded-xl rounded-tl-sm px-3 py-2 min-h-[40px] flex items-center gap-2">
-                <p className="text-xs text-slate-300 leading-snug flex-1">
+                <p className="text-xs text-forge-text-primary leading-snug flex-1">
                   {boardOrientation === "white" ? "White" : "Black"} to move
                   {currentPosition.source === "blunder" ? " — you missed this before" : currentPosition.source === "deviation" ? " — stay in your repertoire" : currentPosition.source === "punish" ? " — find the punishment" : ""}
                 </p>
@@ -923,18 +927,18 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
             <div className="flex items-center justify-between px-6 py-3 bg-forge-surface border-t border-forge-border-subtle shrink-0">
               {mistakes > 0 && !revealed && (
                 <div className="flex items-center gap-2 text-sm">
-                  <X size={14} className="text-rose-400" />
-                  <span className="text-rose-400 font-semibold">
+                  <X size={14} className="text-forge-danger" />
+                  <span className="text-forge-danger font-semibold">
                     {mistakes === 1 ? "Try again — 1 more attempt" : `${mistakes} misses`}
                   </span>
                 </div>
               )}
               {mistakes === 0 && (
-                <p className="text-xs text-slate-500">Find the best move</p>
+                <p className="text-xs text-forge-text-inactive">Find the best move</p>
               )}
               <button
                 onClick={handleReveal}
-                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 cursor-pointer transition-colors duration-150 ml-auto min-h-[44px] px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded-lg"
+                className="flex items-center gap-1.5 text-xs text-forge-text-inactive hover:text-forge-text-primary cursor-pointer transition-colors duration-150 ml-auto min-h-[44px] px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded-lg"
               >
                 <Eye size={14} />
                 <span className="font-semibold">Show</span>
@@ -950,7 +954,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 padding (py-1) so the sub-header doesn't steal space from the
                 Coach Analysis card below the board on iPhone 12 Pro Max. */}
             {currentPosition.context && (
-              <p className="text-xs text-slate-500 px-4 py-1 bg-forge-surface border-b border-forge-border-subtle shrink-0">
+              <p className="text-xs text-forge-text-inactive px-4 py-1 bg-forge-surface border-b border-forge-border-subtle shrink-0">
                 {currentPosition.context}
               </p>
             )}
@@ -1014,7 +1018,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
             {/* Context line — keep game context visible in explanation.
                 Tight py-1 to leave more room for the Coach Analysis card. */}
             {currentPosition.context && (
-              <p className="text-xs text-slate-500 px-4 py-1 bg-forge-surface border-b border-forge-border-subtle shrink-0">
+              <p className="text-xs text-forge-text-inactive px-4 py-1 bg-forge-surface border-b border-forge-border-subtle shrink-0">
                 {currentPosition.context}
               </p>
             )}
@@ -1040,7 +1044,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 shown by the green BEST chip inside BlunderExplanation, so we no
                 longer render a redundant amber line here on reveal). */}
             {!revealed && (
-              <div className="flex items-center gap-2 px-6 pt-1.5 pb-0 text-emerald-400">
+              <div className="flex items-center gap-2 px-6 pt-1.5 pb-0 text-forge-success">
                 <Check size={18} />
                 <span className="text-sm font-black uppercase tracking-wider">
                   Correct
@@ -1076,10 +1080,10 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                     onClick={handleNext}
                     className={cn(
                       "w-full flex items-center justify-center gap-2",
-                      "bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98]",
+                      "bg-forge-primary hover:bg-forge-primary active:scale-[0.98]",
                       "text-white font-black uppercase tracking-widest text-sm",
                       "py-3 rounded-xl transition-all min-h-[44px]",
-                      "border border-indigo-400/20",
+                      "border border-forge-primary-border",
                     )}
                   >
                     Next <ChevronRight size={18} />
@@ -1145,10 +1149,10 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 informational message without Show/Replay controls. */}
             {currentPosition.source === "deviation" && !punishmentDismissed && (
               <div className="px-4 pb-4 motion-safe:animate-slideUp">
-                <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4">
+                <div className="rounded-2xl border border-forge-warning-border bg-forge-warning-muted p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Swords size={14} className="text-amber-400 shrink-0" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 flex-1">
+                    <Swords size={14} className="text-forge-warning shrink-0" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-forge-warning flex-1">
                       Opponent could punish
                     </span>
                     <button
@@ -1156,7 +1160,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                         clearCoach();
                         setPunishmentDismissed(true);
                       }}
-                      className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-slate-600 hover:text-slate-400 cursor-pointer transition-colors duration-150 active:scale-90"
+                      className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-forge-text-muted hover:text-forge-text-secondary cursor-pointer transition-colors duration-150 active:scale-90"
                       aria-label="Dismiss punishment line"
                     >
                       <X size={14} />
@@ -1165,13 +1169,13 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
 
                   {/* No deviation san recorded — informational only, no Show/Replay */}
                   {!currentPosition.san && (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-forge-text-inactive">
                       No deviation move recorded — re-sync games to enable punishment preview.
                     </p>
                   )}
 
                   {currentPosition.san && punishmentLoading && (
-                    <div className="flex items-center gap-2 text-slate-500 text-xs">
+                    <div className="flex items-center gap-2 text-forge-text-inactive text-xs">
                       <Loader2 size={12} className="motion-safe:animate-spin shrink-0" />
                       <span>Finding punishment line...</span>
                     </div>
@@ -1179,10 +1183,10 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
 
                   {currentPosition.san && !punishmentLoading && punishmentSan && (
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-mono font-black text-amber-300">
+                      <span className="text-sm font-mono font-black text-forge-warning">
                         {punishmentSan}
                       </span>
-                      <span className="text-xs text-slate-500 flex-1">
+                      <span className="text-xs text-forge-text-inactive flex-1">
                         After your deviation, the opponent could play this
                       </span>
                       <button
@@ -1190,8 +1194,8 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                         className={cn(
                           "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all active:scale-95",
                           punishmentAnimated
-                            ? "bg-forge-border-subtle border border-forge-border-default text-slate-400 hover:text-slate-200 hover:bg-forge-border-default"
-                            : "bg-amber-500/20 border border-amber-500/30 text-amber-300 hover:bg-amber-500/30",
+                            ? "bg-forge-border-subtle border border-forge-border-default text-forge-text-secondary hover:text-forge-text-primary hover:bg-forge-border-default"
+                            : "bg-forge-warning-muted border border-forge-warning-border text-forge-warning hover:bg-forge-warning-muted",
                         )}
                       >
                         {punishmentAnimated ? (
@@ -1207,7 +1211,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                   )}
 
                   {currentPosition.san && !punishmentLoading && !punishmentSan && (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-forge-text-inactive">
                       Engine unavailable — keep your repertoire moves sharp anyway.
                     </p>
                   )}
@@ -1222,10 +1226,10 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
           <div className="flex-1 flex flex-col items-center gap-6 px-6 pt-8 pb-24 overflow-y-auto">
             {stats.total === 0 ? (
               <>
-                <p className="text-xl font-black text-slate-300 mt-8">
+                <p className="text-xl font-black text-forge-text-primary mt-8">
                   Nothing to train
                 </p>
-                <p className="text-sm text-slate-500 text-center">
+                <p className="text-sm text-forge-text-inactive text-center">
                   Import some games or wait for positions to become due.
                 </p>
               </>
@@ -1235,11 +1239,11 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 {(() => {
                   const acc = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
                   const grade =
-                    acc >= 90 ? { letter: "S", color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/30", msg: "Exceptional" }
-                    : acc >= 75 ? { letter: "A", color: "text-emerald-400", bg: "bg-emerald-400/10 border-emerald-400/30", msg: "Strong session" }
-                    : acc >= 60 ? { letter: "B", color: "text-indigo-400", bg: "bg-indigo-400/10 border-indigo-400/30", msg: "Good progress" }
-                    : acc >= 40 ? { letter: "C", color: "text-amber-400", bg: "bg-amber-400/10 border-amber-400/30", msg: "Keep drilling" }
-                    :             { letter: "D", color: "text-rose-400",   bg: "bg-rose-400/10 border-rose-400/30",   msg: "Tough session — review the mistakes" };
+                    acc >= 90 ? { letter: "S", color: "text-forge-warning", bg: "bg-forge-warning-muted border-forge-warning-border", msg: "Exceptional" }
+                    : acc >= 75 ? { letter: "A", color: "text-forge-success", bg: "bg-forge-success-muted border-forge-success-border", msg: "Strong session" }
+                    : acc >= 60 ? { letter: "B", color: "text-forge-primary-hover", bg: "bg-forge-primary-muted border-forge-primary-border", msg: "Good progress" }
+                    : acc >= 40 ? { letter: "C", color: "text-forge-warning", bg: "bg-forge-warning-muted border-forge-warning-border", msg: "Keep drilling" }
+                    :             { letter: "D", color: "text-forge-danger",   bg: "bg-forge-danger-muted border-forge-danger-border",   msg: "Tough session — review the mistakes" };
                   return (
                     <div className="flex flex-col items-center gap-3">
                       <div className={cn("w-20 h-20 rounded-[2rem] border-2 flex items-center justify-center", grade.bg)}>
@@ -1248,13 +1252,13 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                       <p className={cn("text-sm font-black uppercase tracking-wider", grade.color)}>
                         {grade.msg}
                       </p>
-                      <div className="flex items-center gap-3 text-sm text-slate-500">
-                        <span className="font-black text-slate-200">{acc}%</span>
+                      <div className="flex items-center gap-3 text-sm text-forge-text-inactive">
+                        <span className="font-black text-forge-text-primary">{acc}%</span>
                         <span>accuracy</span>
                         {avgResponseTime && (
                           <>
-                            <span className="text-slate-700">·</span>
-                            <span className="text-indigo-400 font-semibold">{avgResponseTime}s avg</span>
+                            <span className="text-forge-text-muted">·</span>
+                            <span className="text-forge-primary-hover font-semibold">{avgResponseTime}s avg</span>
                           </>
                         )}
                       </div>
@@ -1264,33 +1268,33 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
 
                 <div className="grid grid-cols-3 gap-4 text-center w-full">
                   <div className="bg-forge-card border border-forge-border-subtle rounded-2xl py-4">
-                    <p className="text-2xl font-black text-slate-200">{stats.total}</p>
-                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">drilled</p>
+                    <p className="text-2xl font-black text-forge-text-primary">{stats.total}</p>
+                    <p className="text-[10px] text-forge-text-inactive font-semibold uppercase tracking-wider mt-1">drilled</p>
                   </div>
                   <div className="bg-forge-card border border-forge-border-subtle rounded-2xl py-4">
-                    <p className="text-2xl font-black text-emerald-400">{stats.correct}</p>
-                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">correct</p>
+                    <p className="text-2xl font-black text-forge-success">{stats.correct}</p>
+                    <p className="text-[10px] text-forge-text-inactive font-semibold uppercase tracking-wider mt-1">correct</p>
                   </div>
                   <div className="bg-forge-card border border-forge-border-subtle rounded-2xl py-4">
-                    <p className="text-2xl font-black text-amber-400">{stats.revealed}</p>
-                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">revealed</p>
+                    <p className="text-2xl font-black text-forge-warning">{stats.revealed}</p>
+                    <p className="text-[10px] text-forge-text-inactive font-semibold uppercase tracking-wider mt-1">revealed</p>
                   </div>
                 </div>
 
                 {/* Mistakes replay */}
                 {revealedPositions.length > 0 && (
                   <div className="w-full mt-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-forge-text-inactive mb-3 text-center">
                       Mistakes
                     </p>
                     <div className="flex flex-wrap justify-center gap-3">
                       {revealedPositions.map((pos, i) => {
                         const sourceBadge =
                           pos.source === "blunder"
-                            ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
+                            ? "bg-forge-danger-muted text-forge-danger border-forge-danger-border"
                             : pos.source === "deviation"
-                              ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
-                              : "bg-slate-500/15 text-slate-400 border-slate-500/30";
+                              ? "bg-forge-warning-muted text-forge-warning border-forge-warning-border"
+                              : "bg-slate-500/15 text-forge-text-secondary border-forge-border-default";
                         return (
                           <div
                             key={`${pos.fen}-${i}`}
@@ -1305,7 +1309,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                                 {...BOARD_THEME}
                               />
                             </div>
-                            <span className="text-xs font-black text-amber-400">
+                            <span className="text-xs font-black text-forge-warning">
                               {pos.correctSan}
                             </span>
                             <span
@@ -1330,9 +1334,9 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 onClick={loadSession}
                 className={cn(
                   "w-full flex items-center justify-center gap-2 py-4 rounded-2xl cursor-pointer",
-                  "bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98]",
+                  "bg-forge-primary hover:bg-forge-primary active:scale-[0.98]",
                   "text-white font-black text-base uppercase tracking-widest",
-                  "shadow-xl shadow-indigo-600/30 border border-indigo-400/20",
+                  "shadow-xl shadow-indigo-600/30 border border-forge-primary-border",
                   "transition-colors duration-150",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-forge-base",
                 )}
@@ -1345,8 +1349,8 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 className={cn(
                   "w-full px-8 py-3 min-h-[44px] rounded-xl cursor-pointer",
                   "bg-forge-border-subtle border border-forge-border-default",
-                  "text-slate-400 font-semibold text-sm",
-                  "hover:bg-forge-border-default hover:text-slate-200 transition-colors duration-150 active:scale-[0.98]",
+                  "text-forge-text-secondary font-semibold text-sm",
+                  "hover:bg-forge-border-default hover:text-forge-text-primary transition-colors duration-150 active:scale-[0.98]",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
                 )}
               >
