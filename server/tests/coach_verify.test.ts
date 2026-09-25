@@ -77,7 +77,7 @@ describe("templateFromFacts", () => {
   test("is built only from facts and passes its own verifier", async () => {
     const f = await scholarFacts();
     const t = templateFromFacts(f);
-    const all = [t.analysis, t.concept, ...Object.values(t.captions)].join(" ");
+    const all = [t.analysis, t.concept, ...Object.values(t.captions)].join(". ");
     expect(verifyClaims(all, f)).toEqual({ ok: true, violations: [] });
     expect(t.analysis).toContain("Qxf7#");
     expect(t.analysis).toContain("checkmate");
@@ -90,7 +90,7 @@ describe("templateFromFacts", () => {
     );
     const t = templateFromFacts(f);
     expect(t.analysis.toLowerCase()).toContain("stalemate");
-    const all = [t.analysis, t.concept, ...Object.values(t.captions)].join(" ");
+    const all = [t.analysis, t.concept, ...Object.values(t.captions)].join(". ");
     expect(verifyClaims(all, f).ok).toBe(true);
   });
 
@@ -123,6 +123,15 @@ describe("verifyClaims fails closed", () => {
     "Your queen on h5 can be captured for free.",
     "Nf6 wins the queen.",
     "Black takes the knight.",
+    "Nf3 costs you the queen.",
+    "Nf3 throws away the queen.",
+    "Nf3 forfeits the queen.",
+    "Nf3 leaves you a queen down.",
+    "Nf3 cedes the bishop.",
+    "Nf6 nets a pawn.",
+    "Black is up a piece after Nf6.",
+    "Nf3 costs a pawn.",
+    "Nf3 saves the queen.",
     "Nf6 wins the pawn.",
     "Black wins the pawn.",
     "Nf3 wins the pawn.",
@@ -165,6 +174,10 @@ describe("verifyClaims fails closed", () => {
     "The knight on c6 defends the pawn on e5.",
     "The queen on h5 is hanging.",
     "Qxf7# wins the pawn.",
+    "Nf3 develops the knight.",
+    "Nf3 allows Nf6, and Black brings the knight into play.",
+    "Qxf7# ends the game.",
+    "The bishop on c4 attacks f7.",
     "Qxf7# captures the pawn on f7.",
     "Nf3 allows Nf6.",
     "Nf3 wins tempo for Black.",
@@ -191,7 +204,14 @@ describe("templateFromFacts with a capturing reply", () => {
     expect(f.reply?.captured).toBe("p");
     const t = templateFromFacts(f);
     expect(t.analysis).toContain("captures your pawn");
-    const all = [t.analysis, t.concept, ...Object.values(t.captions)].join(" ");
+    const all = [t.analysis, t.concept, ...Object.values(t.captions)].join(". ");
     expect(verifyClaims(all, f)).toEqual({ ok: true, violations: [] });
+  });
+});
+
+describe("default-deny", () => {
+  test("over-rejects true but unprovable text by design", async () => {
+    // Deliberate: no verifier proof exists for "attacked twice", so a referent + subject clause is denied.
+    expect(verifyClaims("Nf3 leaves the f7 pawn attacked twice.", await scholarFacts()).ok).toBe(false);
   });
 });

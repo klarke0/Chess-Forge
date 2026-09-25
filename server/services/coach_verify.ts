@@ -59,6 +59,11 @@ const HANGING = new RegExp(
 const MOVE_AFTER_VERB = /\b(?:play|plays|played|playing|after|with|push|pushes|advance|advances|move|moves)\s+([a-h][1-8])\b/gi;
 const MOVE_AT_START = /^\s*([a-h][1-8])\s+(?:wins|loses|captures|takes|gains|threatens|attacks|forks|pins|hangs|defends)\b/i;
 
+/** Counts claims in the current clause that were proven true. */
+interface ClauseStats {
+  proven: number;
+}
+
 type SideMove = { mv: MoveFacts; mover: boolean };
 
 const sideMoves = (f: CoachFacts): SideMove[] => {
@@ -98,6 +103,7 @@ function checkMaterial(
   facts: CoachFacts,
   allowed: Set<string>,
   violations: string[],
+  stats: ClauseStats,
   prevSan?: string,
 ): void {
   if (!MATERIAL_VERB.test(clause)) return;
@@ -123,7 +129,36 @@ function checkMaterial(
       bad();
       return;
     }
+    stats.proven++;
   }
+}
+
+const NEUTRAL_OR_GLUE = new Set(
+  (
+    "develop develops developed developing move moves moved play plays played playing bring brings bringing " +
+    "put puts place places allow allows let lets permit permits is are was were be " +
+    "a an the your their his its and or with on to into in of at for from by that this then also now just " +
+    "which as it black white you opponent yours"
+  ).split(" "),
+);
+
+/**
+ * Default-deny: a clause that names a piece/material AND a subject (supplied move or side) must carry a
+ * proven claim, or consist only of neutral verbs and glue words. Deliberately over-rejects true-but-unprovable text.
+ */
+function defaultDeny(clause: string, allowed: Set<string>, stats: ClauseStats, violations: string[]): void {
+  const hasReferent = new RegExp(`\\b(?:${REFERENT})\\b`, "i").test(clause);
+  const hasSubject = suppliedSans(clause, allowed).length > 0 || /\b(white|black|you|your|opponent)\b/i.test(clause);
+  if (!hasReferent || !hasSubject || stats.proven > 0) return;
+  const words = clause
+    .replace(SAN_TOKEN, " ")
+    .replace(/\b[a-h][1-8]\b/gi, " ")
+    .split(/[^A-Za-z]+/)
+    .filter(Boolean)
+    .map((w) => w.toLowerCase())
+    .filter((w) => !new RegExp(`^(?:${REFERENT})$`).test(w));
+  if (words.every((w) => NEUTRAL_OR_GLUE.has(w))) return;
+  if (!violations.some((v) => v.includes(clause.trim()))) violations.push(`unverifiable claim: "${clause.trim()}"`);
 }
 
 function checkClause(
@@ -132,6 +167,7 @@ function checkClause(
   boards: Chess[],
   allowed: Set<string>,
   violations: string[],
+  stats: ClauseStats,
   prevSan?: string,
 ): void {
   const typeOf = (name: string): PieceSymbol => TYPE_BY_NAME[name.toLowerCase()];
@@ -165,7 +201,7 @@ function checkClause(
     }
   }
 
-  checkMaterial(clause, facts, allowed, violations, prevSan);
+  checkMaterial(clause, facts, allowed, violations, stats, prevSan);
 
   if (!HAZARD.test(clause)) return;
 
@@ -187,7 +223,7 @@ function checkClause(
         return b.attackers(t.square, src.color).includes(srcSq);
       });
     });
-    if (holds) proven++;
+    if (holds) (proven++, stats.proven++);
     else violations.push(`false claim: ${m[0]}`);
   }
 
@@ -202,7 +238,7 @@ function checkClause(
     if (!m) continue;
     const mv = sideMoves(facts).find((x) => strip(x.mv.san) === san)?.mv;
     const sq = m[2]?.toLowerCase();
-    if (mv?.attacks.some((a) => a.type === typeOf(m[1]) && (!sq || a.square === sq))) proven++;
+    if (mv?.attacks.some((a) => a.type === typeOf(m[1]) && (!sq || a.square === sq))) (proven++, stats.proven++);
     else violations.push(`false claim: ${san}${m[0]}`);
   }
 
@@ -218,7 +254,7 @@ function checkClause(
       const undefended = b.attackers(sq, p.color).length === 0;
       return undefended && (!needsAttacker || b.attackers(sq, enemy).length > 0);
     });
-    if (holds) proven++;
+    if (holds) (proven++, stats.proven++);
     else violations.push(`false claim: ${m[0]}`);
   }
 
@@ -266,7 +302,9 @@ export function verifyClaims(text: string, facts: CoachFacts): Verdict {
   // 3-4, 6. Clause-level rules: every hazard claim must be proven, else fail closed.
   let prevSan: string | undefined;
   for (const clause of text.split(CLAUSE_SPLIT)) {
-    checkClause(clause, facts, boards, allowed, violations, prevSan);
+    const stats: ClauseStats = { proven: 0 };
+    checkClause(clause, facts, boards, allowed, violations, stats, prevSan);
+    defaultDeny(clause, allowed, stats, violations);
     prevSan = suppliedSans(clause, allowed).pop() ?? prevSan;
   }
 
