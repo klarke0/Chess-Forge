@@ -93,9 +93,10 @@ The drill pool is small (~75 progress rows, 12 positions/session). Any change th
 2. Session size in `server/routes/v2_train_now.ts` (currently 12) is still ≤ ~20% of available drillable rows.
 3. After running a session locally, run:
    ```
-   sqlite3 server/chess_trainer.db "SELECT COUNT(*), SUM(CASE WHEN next_review > datetime('now') THEN 1 ELSE 0 END), MAX(interval_days) FROM progress;"
+   sqlite3 server/chess_trainer.db "SELECT COUNT(*), SUM(CASE WHEN next_review > datetime('now') THEN 1 ELSE 0 END) AS future, SUM(CASE WHEN next_review <= datetime('now') THEN 1 ELSE 0 END) AS due, MAX(interval_days) FROM progress;"
    ```
-   The "future" count should be a small fraction of total. If most rows are future-dated, the pool is starving.
+   The "future" count should be a small fraction of total. If most rows are future-dated, the pool is starving. **Also watch `due`**: if it is most of the table (and growing), the pool is over-supplied with unreviewed rows rather than starved — the earlier `future`-only check read as "healthy" while 174 of 178 rows were due. `due` counts every row, including blunder positions outside the repertoire, so a high number is normal early on; it should trend down as sessions consume the backlog.
+4. Every drill source must honor `progress.next_review` (`deferredUntil()` in `v2_train_now.ts`). Not-yet-due positions are *deferred*: they only top up a session that would otherwise be short, soonest-due first. Don't add a source that bypasses this — Sources 2 and 3 once did, and one deviation was served in every session.
 
 **Recovery if it regresses:** `UPDATE progress SET interval_days = 30 WHERE interval_days > 30; UPDATE progress SET next_review = datetime('now') WHERE next_review > datetime('now', '+30 days');`
 - **Deviations**: Only `notes = 'player'` rows are valid for drilling. Run `POST /api/v2/backfill-deviations` to populate deviations for pre-v2 games.

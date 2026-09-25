@@ -425,6 +425,24 @@ export function trainNow(req: Request): Response {
     ).map((r) => normalizeFen(r.fen)),
   );
 
+  // SM-2 schedule per position. Every source consults this: a position whose
+  // next_review is still in the future is "deferred" — kept out of the session
+  // unless nothing due is left to fill it. Without this gate, Sources 2 and 3
+  // ignored the schedule entirely (progress rows for blunders outside the
+  // repertoire were written but never read), so the same few positions
+  // repeated while hundreds of due rows were unreachable.
+  const nextReviewByFen = new Map<string, string | null>(
+    (
+      db
+        .query("SELECT fen, next_review FROM progress WHERE repertoire_id = ?")
+        .all(repertoireId) as { fen: string; next_review: string | null }[]
+    ).map((r) => [normalizeFen(r.fen), r.next_review]),
+  );
+  const deferredUntil = (nFen: string): string | undefined => {
+    const nr = nextReviewByFen.get(nFen);
+    return nr && nr > now ? nr : undefined;
+  };
+
   // Collect all candidate positions into a map keyed by normalized FEN
   const countOnly = url.searchParams.get("countOnly") === "true";
 
@@ -522,6 +540,7 @@ export function trainNow(req: Request): Response {
       fullFen?: string; // original 6-part FEN for chess.js compatibility
       opponentMove?: string;
       refutationSans?: string[];
+      deferredUntil?: string; // next_review still in the future (see above)
     }
   >();
 
@@ -533,12 +552,16 @@ export function trainNow(req: Request): Response {
        FROM progress p
        WHERE p.repertoire_id = ?
          AND (
-           (p.total_attempts > 0 AND CAST(p.correct_attempts AS REAL) / p.total_attempts < 0.7)
+           (
+             p.total_attempts > 0
+             AND CAST(p.correct_attempts AS REAL) / p.total_attempts < 0.7
+             AND (p.next_review IS NULL OR p.next_review <= ?)
+           )
            OR (p.next_review IS NOT NULL AND p.next_review <= ?)
          )
        ORDER BY p.next_review ASC`,
     )
-    .all(repertoireId, now) as any[];
+    .all(repertoireId, now, now) as any[];
 
   // For progress-based positions, look up the correct move from the repertoire
   for (const row of progressRows) {
@@ -697,6 +720,7 @@ export function trainNow(req: Request): Response {
           date: game.date,
           context: buildContext(game.id, moveNum),
           fullFen: fenBefore,
+          deferredUntil: deferredUntil(nFen),
         });
       }
     }
@@ -754,6 +778,7 @@ export function trainNow(req: Request): Response {
         moveNumber: dev.move_number,
         date: dev.date,
         context: buildContext(dev.game_id, dev.move_number),
+        deferredUntil: deferredUntil(nFen),
       });
     }
   }
@@ -778,19 +803,9 @@ export function trainNow(req: Request): Response {
     if (dismissedSet.has(nFen)) continue;
     if (candidates.has(nFen)) continue; // another source already owns this FEN
 
-    // SM-2 gate: skip candidates not yet due. Without this, punish has no
-    // next_review check at all, and with only a handful of harvested rows
-    // per repertoire the same 2-3 cards would reappear every session
-    // forever regardless of how well they'd been answered — the exact
-    // drill-pool staleness failure CLAUDE.md guards against.
-    const punishProgress = db
-      .query(
-        "SELECT next_review FROM progress WHERE repertoire_id = ? AND fen = ?",
-      )
-      .get(repertoireId, nFen) as { next_review: string | null } | null;
-    if (punishProgress?.next_review && punishProgress.next_review > now) {
-      continue;
-    }
+    // SM-2 gate (see nextReviewByFen). Punish cards are spice, so a not-yet-due
+    // one is dropped outright rather than deferred.
+    if (deferredUntil(nFen)) continue;
 
     candidates.set(nFen, {
       san: cand.opponentMove,
@@ -868,6 +883,7 @@ export function trainNow(req: Request): Response {
       review = 0;
     for (const cand of candidates.values()) {
       if (!cand.correctSan || !cand.correctSan.trim()) continue;
+      if (cand.deferredUntil) continue; // not due yet — not actionable backlog
       if (cand.source === "blunder") blunders++;
       else if (cand.source === "deviation") deviations++;
       else if (cand.source === "review") review++;
@@ -926,6 +942,7 @@ export function trainNow(req: Request): Response {
 
   // Score and sort
   const scored: TrainPosition[] = [];
+  const deferredByPosition = new Map<TrainPosition, string>();
 
   for (const [fen, cand] of candidates) {
     const prog = progressMap.get(fen);
@@ -955,7 +972,7 @@ export function trainNow(req: Request): Response {
     const positionFen = ensureFullFen(cand.fullFen ?? fen);
     const pattern = classifyPattern(positionFen, cand.correctSan, cand.moveNumber);
 
-    scored.push({
+    const scoredPosition: TrainPosition = {
       fen: positionFen,
       san: cand.san,
       correctSan: cand.correctSan,
@@ -970,7 +987,9 @@ export function trainNow(req: Request): Response {
       pattern,
       opponentMove: cand.opponentMove,
       refutationSans: cand.refutationSans,
-    });
+    };
+    scored.push(scoredPosition);
+    if (cand.deferredUntil) deferredByPosition.set(scoredPosition, cand.deferredUntil);
   }
 
   scored.sort((a, b) => b.score - a.score);
@@ -979,20 +998,27 @@ export function trainNow(req: Request): Response {
   const valid = scored.filter(
     (p) => p.correctSan && p.correctSan.trim().length > 0,
   );
+  // Due (or never-scheduled) positions compete for the session. Deferred ones
+  // (next_review still in the future) only top up a session that would
+  // otherwise come up short — soonest-due first.
+  const dueValid = valid.filter((p) => !deferredByPosition.has(p));
+  const deferredValid = valid
+    .filter((p) => deferredByPosition.has(p))
+    .sort((a, b) =>
+      deferredByPosition.get(a)!.localeCompare(deferredByPosition.get(b)!),
+    );
 
-  // Add small random jitter to top candidates so each session has some variety.
-  // Only jitter among candidates within the top score tier (score > 50% of top score).
-  const topScore = valid[0]?.score ?? 1;
+  // Jitter the top score tier so each session has some variety: perturb each
+  // score by ±25% and sort on the perturbed value. (Shuffling and then
+  // re-sorting by the true score, as this used to, only reordered exact ties.)
+  const topScore = dueValid.reduce((m, p) => Math.max(m, p.score), 0) || 1;
   const tierCutoff = topScore * 0.5;
-  const tierPositions = valid.filter((p) => p.score >= tierCutoff);
-  const belowTier = valid.filter((p) => p.score < tierCutoff);
-  // Fisher-Yates shuffle within tier for variety
-  for (let i = tierPositions.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [tierPositions[i], tierPositions[j]] = [tierPositions[j], tierPositions[i]];
-  }
-  // Re-sort tier by score (stable within random order), keep high scores first overall
-  tierPositions.sort((a, b) => b.score - a.score);
+  const tierPositions = dueValid
+    .filter((p) => p.score >= tierCutoff)
+    .map((p) => ({ p, key: p.score * (0.75 + Math.random() * 0.5) }))
+    .sort((a, b) => b.key - a.key)
+    .map((x) => x.p);
+  const belowTier = dueValid.filter((p) => p.score < tierCutoff);
   const shuffledValid = [...tierPositions, ...belowTier];
 
   // Punish cards are spice, not the meal: at most 3 per session.
@@ -1037,6 +1063,17 @@ export function trainNow(req: Request): Response {
     const usedFens = new Set(session.map((p) => p.fen));
     const remaining = cappedValid.filter((p) => !usedFens.has(p.fen));
     session.push(...remaining.slice(0, SESSION_SIZE - session.length));
+  }
+
+  // Not enough due material: seat the soonest-due deferred positions rather
+  // than ship a short session.
+  if (session.length < SESSION_SIZE && deferredValid.length > 0) {
+    const usedFens = new Set(session.map((p) => p.fen));
+    session.push(
+      ...deferredValid
+        .filter((p) => !usedFens.has(p.fen))
+        .slice(0, SESSION_SIZE - session.length),
+    );
   }
 
   // ---------- Emergency pad: if still < SESSION_SIZE, fill with SM-2 review items ----------
