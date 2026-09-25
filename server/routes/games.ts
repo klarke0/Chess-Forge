@@ -6,6 +6,7 @@ import { computeAndPersistDeviations } from "../utils/deviations";
 import { batchLoadGamePositions } from "../utils/gamePositions";
 import { parseAnalysisJson } from "../utils/analysis";
 import { ANALYSIS_VERSION } from "../services/analysis_config";
+import { mapChessComResult } from "../utils/gameResult";
 
 function deriveTimeClass(timeControl: string): string {
   const base = parseInt(timeControl?.split("+")[0] || "0", 10);
@@ -165,12 +166,10 @@ export async function syncGames(
           g.white.username.toLowerCase() === username.toLowerCase();
         const userColor = isWhite ? "white" : "black";
         const myResult = isWhite ? g.white.result : g.black.result;
-        let result = "draw";
-        if (myResult === "win") result = "win";
-        else if (
-          ["checkmated", "resign", "timeout", "abandoned"].includes(myResult)
-        )
-          result = "loss";
+        const opponentResult = isWhite ? g.black.result : g.white.result;
+        // chess.com's codes are per player ("resigned", "timeout", "agreed", ...);
+        // see utils/gameResult.ts for the full table.
+        const result = mapChessComResult(myResult, opponentResult);
 
         const timeControl = g.time_control || "";
         const timeClass = g.time_class || deriveTimeClass(timeControl);
