@@ -316,24 +316,26 @@ export async function buildFacts(
 }
 
 export function stepsFromFacts(facts: CoachFacts, captions: CoachCaptions): CoachStepOut[] {
-  const steps: CoachStepOut[] = [];
-  if (facts.wrong && !facts.wrongEqualsBest) {
-    steps.push({
-      text: captions.wrong,
-      action: { type: "playMove", san: facts.wrong.san, highlight: "red" },
-    });
-    if (facts.reply && facts.severity !== "equal") {
-      steps.push({
-        text: captions.reply,
-        action: { type: "playMove", san: facts.reply.san, highlight: "red" },
-      });
-    }
-  }
-  steps.push({
-    text: captions.best,
+  const best: CoachStepOut = {
+    text: [captions.best, captions.why].filter(Boolean).join(" "),
     action: { type: "playMove", san: facts.best.san, highlight: "green" },
-  });
+  };
+  if (facts.wrong && !facts.wrongEqualsBest) {
+    const withReply = facts.reply && facts.severity !== "equal";
+    // Beat 1: the wrong move (+ engine reply). Beat 2: the best move, which
+    // the client replays from the ORIGINAL position (it resets before it).
+    return [
+      {
+        text: [captions.wrong, withReply ? captions.reply : ""].filter(Boolean).join(" "),
+        action: { type: "playMove", san: facts.wrong.san, highlight: "red" },
+      },
+      best,
+    ];
+  }
+  // Missed move / wrongEqualsBest: play the best move, then highlight its target.
   const squares: string[] = [facts.best.to, ...facts.best.attacks.map((a) => a.square)].slice(0, 4);
-  steps.push({ text: captions.why, action: { type: "highlight", squares, color: "blue" } });
-  return steps;
+  return [
+    best,
+    { text: "Key squares.", action: { type: "highlight", squares, color: "blue" } },
+  ];
 }

@@ -278,7 +278,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
             "w-full flex items-center justify-center gap-2",
             "bg-forge-primary hover:bg-forge-primary active:scale-[0.98]",
             "text-white font-black uppercase tracking-widest text-sm",
-            "py-4 rounded-xl transition-all min-h-[44px]",
+            "py-4 rounded-xl transition-all min-h-[44px] min-w-[44px] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forge-primary-hover",
             "border border-forge-primary-border",
           )}
         >
@@ -289,7 +289,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
   }
 
   return (
-    <div className="flex flex-col gap-2 p-4 bg-forge-card border-t border-forge-border-subtle rounded-[2.5rem] animate-slideUp">
+    <div className="flex flex-col gap-2 p-4 bg-forge-card border-t border-forge-border-subtle rounded-[2.5rem] motion-safe:animate-slideUp">
       {/* Header: title + concept badge (or move number if provided).
           We render the icon, title text, and concept pill inline as siblings
           (no wrapper around icon+title) so the badge can hug the title on the
@@ -301,7 +301,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
         <span className="text-xs font-black uppercase tracking-wider text-forge-text-primary min-w-0 truncate">
           {mistakeContext === "original"
             ? "Why your original move failed"
-            : "Why your drill move failed"}
+            : "Why that move fell short"}
         </span>
         {moveNumber != null ? (
           <span className="ml-auto text-[10px] font-bold text-forge-text-inactive shrink-0">
@@ -310,7 +310,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
         ) : analysis?.concept ? (
           <span
             className={cn(
-              "ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0",
+              "ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shrink-0",
               "bg-forge-warning-muted text-forge-warning border border-forge-warning-border",
             )}
           >
@@ -325,7 +325,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
           <span className="flex items-center gap-1.5 text-forge-danger font-mono font-bold">
             <span className="w-2 h-2 rounded-full bg-forge-danger" />
             <span className="text-[10px] uppercase tracking-wider text-forge-danger font-sans">
-              {mistakeContext === "original" ? "Played:" : "Played:"}
+              {mistakeContext === "original" ? "In your game:" : "You played:"}
             </span>
             {wrongMove}
           </span>
@@ -361,7 +361,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
 
       {/* Loading skeleton */}
       {loading && (
-        <div className="space-y-3 animate-pulse">
+        <div className="space-y-3 motion-safe:animate-pulse">
           <div className="h-6 w-32 bg-forge-border-subtle rounded-full" />
           <div className="h-4 w-full bg-forge-border-subtle rounded-full" />
           <div className="h-4 w-3/4 bg-forge-border-subtle rounded-full" />
@@ -458,7 +458,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
           </div>
 
           {mastersLoading && (
-            <div className="space-y-2 animate-pulse">
+            <div className="space-y-2 motion-safe:animate-pulse">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="flex items-center gap-2">
                   <div className="h-3 w-8 bg-forge-border-subtle rounded" />
@@ -521,7 +521,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
           className={cn(
             "rounded-2xl border p-4 space-y-3",
             challengeState === "loading" &&
-              "bg-forge-border-subtle border-forge-border-default animate-pulse",
+              "bg-forge-border-subtle border-forge-border-default motion-safe:animate-pulse",
             challengeState === "confirmed" &&
               "bg-forge-success-muted border-forge-success-border",
             challengeState === "ambiguous" &&
@@ -661,7 +661,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
                     "mt-1 w-full flex items-center justify-center gap-2",
                     "bg-forge-warning-muted border border-forge-warning-border text-forge-warning",
                     "text-xs font-black uppercase tracking-wider",
-                    "py-2.5 rounded-xl transition-all min-h-[44px]",
+                    "py-2.5 rounded-xl transition-all min-h-[44px] min-w-[44px] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forge-primary-hover",
                     "active:scale-[0.98]",
                   )}
                 >
@@ -687,7 +687,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
               "flex items-center justify-center gap-2 px-4",
               "bg-forge-primary hover:bg-forge-primary active:scale-[0.98]",
               "text-white font-bold text-sm",
-              "py-3 rounded-xl transition-all min-h-[44px]",
+              "py-3 rounded-xl transition-all min-h-[44px] min-w-[44px] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forge-primary-hover",
               "border border-forge-primary-border",
             )}
           >
@@ -704,7 +704,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
               "bg-forge-border-subtle border border-forge-border-default text-forge-text-secondary",
               "hover:text-forge-text-primary hover:bg-forge-border-default",
               "text-xs font-bold",
-              "py-3 rounded-xl transition-all min-h-[44px]",
+              "py-3 rounded-xl transition-all min-h-[44px] min-w-[44px] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forge-primary-hover",
               "active:scale-[0.98]",
             )}
           >
@@ -721,7 +721,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
               ? "bg-forge-border-subtle border border-forge-border-default text-forge-text-primary hover:bg-forge-border-default"
               : "bg-forge-primary hover:bg-forge-primary border border-forge-primary-border text-white",
             onReplay ? "font-bold text-sm" : "font-black uppercase tracking-widest text-sm",
-            "py-3 rounded-xl transition-all min-h-[44px]",
+            "py-3 rounded-xl transition-all min-h-[44px] min-w-[44px] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forge-primary-hover",
             "active:scale-[0.98]",
           )}
         >

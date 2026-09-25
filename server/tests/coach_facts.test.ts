@@ -207,24 +207,21 @@ describe("buildFacts", () => {
 describe("stepsFromFacts", () => {
   const captions = { wrong: "w", reply: "r", best: "b", why: "y" };
 
-  test("blunder yields wrong, reply, best, highlight — all legal in the client's reset order", async () => {
+  test("blunder yields two beats: wrong(+reply) then best, each legal from the start FEN", async () => {
     const { engine } = queueEngine([
       { cp: null, mate: 1, bestMoveUci: "h5f7", pvUci: ["h5f7"] },
       { cp: 30, mate: null, bestMoveUci: "g8f6", pvUci: ["g8f6"] },
     ]);
     const f = await buildFacts({ fen: SCHOLAR, wrongMove: "Nf3", correctMove: "Qxf7#", cpLoss: null }, engine);
     const steps = stepsFromFacts(f, captions);
-    expect(steps.map((s) => s.action.type)).toEqual(["playMove", "playMove", "playMove", "highlight"]);
-    // Client replays wrong -> reply cumulatively, then resets to the start FEN before the best move.
-    const c = new Chess(SCHOLAR);
-    for (const s of steps.slice(0, 2)) {
+    expect(steps.map((s) => s.action.type)).toEqual(["playMove", "playMove"]);
+    expect(steps[0].text).toBe("w r");
+    expect(steps[1].text).toBe("b y");
+    // Client resets to the start FEN before beat 0 and before a final playMove beat.
+    for (const s of steps) {
+      const c = new Chess(SCHOLAR);
       expect(s.action.type === "playMove" && c.move(s.action.san)).toBeTruthy();
     }
-    const fresh = new Chess(SCHOLAR);
-    const bestStep = steps[2].action;
-    expect(bestStep.type === "playMove" && fresh.move(bestStep.san)).toBeTruthy();
-    const hl = steps[3].action;
-    expect(hl.type === "highlight" && hl.squares.every((s) => /^[a-h][1-8]$/.test(s))).toBe(true);
   });
 
   test("equal severity drops the reply beat; missed move drops the wrong beat", async () => {
@@ -235,12 +232,15 @@ describe("stepsFromFacts", () => {
         { cp: -25, mate: null, bestMoveUci: "d7d5", pvUci: ["d7d5"] },
       ]).engine,
     );
-    expect(stepsFromFacts(eq, captions).length).toBe(3);
+    const eqSteps = stepsFromFacts(eq, captions);
+    expect(eqSteps.length).toBe(2);
+    expect(eqSteps[0].text).toBe("w");
 
     const missed = await buildFacts(
       { fen: START, wrongMove: null, correctMove: "e4", cpLoss: 1 },
       queueEngine([{ cp: 30, mate: null, bestMoveUci: "e2e4", pvUci: ["e2e4"] }]).engine,
     );
-    expect(stepsFromFacts(missed, captions).length).toBe(2);
+    const ms = stepsFromFacts(missed, captions);
+    expect(ms.map((x) => x.action.type)).toEqual(["playMove", "highlight"]);
   });
 });

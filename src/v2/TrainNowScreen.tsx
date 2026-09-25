@@ -1092,26 +1092,27 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
               ) : (
                 <BlunderExplanation
                   fen={currentPosition.fen}
-                  /* IMPORTANT: pass the ORIGINAL game blunder
-                     (currentPosition.san), not the per-attempt drill miss
-                     (drill.wrongMove). The walkthrough explains the original
-                     mistake the position was queued for; the drill attempt is
-                     only surfaced in the chip row above as "PLAYED →
-                     BEST". Punish drills are the exception: `san` there holds
-                     the OPPONENT's blunder (one ply earlier, the other side),
-                     not a move of the student's — always fall back to the
-                     drill-state wrongMove so the card explains what the
-                     student actually played, not an illegal opposing move. */
+                  /* One story about one move: explain the move the student
+                     just tried on the board (drill-state wrongMove). Only when
+                     they made no attempt (e.g. revealed the answer) fall back
+                     to the original game move (currentPosition.san) and label
+                     the card "original". Punish drills are the exception:
+                     `san` there is the OPPONENT's blunder, not a move of the
+                     student's, so always use the drill attempt. */
                   wrongMove={
                     currentPosition.source === "punish"
                       ? wrongMove
-                      : (currentPosition.san ?? wrongMove)
+                      : (wrongMove ?? currentPosition.san ?? null)
                   }
                   correctMove={currentPosition.correctSan}
                   cpLoss={currentPosition.cpLoss ?? null}
                   phase={currentPosition.phase}
                   revealed={revealed}
-                  mistakeContext="drill"
+                  mistakeContext={
+                    wrongMove || currentPosition.source === "punish"
+                      ? "drill"
+                      : "original"
+                  }
                   onNext={handleNext}
                   onReplay={replayCoach}
                   onClose={() => {

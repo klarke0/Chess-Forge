@@ -89,8 +89,14 @@ export const InteractiveCoach: React.FC<InteractiveCoachProps> = ({
 
   // Default reset points: before beat 0 (always) and before the penultimate
   // beat (correct-move replay). Allow override via prop.
+  // Two-beat walkthroughs are [wrong, best]: a final playMove beat is the
+  // best move and must start from the original FEN, not after the wrong one.
   const defaultResetIndices =
-    steps.length >= 3 ? [0, steps.length - 2] : [0];
+    steps.length >= 3
+      ? [0, steps.length - 2]
+      : steps.length === 2 && steps[1].action.type === "playMove"
+        ? [0, 1]
+        : [0];
   const effectiveResets = new Set(resetIndices ?? defaultResetIndices);
 
   const dispatchedFor = useRef<number>(-1);
@@ -188,7 +194,7 @@ export const InteractiveCoach: React.FC<InteractiveCoachProps> = ({
       {/* Header: Coach Walkthrough label + step counter */}
       <div className="flex items-center gap-1.5">
         <Sparkles size={11} className="text-forge-primary-hover shrink-0" />
-        <span className="text-[9px] font-black uppercase tracking-widest text-forge-primary-hover">
+        <span className="text-[10px] font-black uppercase tracking-widest text-forge-primary-hover">
           Coach Walkthrough
         </span>
         <span className="ml-auto text-[10px] tabular-nums text-forge-text-inactive font-semibold">
@@ -201,7 +207,7 @@ export const InteractiveCoach: React.FC<InteractiveCoachProps> = ({
         type="button"
         onClick={() => setIsPaused((p) => !p)}
         className={cn(
-          "w-full text-left rounded-xl border px-3 py-2.5 transition-all min-h-[56px] flex items-start gap-2",
+          "w-full text-left rounded-xl border px-3 py-2.5 transition-all min-h-[56px] flex items-start gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forge-primary-hover",
           STEP_INDEX_BG[tone],
         )}
       >
@@ -221,7 +227,7 @@ export const InteractiveCoach: React.FC<InteractiveCoachProps> = ({
           disabled={currentStep === 0}
           aria-label="Previous beat"
           className={cn(
-            "p-1.5 rounded-lg text-forge-text-secondary hover:text-forge-text-primary disabled:opacity-30 transition-all active:scale-95",
+            "min-h-[44px] min-w-[44px] inline-flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forge-primary-hover rounded-lg text-forge-text-secondary hover:text-forge-text-primary disabled:opacity-30 transition-all active:scale-95",
             "border border-forge-border-subtle bg-forge-card",
           )}
         >
@@ -236,10 +242,10 @@ export const InteractiveCoach: React.FC<InteractiveCoachProps> = ({
               onClick={() => handleJumpTo(i)}
               aria-label={`Jump to beat ${i + 1}`}
               className={cn(
-                "rounded-full transition-all",
+                "rounded-full transition-all bg-clip-content py-[18px] box-content min-h-0 h-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forge-primary-hover",
                 i === currentStep
-                  ? "w-6 h-2 bg-forge-primary-hover"
-                  : "w-2 h-2 bg-slate-600 hover:bg-slate-500",
+                  ? "w-6 bg-forge-primary-hover"
+                  : "w-2 bg-forge-text-inactive hover:bg-forge-text-secondary",
               )}
             />
           ))}
@@ -251,7 +257,7 @@ export const InteractiveCoach: React.FC<InteractiveCoachProps> = ({
           disabled={currentStep === steps.length - 1}
           aria-label="Next beat"
           className={cn(
-            "p-1.5 rounded-lg text-forge-text-secondary hover:text-forge-text-primary disabled:opacity-30 transition-all active:scale-95",
+            "min-h-[44px] min-w-[44px] inline-flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forge-primary-hover rounded-lg text-forge-text-secondary hover:text-forge-text-primary disabled:opacity-30 transition-all active:scale-95",
             "border border-forge-border-subtle bg-forge-card",
           )}
         >

@@ -387,9 +387,9 @@ export function templateFromFacts(f: CoachFacts): {
     concept,
     analysis: [bestLine, wrongLine].filter(Boolean).join(" "),
     captions: {
-      wrong: f.wrong ? `${f.wrong.san} was played.` : "",
+      wrong: f.wrong ? `Your move ${f.wrong.san}.` : "",
       reply: f.reply ? `${f.reply.san} is the engine's best answer.` : "",
-      best: `${f.best.san} is the move.`,
+      best: `Better: ${f.best.san}.`,
       why: f.evalAfterWrong
         ? `Engine depth ${f.engineDepth}: about ${loss} at stake.`
         : `Engine depth ${f.engineDepth}: ${bestEvalPhrase(f.evalAfterBest)} after ${f.best.san}.`,

@@ -68,7 +68,7 @@ describe("explainBlunderCore", () => {
     const r = await explainBlunderCore(body, h.deps);
     expect(r.status).toBe(200);
     expect(r.body.source).toBe("model");
-    expect((r.body.steps as unknown[]).length).toBe(4);
+    expect((r.body.steps as unknown[]).length).toBe(2);
     expect(h.store.size).toBe(1);
     // Second call is a pure cache hit: no engine, no Gemini.
     const before = { e: h.engineCalls(), g: h.geminiCalls() };

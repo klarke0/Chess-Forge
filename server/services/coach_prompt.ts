@@ -100,6 +100,7 @@ export function buildCoachPrompt(
         ? `5. Explain what ${f.best.san} DOES, and what the played move ALLOWS (use the engine's reply). Do not merely restate the move.`
         : `5. Explain what ${f.best.san} does and why it matters. Do not merely restate the move.`,
     `6. Speak to the student as "you". "analysis" is at most 55 words; each caption at most 14 words.`,
+    `7. In captions, refer to the student's move as "Your move <SAN>" and the alternative as "Better: <SAN>".`,
     ctx.framing ? `CONTEXT (unverified, do not repeat claims from it): ${ctx.framing}` : ``,
   );
   if (ctx.violations && ctx.violations.length > 0) {
