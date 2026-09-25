@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Settings, RotateCcw, Eye, EyeOff, AlertTriangle, Loader2, CheckCircle2 } from "lucide-react";
+import { Settings, RotateCcw, Eye, EyeOff, ChevronDown, AlertTriangle, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import * as api from "@/services/api";
 import { useRepertoireStore } from "@/stores/repertoireStore";
@@ -51,6 +51,7 @@ export const SettingsScreen: React.FC = () => {
   const [resetTarget, setResetTarget] = useState<RepertoireStats | null>(null);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMsg, setResetMsg] = useState<string | null>(null);
+  const [infoOpen, setInfoOpen] = useState(false);
   const selectedId = useRepertoireStore((s) => s.repertoireId);
 
   useEffect(() => {
@@ -139,7 +140,7 @@ export const SettingsScreen: React.FC = () => {
       </div>
 
       {/* Repertoire cards */}
-      <div className="space-y-3 mb-3">
+      <div className="space-y-2 mb-2">
         {loading ? (
           <>
             <SkeletonCard />
@@ -161,19 +162,37 @@ export const SettingsScreen: React.FC = () => {
         )}
       </div>
 
-      {/* Info section */}
-      <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-4">
-        <h2 className="text-xs font-black uppercase tracking-widest text-forge-text-inactive mb-2">How it works</h2>
-        <div className="space-y-2">
-          <InfoRow
-            icon={<EyeOff size={13} className="text-forge-text-inactive" />}
-            text="Disabled repertoires are excluded from drill sessions. Re-enable them at any time."
+      {/* Info section — collapsed by default */}
+      <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl">
+        <button
+          onClick={() => setInfoOpen((o) => !o)}
+          aria-expanded={infoOpen}
+          aria-controls="settings-how-it-works"
+          className={cn(
+            "w-full flex items-center justify-between px-4 min-h-[44px] cursor-pointer rounded-forge-xl",
+            "text-xs font-black uppercase tracking-widest text-forge-text-inactive hover:text-forge-text-secondary",
+            "transition-colors duration-150",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
+          )}
+        >
+          How drills use these
+          <ChevronDown
+            size={14}
+            className={cn("motion-safe:transition-transform motion-safe:duration-150", infoOpen && "rotate-180")}
           />
-          <InfoRow
-            icon={<RotateCcw size={13} className="text-forge-danger" />}
-            text="Reset progress clears all SM-2 state so positions start fresh, as if never drilled."
-          />
-        </div>
+        </button>
+        {infoOpen && (
+          <div id="settings-how-it-works" className="px-4 pb-4 space-y-2">
+            <InfoRow
+              icon={<EyeOff size={13} className="text-forge-text-inactive" />}
+              text="Disabled repertoires are excluded from drill sessions. Re-enable them at any time."
+            />
+            <InfoRow
+              icon={<RotateCcw size={13} className="text-forge-danger" />}
+              text="Reset progress clears all SM-2 state so positions start fresh, as if never drilled."
+            />
+          </div>
+        )}
       </div>
 
       {/* Reset confirm overlay */}
@@ -222,7 +241,7 @@ function RepertoireCard({ stat, enabled, selected, onToggleEnabled, onResetProgr
   return (
     <div
       className={cn(
-        "bg-forge-card border rounded-forge-xl p-3 transition-all",
+        "bg-forge-card border rounded-forge-xl px-3 py-2 transition-all",
         enabled ? "border-forge-border-subtle" : "border-forge-border-subtle opacity-60",
       )}
     >
@@ -237,9 +256,6 @@ function RepertoireCard({ stat, enabled, selected, onToggleEnabled, onResetProgr
               </span>
             )}
           </h3>
-          <span className={cn("text-xs font-semibold block", sideColor)}>
-            Playing as {sideLabel}
-          </span>
         </div>
         {/* Enable/Disable toggle */}
         <button
@@ -276,24 +292,18 @@ function RepertoireCard({ stat, enabled, selected, onToggleEnabled, onResetProgr
         </button>
       </div>
 
-      {/* Stats strip */}
-      <div className="grid grid-cols-3 gap-2 mt-2">
-        <StatPill
-          label="Positions"
-          value={stat.positionCount.toLocaleString()}
-          color="text-forge-text-primary"
-        />
-        <StatPill
-          label="Drilled"
-          value={`${stat.drilledCount} / ${stat.positionCount}`}
-          color="text-forge-primary-hover"
-        />
-        <StatPill
-          label="Accuracy"
-          value={stat.drilledCount > 0 ? `${stat.accuracy}%` : "—"}
-          color={accuracyColor}
-        />
-      </div>
+      {/* Side + stats, one line */}
+      <p className="pl-1 text-[10px] text-forge-text-muted leading-snug">
+        <span className={sideColor}>{sideLabel}</span>
+        {" · "}
+        {stat.positionCount.toLocaleString()} pos
+        {" · "}
+        {stat.drilledCount.toLocaleString()} drilled
+        {" · "}
+        <span className={accuracyColor}>
+          {stat.drilledCount > 0 ? `${stat.accuracy}% acc` : "— acc"}
+        </span>
+      </p>
 
       {/* Drilled progress bar */}
       {stat.positionCount > 0 && (
@@ -303,7 +313,7 @@ function RepertoireCard({ stat, enabled, selected, onToggleEnabled, onResetProgr
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={drilledPct}
-          className="h-1 mt-2 bg-forge-elevated rounded-full overflow-hidden"
+          className="h-[3px] mt-1.5 bg-forge-elevated rounded-full overflow-hidden"
         >
           <div
             className="h-full bg-forge-primary rounded-full transition-all"
@@ -319,15 +329,6 @@ function RepertoireCard({ stat, enabled, selected, onToggleEnabled, onResetProgr
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function StatPill({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <div className="bg-forge-elevated rounded-xl px-2 py-1.5 text-center">
-      <p className={cn("text-sm font-black leading-tight", color)}>{value}</p>
-      <p className="text-[10px] text-forge-text-inactive uppercase tracking-wider">{label}</p>
-    </div>
-  );
-}
-
 function InfoRow({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
     <div className="flex items-start gap-2.5">
@@ -339,13 +340,9 @@ function InfoRow({ icon, text }: { icon: React.ReactNode; text: string }) {
 
 function SkeletonCard() {
   return (
-    <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-3 space-y-2">
+    <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl px-3 py-2 space-y-1.5">
       <div className="h-11 bg-forge-elevated rounded-xl motion-safe:animate-pulse" />
-      <div className="grid grid-cols-3 gap-2">
-        <div className="h-11 bg-forge-elevated rounded-xl motion-safe:animate-pulse" />
-        <div className="h-11 bg-forge-elevated rounded-xl motion-safe:animate-pulse" />
-        <div className="h-11 bg-forge-elevated rounded-xl motion-safe:animate-pulse" />
-      </div>
+      <div className="h-3 w-48 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
     </div>
   );
 }
