@@ -44,6 +44,7 @@ import {
   punishHarvestRoute, punishStatusRoute, punishListRoute,
 } from "./routes/v2_punish";
 import { learnNextRoute, learnCompleteRoute } from "./routes/v2_learn";
+import { warmCoachEngine } from "./services/coach_engine";
 
 const PORT = Number(process.env.PORT) || 3001;
 const DIST_PATH = join(import.meta.dir, "../dist");
@@ -164,6 +165,8 @@ Bun.serve({
     }
   },
 });
+
+warmCoachEngine();
 
 async function route(
   method: string,

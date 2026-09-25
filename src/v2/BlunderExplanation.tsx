@@ -160,6 +160,7 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
 
   useEffect(() => {
     if (!needsExplanation) return;
+    let cancelled = false;
     setLoading(true);
     setError(false);
     setAnalysis(null);
@@ -168,9 +169,20 @@ export const BlunderExplanation: React.FC<BlunderExplanationProps> = ({
       method: "POST",
       body: JSON.stringify({ fen, wrongMove, correctMove, cpLoss, phase, framing }),
     })
-      .then(setAnalysis)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+      .then((a) => {
+        if (!cancelled) setAnalysis(a);
+      })
+      .catch(() => {
+        if (!cancelled) setError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    // A slow response for a previous position must not overwrite the current card.
+    return () => {
+      cancelled = true;
+    };
   }, [fen, wrongMove, correctMove, cpLoss, phase, needsExplanation, framing]);
 
   async function handleChallenge() {
