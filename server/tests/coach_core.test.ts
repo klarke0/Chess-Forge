@@ -280,6 +280,44 @@ describe("explainBlunderCore", () => {
   });
 });
 
+describe("verifier throwing", () => {
+  test("throws on both attempts: uncached template, model not told 'verifier error'", async () => {
+    const err = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const prompts: string[] = [];
+      const h = harness({});
+      h.deps.gemini = async (p) => (prompts.push(p), goodModelJson);
+      h.deps.verify = () => { throw new Error("verifier bug"); };
+      const r = await explainBlunderCore(body, h.deps);
+      expect(r.status).toBe(200);
+      expect(r.body.source).toBe("template");
+      expect(h.store.size).toBe(0);
+      expect(prompts.length).toBe(2);
+      expect(prompts[1]).not.toContain("verifier error");
+    } finally {
+      err.mockRestore();
+    }
+  });
+
+  test("throws once then ok: model card is cached", async () => {
+    const err = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const h = harness({});
+      h.deps.gemini = async () => goodModelJson;
+      let n = 0;
+      h.deps.verify = () => {
+        if (n++ === 0) throw new Error("verifier bug");
+        return { ok: true, violations: [] };
+      };
+      const r = await explainBlunderCore(body, h.deps);
+      expect(r.body.source).toBe("model");
+      expect(h.store.size).toBe(1);
+    } finally {
+      err.mockRestore();
+    }
+  });
+});
+
 describe("buildCoachPrompt", () => {
   const facts = async (evals: EngineEval[], wrong: string | null, cpLoss: number | null = null) => {
     let i = 0;

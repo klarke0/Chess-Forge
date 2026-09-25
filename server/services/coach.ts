@@ -14,7 +14,7 @@ import {
   parseCoachJson,
   type MastersSummary,
 } from "./coach_prompt";
-import { templateFromFacts, verifyClaims } from "./coach_verify";
+import { templateFromFacts, verifyClaims, type Verdict } from "./coach_verify";
 
 export interface CoachDeps {
   engine: EvalEngine;
@@ -29,6 +29,8 @@ export interface CoachDeps {
   budgetMs?: number;
   /** Cap on the optional masters lookup (default 1500ms). */
   mastersTimeoutMs?: number;
+  /** Claim verifier; defaults to the real one. Injectable for tests. */
+  verify?: (text: string, facts: CoachFacts) => Verdict;
 }
 
 export interface CoachResult {
@@ -207,12 +209,14 @@ async function run(input: CoachInput, key: CoachCacheKey, deps: CoachDeps): Prom
     const all = [parsed.analysis, parsed.concept, ...Object.values(parsed.captions)]
       .filter(Boolean)
       .join(". ");
-    let verdict: { ok: boolean; violations: string[] };
+    let verdict: Verdict;
     try {
-      verdict = verifyClaims(all, facts);
+      verdict = (deps.verify ?? verifyClaims)(all, facts);
     } catch (e) {
+      // A verifier bug is not a model lie: don't blame the model or cache the result.
       console.error("[coach] verifier error:", e);
-      verdict = { ok: false, violations: ["verifier error"] };
+      lastFailure = "other";
+      continue;
     }
     if (verdict.ok) {
       const p = payload(facts, parsed, "model");
