@@ -34,7 +34,7 @@ interface InsightsTabProps {
   // Unused
 }
 
-// ── Stat card (compact tile) ──────────────────────────────────────────────────
+// ── Stat card (compact 64px tile) ──────────────────────────────────────────────────
 const StatCard: React.FC<{
   label: string;
   value: string | number;
@@ -49,7 +49,7 @@ const StatCard: React.FC<{
     onClick={onClick}
     title={hint}
     className={cn(
-      "bg-forge-card border border-forge-border-subtle rounded-2xl px-3 py-2.5 min-h-[76px] flex flex-col justify-between overflow-hidden",
+      "bg-forge-card border border-forge-border-subtle rounded-2xl px-3 py-2 min-h-[64px] flex flex-col justify-between overflow-hidden",
       onClick && "cursor-pointer hover:border-forge-border-default transition-colors duration-150",
       onClick && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
       className,
@@ -1237,7 +1237,7 @@ const RepertoireTreeCard: React.FC<{ data: RepertoireTreeData }> = ({
   );
 };
 
-const OpeningTreePanel: React.FC<{ onSummary?: (s: string) => void }> = ({ onSummary }) => {
+const OpeningTreePanel: React.FC = () => {
   const availableRepertoires = useRepertoireStore((s) => s.availableRepertoires);
   const [trees, setTrees] = useState<RepertoireTreeData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1297,14 +1297,6 @@ const OpeningTreePanel: React.FC<{ onSummary?: (s: string) => void }> = ({ onSum
     loadTrees();
   }, [loadTrees]);
 
-  useEffect(() => {
-    if (loading || !onSummary) return;
-    if (trees.length === 0) return onSummary("No repertoires found");
-    const drilled = trees.reduce((sum, t) => sum + t.drilledPositions, 0);
-    const total = trees.reduce((sum, t) => sum + t.totalPositions, 0);
-    onSummary(`${trees.length} ${trees.length === 1 ? "repertoire" : "repertoires"} · ${drilled}/${total} positions drilled`);
-  }, [trees, loading, onSummary]);
-
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -1351,7 +1343,7 @@ const OpeningTreePanel: React.FC<{ onSummary?: (s: string) => void }> = ({ onSum
 
 // ── Opponent model panel ──────────────────────────────────────────────────────
 
-const OpponentModelPanel: React.FC<{ onSummary?: (s: string) => void }> = ({ onSummary }) => {
+const OpponentModelPanel: React.FC = () => {
   const [data, setData] = useState<api.TopOpponent[] | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -1362,13 +1354,6 @@ const OpponentModelPanel: React.FC<{ onSummary?: (s: string) => void }> = ({ onS
       .catch(() => setData([]))
       .finally(() => setLoading(false));
   }, []);
-
-  useEffect(() => {
-    if (loading || !onSummary) return;
-    const opps = data ?? [];
-    if (opps.length === 0) return onSummary("No deviation data yet");
-    onSummary(`${opps.length} ${opps.length === 1 ? "opponent" : "opponents"} · top: ${opps[0].opponent}`);
-  }, [data, loading, onSummary]);
 
   if (loading) {
     return (
@@ -1532,7 +1517,7 @@ const InsightsDashboardPanels: React.FC<{ onSummary?: (s: string) => void }> = (
 };
 
 // ── Main InsightsTab ────────────────────────────────────────────────────────────
-type SummaryKey = "timeControl" | "weekly" | "blunder" | "drill" | "tree" | "opponents";
+type SummaryKey = "timeControl" | "weekly" | "blunder" | "drill";
 
 export const InsightsTab: React.FC<InsightsTabProps> = () => {
   const { chapters, getChapterMastery, weakPositions } = useRepertoireStore();
@@ -1554,8 +1539,6 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
       weekly: make("weekly"),
       blunder: make("blunder"),
       drill: make("drill"),
-      tree: make("tree"),
-      opponents: make("opponents"),
     };
   }, []);
 
@@ -1585,21 +1568,6 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
     ? chapters
     : chapters.slice(0, COVERAGE_PREVIEW);
 
-  const patternSummary = !patternReport
-    ? "Not run yet"
-    : patternReport.isError
-      ? "Analysis unavailable"
-      : [
-          patternReport.patterns.length > 0
-            ? `${patternReport.patterns.length} patterns`
-            : null,
-          patternReport.createdAt
-            ? `last run ${formatTimeAgo(patternReport.createdAt)}`
-            : null,
-        ]
-          .filter(Boolean)
-          .join(" · ") || "Report ready";
-
   const gameBreakdownSummary = [
     summaries.timeControl ?? "Loading…",
     patternReport?.openings && patternReport.openings.length > 0
@@ -1615,7 +1583,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
 
   return (
     <div className="absolute inset-0 overflow-y-auto bg-forge-base custom-scrollbar">
-      <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-3 pb-24 md:pb-6">
+      <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-2 pb-24 md:pb-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -1877,29 +1845,13 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
           </Accordion>
 
           <Accordion
-            title="Opening tree"
-            summary={summaries.tree ?? "Loading…"}
+            title="More insights"
+            summary="Opening tree · Opponents · Pattern report"
             icon={<GitBranch size={14} />}
             accent="text-forge-insight"
           >
-            <OpeningTreePanel onSummary={report.tree} />
-          </Accordion>
-
-          <Accordion
-            title="Opponents"
-            summary={summaries.opponents ?? "Loading…"}
-            icon={<Users size={14} />}
-            accent="text-forge-insight"
-          >
-            <OpponentModelPanel onSummary={report.opponents} />
-          </Accordion>
-
-          <Accordion
-            title="Pattern report"
-            summary={patternSummary}
-            icon={<Brain size={14} />}
-            accent="text-violet-400"
-          >
+            <OpeningTreePanel />
+            <OpponentModelPanel />
             <PatternPanel
               cached={patternReport}
               onRerun={(result) => setPatternReport(result)}
