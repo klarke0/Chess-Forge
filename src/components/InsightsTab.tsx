@@ -1583,7 +1583,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
 
   return (
     <div className="absolute inset-0 overflow-y-auto bg-forge-base custom-scrollbar">
-      <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-2 pb-24 md:pb-6">
+      <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-2 pb-4 md:pb-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
