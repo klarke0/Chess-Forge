@@ -24,8 +24,16 @@ const strip = (san: string): string => san.replace(/[+#]/g, "");
 
 const CLAUSE_SPLIT = /[.!?;:,]|\s+(?:but|because)\s+/i;
 const HAZARD =
-  /\b(attack(?:s|ed|ing)?|defend(?:s|ed|ing)?|protect(?:s|ed|ing)?|guard(?:s|ed|ing)?|support(?:s|ed|ing)?|hang(?:s|ing)?|undefended|unprotected|unguarded|loose|en prise|fork(?:s|ed|ing)?|pin(?:s|ned|ning)?|skewer(?:s|ed|ing)?|threaten(?:s|ed|ing)?|eyeing|target(?:s|ing)?|pressur(?:e|es|ing)|traps?)\b/i;
-const UNPROVABLE = /\b(fork(?:s|ed|ing)?|pin(?:s|ned|ning)?|skewer(?:s|ed|ing)?)\b/i;
+  /\b(attack(?:s|ed|ing)?|defend(?:s|ed|ing)?|protect(?:s|ed|ing)?|guard(?:s|ed|ing)?|support(?:s|ed|ing)?|hang(?:s|ing)?|undefended|unprotected|unguarded|loose|en prise|fork(?:s|ed|ing)?|pin(?:s|ned|ning)?|skewer(?:s|ed|ing)?|threaten(?:s|ed|ing)?|eyeing|target(?:s|ing)?|pressur(?:e|es|ing)|trap(?:s|ped|ping)?|for free|can be captured)\b/i;
+const UNPROVABLE =
+  /\b(fork(?:s|ed|ing)?|pin(?:s|ned|ning)?|skewer(?:s|ed|ing)?|trap(?:s|ped|ping)?|for free|can be captured)\b/i;
+const MATERIAL =
+  "win|wins|winning|capture|captures|captured|capturing|take|takes|taking|took|lose|loses|losing|lost|gain|gains|gaining|grab|grabs|grabbing";
+const MATERIAL_PIECE = new RegExp(
+  `\\b(?:${MATERIAL}) (?:(?:the|your|their|a|an) )?(?:(?:white|black|enemy|opposing) )?${PIECE}\\b`,
+  "gi",
+);
+const MATERIAL_SQ = new RegExp(`\\b(?:${MATERIAL}) (?:on )?${SQ}\\b`, "gi");
 const MATE_WORD = /\b(checkmate[sd]?|mate[sd]?|mating)\b/i;
 const ATTACK_VERB = "attacks?|attacking|hits|targets|targeting|threatens|threatening|pressures|pressuring|eyeing";
 const DEFEND_VERB = "defends|defending|protects|protecting|guards|guarding|supports|supporting";
@@ -41,6 +49,26 @@ const HANGING = new RegExp(
 );
 const MOVE_AFTER_VERB = /\b(?:play|plays|played|playing|after|with|push|pushes|advance|advances|move|moves)\s+([a-h][1-8])\b/gi;
 const MOVE_AT_START = /^\s*([a-h][1-8])\s+(?:wins|loses|captures|takes|gains|threatens|attacks|forks|pins|hangs|defends)\b/i;
+
+function checkMaterial(clause: string, facts: CoachFacts, violations: string[]): void {
+  const hasPiece = new RegExp(`\\b${PIECE}\\b`, "i").test(clause);
+  const hasMaterial = new RegExp(`\\b(?:${MATERIAL})\\b`, "i").test(clause);
+  if (!hasMaterial || !hasPiece) return;
+  const moves = [facts.best, facts.wrong, facts.reply].filter((x): x is NonNullable<typeof x> => !!x);
+  let proven = 0;
+  let bad = 0;
+  for (const m of clause.matchAll(MATERIAL_PIECE)) {
+    const t = TYPE_BY_NAME[m[1].toLowerCase()];
+    if (moves.some((mv) => mv.captured === t)) proven++;
+    else bad++;
+  }
+  for (const m of clause.matchAll(MATERIAL_SQ)) {
+    const sq = m[1].toLowerCase();
+    if (moves.some((mv) => mv.captured && mv.to === sq)) proven++;
+    else bad++;
+  }
+  if (proven === 0 || bad > 0) violations.push(`unverifiable claim: "${clause.trim()}"`);
+}
 
 function checkClause(
   clause: string,
@@ -79,6 +107,8 @@ function checkClause(
       violations.push("mentions mate but the engine facts show none");
     }
   }
+
+  checkMaterial(clause, facts, violations);
 
   if (!HAZARD.test(clause)) return;
 

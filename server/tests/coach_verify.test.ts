@@ -118,6 +118,11 @@ describe("verifyClaims fails closed", () => {
     "The knight on c6 pins the pawn on e5.",
     "Black threatens mate on g7 after Nf3.",
     "Qxf7 is not needed but d4 wins a pawn.",
+    "The queen on h5 is trapped.",
+    "Black wins your queen with Nf6.",
+    "Your queen on h5 can be captured for free.",
+    "Nf6 wins the queen.",
+    "Black takes the knight.",
   ];
   for (const phrase of REJECT) {
     test(`rejects: ${phrase}`, async () => {
@@ -137,10 +142,28 @@ describe("verifyClaims fails closed", () => {
     "The bishop on c4 attacks the black pawn on f7.",
     "The knight on c6 defends the pawn on e5.",
     "The queen on h5 is hanging.",
+    "Qxf7# wins the pawn.",
   ];
   for (const phrase of ACCEPT) {
     test(`accepts: ${phrase}`, async () => {
       expect(verifyClaims(phrase, await scholarFacts())).toEqual({ ok: true, violations: [] });
     });
   }
+});
+
+describe("templateFromFacts with a capturing reply", () => {
+  test("passes its own verifier", async () => {
+    const f = await buildFacts(
+      { fen: "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2", wrongMove: "Nf3", correctMove: "exd5", cpLoss: null },
+      stub([
+        { cp: 100, mate: null, bestMoveUci: "e4d5", pvUci: ["e4d5"] },
+        { cp: 300, mate: null, bestMoveUci: "d5e4", pvUci: ["d5e4"] },
+      ]),
+    );
+    expect(f.reply?.captured).toBe("p");
+    const t = templateFromFacts(f);
+    expect(t.analysis).toContain("captures your pawn");
+    const all = [t.analysis, t.concept, ...Object.values(t.captions)].join(" ");
+    expect(verifyClaims(all, f)).toEqual({ ok: true, violations: [] });
+  });
 });
