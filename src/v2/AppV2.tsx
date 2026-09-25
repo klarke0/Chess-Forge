@@ -10,7 +10,7 @@ import { SettingsScreen } from "./SettingsScreen";
 import { useRepertoireStore } from "@/stores/repertoireStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useEngineStore } from "@/stores/engineStore";
-import { BackgroundAnalysisQueue } from "@/services/background_analysis";
+import { startAutoSync } from "@/services/auto_sync";
 
 const AppV2: React.FC = () => {
   const [activeTab, setActiveTab] = useState<V2Tab>("train");
@@ -31,12 +31,7 @@ const AppV2: React.FC = () => {
   useEffect(() => {
     useRepertoireStore.getState().loadFromApi();
     initEngine();
-    // Once per page load: StrictMode re-runs effects in dev, which would
-    // otherwise fire the auto-sync (POST /api/games/sync) twice.
-    if (!backgroundStarted) {
-      backgroundStarted = true;
-      BackgroundAnalysisQueue.start();
-    }
+    startAutoSync();
   }, []);
 
   function handleTrainNow(mode: TrainingMode, phase: PhaseFilter) {
@@ -118,7 +113,5 @@ const AppV2: React.FC = () => {
     </div>
   );
 };
-
-let backgroundStarted = false;
 
 export default AppV2;

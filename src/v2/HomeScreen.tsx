@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Play, Film, BookOpen, Flame, RefreshCw, Loader2, Target, CheckCircle2, Circle, GraduationCap } from "lucide-react";
+import { Play, Film, BookOpen, Flame, Target, CheckCircle2, Circle, GraduationCap } from "lucide-react";
 import { Chessboard } from "react-chessboard";
 import { cn } from "@/utils/cn";
 import { useRepertoireStore } from "@/stores/repertoireStore";
-import { useBackgroundStore } from "@/stores/backgroundStore";
-import { BackgroundAnalysisQueue } from "@/services/background_analysis";
 import * as api from "@/services/api";
 import { BOARD_THEME_MUTED } from "@/design/tokens";
 import { StatusChip, type ChipTone } from "@/v2/components/StatusChip";
@@ -56,38 +54,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [weakest, setWeakest] = useState<api.WeakestPosition | null>(null);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<PhaseFilter>("all");
-  const [refreshing, setRefreshing] = useState(false);
-  const [refreshMsg, setRefreshMsg] = useState<string | null>(null);
   const [lessonState, setLessonState] = useState<{
     loading: boolean;
     lesson: api.Lesson | null;
     learned: number;
   }>({ loading: true, lesson: null, learned: 0 });
-
-  const isAnalyzing = useBackgroundStore((s) => s.isAnalyzing);
-  const analyzedCount = useBackgroundStore((s) => s.analyzedCount);
-  const totalInQueue = useBackgroundStore((s) => s.totalInQueue);
-  const activeGameName = useBackgroundStore((s) => s.activeGameName);
-
-  async function handleRefreshAnalysis() {
-    if (refreshing || isAnalyzing) return;
-    setRefreshing(true);
-    setRefreshMsg(null);
-    try {
-      const { queued } = await api.refreshAnalysis();
-      if (queued === 0) {
-        setRefreshMsg("All games already up to date");
-      } else {
-        setRefreshMsg(`Queued ${queued} games for re-analysis`);
-        BackgroundAnalysisQueue.triggerNow();
-      }
-    } catch {
-      setRefreshMsg("Failed to queue games");
-    } finally {
-      setRefreshing(false);
-      setTimeout(() => setRefreshMsg(null), 4000);
-    }
-  }
 
   useEffect(() => {
     if (!repertoireId) return;
@@ -364,36 +335,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </span>
         </button>
       </div>
-
-      {/* Analysis status + refresh — one small line */}
-      {isAnalyzing ? (
-        <div className="flex items-center gap-2 px-2 text-[10px] text-forge-text-inactive">
-          <Loader2 size={10} className="motion-safe:animate-spin text-forge-primary-hover shrink-0" />
-          <span className="truncate">
-            {activeGameName
-              ? `Analyzing ${analyzedCount}/${totalInQueue} — ${activeGameName}`
-              : "Analyzing games..."}
-          </span>
-        </div>
-      ) : (
-        // -my-2 keeps the row visually compact while the button's 44px
-        // hit area extends into the surrounding gap-2 spacing.
-        <div className="flex items-center gap-2 px-2 -my-2">
-          <button
-            onClick={handleRefreshAnalysis}
-            disabled={refreshing}
-            className="flex items-center gap-1.5 text-[10px] text-forge-text-muted hover:text-forge-text-secondary transition-colors duration-150 disabled:opacity-40 cursor-pointer min-h-[44px] px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded"
-          >
-            {refreshing
-              ? <Loader2 size={10} className="motion-safe:animate-spin" />
-              : <RefreshCw size={10} />}
-            Refresh analysis
-          </button>
-          {refreshMsg && (
-            <span className="text-[10px] text-forge-text-inactive">{refreshMsg}</span>
-          )}
-        </div>
-      )}
     </div>
   );
 };

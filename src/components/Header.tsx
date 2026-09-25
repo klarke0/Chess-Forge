@@ -1,8 +1,7 @@
 import React from "react";
-import { Brain, BarChart3, GitGraph, Cpu, Settings } from "lucide-react";
+import { Brain, BarChart3, GitGraph, Settings } from "lucide-react";
 import { useEngineStore } from "../stores/engineStore";
 import { useRepertoireStore } from "../stores/repertoireStore";
-import { useBackgroundStore } from "../stores/backgroundStore";
 import { TabMode } from "./Layout";
 import { ForgeIcon } from "./ForgeIcon";
 import { cn } from "../utils/cn";
@@ -18,8 +17,6 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onOpenSettings,
 }) => {
-  const { isAnalyzing, activeGameName, analyzedCount, totalInQueue } =
-    useBackgroundStore();
   const { showLines, toggleLines } = useEngineStore();
   const {
     selectedChapter,
@@ -55,22 +52,6 @@ export const Header: React.FC<HeaderProps> = ({
         <div>
           <h1 className="text-lg font-black tracking-tight text-white uppercase italic font-outfit flex items-center gap-3">
             CHESS <span className="text-orange-500">FORGE</span>
-            {isAnalyzing && (
-              <div className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-lg animate-in fade-in zoom-in-95 duration-300 group relative non-italic">
-                <Cpu size={10} className="text-orange-400 animate-pulse" />
-                <span className="text-[9px] font-mono text-orange-300">
-                  {analyzedCount}/{totalInQueue}
-                </span>
-                <div className="absolute top-full left-0 mt-2 w-48 bg-slate-900 border border-white/10 p-2 rounded-lg shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                  <p className="text-[8px] font-black uppercase text-slate-500 mb-1">
-                    Background Scanning
-                  </p>
-                  <p className="text-[10px] font-bold text-white truncate">
-                    {activeGameName}
-                  </p>
-                </div>
-              </div>
-            )}
           </h1>
           <p className="text-[8px] text-slate-400 font-black uppercase tracking-[0.3em] flex items-center gap-2">
             <span className="w-1 h-1 rounded-full bg-orange-500 animate-pulse" />

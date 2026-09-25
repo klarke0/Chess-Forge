@@ -18,10 +18,10 @@ import { InsightsTab } from "./components/InsightsTab";
 import { MistakeReplay } from "./components/MistakeReplay";
 import { useTraining } from "./hooks/useTraining";
 import { useEngineStore } from "./stores/engineStore";
+import { startAutoSync } from "./services/auto_sync";
 import { useRepertoireStore } from "./stores/repertoireStore";
 import { useTrainingStore } from "./stores/trainingStore";
 import { useSettingsStore } from "./stores/settingsStore";
-import { BackgroundAnalysisQueue } from "./services/background_analysis";
 import * as api from "./services/api";
 import { SettingsPanel } from "./components/SettingsPanel";
 
@@ -63,7 +63,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     initEngine();
-    BackgroundAnalysisQueue.start();
+    startAutoSync();
   }, [initEngine]);
 
   useEffect(() => {

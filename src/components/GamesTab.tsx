@@ -11,7 +11,6 @@ import {
   Upload,
   RefreshCw,
   CheckCircle2,
-  Cpu,
 } from "lucide-react";
 import { GameAnalysis, AnalyzedGame } from "./GameAnalysis";
 import { ChessComModal } from "./ChessComModal";
@@ -20,11 +19,11 @@ import { GameReviewSummary } from "../v2/GameReviewSummary";
 import { cn } from "../utils/cn";
 import * as api from "../services/api";
 import { useRepertoireStore } from "../stores/repertoireStore";
-import { useBackgroundStore } from "../stores/backgroundStore";
+import { useAnalysisStatus } from "../hooks/useAnalysisStatus";
+import { AnalysisStatusBar } from "./AnalysisStatusBar";
 import { PgnParser, ParsedGame } from "../services/pgn_parser";
 import { computeDeviations } from "../utils/deviations";
 import { normalizeFen } from "../utils/normalizeFen";
-import { BackgroundAnalysisQueue } from "../services/background_analysis";
 
 type GamesView = "database" | "summary" | "analysis";
 
@@ -77,7 +76,6 @@ export const GamesTab: React.FC<GamesTabProps> = ({
   const [syncing, setSyncing] = useState(false);
   const [showChessComModal, setShowChessComModal] = useState(false);
   const [showPgnModal, setShowPgnModal] = useState(false);
-  const [showScanConfirm, setShowScanConfirm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterResult, setFilterResult] = useState<
     "all" | "win" | "loss" | "draw"
@@ -94,7 +92,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
   const [loadingStep, setLoadingStep] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const chessComUsername = useRepertoireStore((s) => s.chessComUsername);
-  const { isAnalyzing, analyzedCount, totalInQueue } = useBackgroundStore();
+  const analysis = useAnalysisStatus();
 
   const loadGames = () => {
     setLoading(true);
@@ -306,8 +304,8 @@ export const GamesTab: React.FC<GamesTabProps> = ({
     try {
       await api.syncGamesFromChessCom(username);
       await loadGames();
-      // Automatically start background analysis for the new games
-      BackgroundAnalysisQueue.start();
+      // The server kicks off analysis after a sync that inserted games.
+      void analysis.refresh();
     } catch (e) {
       console.error("Sync failed:", e);
     } finally {
@@ -326,35 +324,12 @@ export const GamesTab: React.FC<GamesTabProps> = ({
     try {
       await api.uploadGamesPgn(pgn, chessComUsername || "");
       await loadGames();
-      // Automatically start background analysis for the uploaded games
-      BackgroundAnalysisQueue.start();
+      // Ask the server job to pick up the uploaded games (no-op if it is unavailable).
+      void analysis.start();
     } catch (e) {
       console.error("Upload failed:", e);
     } finally {
       setSyncing(false);
-    }
-  };
-
-  const handleScanAll = async () => {
-    setShowScanConfirm(false);
-    try {
-      // Clear all analysis locally
-      const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith("game-analysis-")) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach((key) => localStorage.removeItem(key));
-
-      // Clear from backend
-      await api.clearAllAnalysis();
-      await loadGames();
-      BackgroundAnalysisQueue.start();
-    } catch (e) {
-      console.error("Failed to clear and scan all:", e);
-      setError("Failed to initiate a fresh scan of all games.");
     }
   };
 
@@ -395,7 +370,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
 
         {view === "database" && (
           <>
-            {/* Row 1: search + compact actions (scan status / stop lives here) */}
+            {/* Row 1: search + compact actions */}
             <div className="flex items-center gap-2">
               <div className="relative flex-1 min-w-0">
                 <input
@@ -416,26 +391,6 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                   </button>
                 )}
               </div>
-
-              {isAnalyzing ? (
-                <button
-                  onClick={() => BackgroundAnalysisQueue.stop()}
-                  aria-label={`Stop scan${totalInQueue > 0 ? `, ${analyzedCount} of ${totalInQueue} analysed` : ""}`}
-                  className="flex items-center gap-1.5 h-11 px-3 shrink-0 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/20 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all motion-safe:animate-pulse cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
-                >
-                  <Cpu size={12} className="motion-safe:animate-spin" />
-                  Stop{totalInQueue > 0 ? ` ${analyzedCount}/${totalInQueue}` : ""}
-                </button>
-              ) : (
-                <button
-                  onClick={() => setShowScanConfirm(true)}
-                  aria-label="Scan all games"
-                  className="flex items-center gap-1.5 h-11 px-3 shrink-0 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/20 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
-                >
-                  <Cpu size={12} />
-                  Scan
-                </button>
-              )}
 
               <button
                 onClick={handleSyncClick}
@@ -458,6 +413,9 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                 <Upload size={12} /> PGN
               </button>
             </div>
+
+            {/* Server-side analysis job: Analyze / progress + Stop / Retry failed */}
+            <AnalysisStatusBar analysis={analysis} />
 
             {/* Row 2: filters as three compact selects (one row on phones) */}
             <div className="grid grid-cols-3 gap-2">
@@ -800,37 +758,6 @@ export const GamesTab: React.FC<GamesTabProps> = ({
       )}
 
       {/* Modals */}
-      {showScanConfirm && (
-        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0a0d14] border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl motion-safe:animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">
-              Rescan All Games?
-            </h3>
-            <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-              This will{" "}
-              <span className="text-rose-400 font-bold">
-                clear all existing analysis
-              </span>{" "}
-              and start a fresh scan of every game in your database. This
-              process may take a long time. Are you sure?
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowScanConfirm(false)}
-                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleScanAll}
-                className="flex items-center gap-2 px-4 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
-              >
-                <Cpu size={14} /> Clear & Scan All
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       {showChessComModal && (
         <ChessComModal
           onClose={() => setShowChessComModal(false)}

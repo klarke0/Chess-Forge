@@ -486,6 +486,50 @@ export function refreshAnalysis(): Promise<{ ok: boolean; queued: number }> {
   return request<{ ok: boolean; queued: number }>("/v2/refresh-analysis", { method: "POST" });
 }
 
+// --- Server-side analysis job ---
+
+export interface AnalysisStatus {
+  running: boolean;
+  current: {
+    gameId: number;
+    white: string;
+    black: string;
+    ply: number;
+    plies: number;
+  } | null;
+  counts: { pending: number; done: number; failed: number; total: number };
+  startedAt: string | null;
+  etaSeconds: number | null;
+  depth: number;
+  version: number;
+}
+
+// The analysis routes use the ok()/err() envelope ({ ok, data }); tolerate a
+// bare body too so a route mid-migration doesn't break the client.
+async function requestData<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await request<unknown>(path, options);
+  if (res && typeof res === "object" && "ok" in res && "data" in res) {
+    return (res as { data: T }).data;
+  }
+  return res as T;
+}
+
+export function getAnalysisStatus(): Promise<AnalysisStatus> {
+  return requestData<AnalysisStatus>("/v2/analysis/status");
+}
+
+export function startAnalysis(): Promise<unknown> {
+  return requestData<unknown>("/v2/analysis/start", { method: "POST" });
+}
+
+export function stopAnalysis(): Promise<unknown> {
+  return requestData<unknown>("/v2/analysis/stop", { method: "POST" });
+}
+
+export function retryFailedAnalysis(): Promise<unknown> {
+  return requestData<unknown>("/v2/analysis/retry-failed", { method: "POST" });
+}
+
 // --- Game type stats ---
 
 export interface GameTypeStat {
