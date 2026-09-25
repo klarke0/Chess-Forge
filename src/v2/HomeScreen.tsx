@@ -132,7 +132,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const lastSeenLabel = formatLastSeen(lastReviewed);
 
   return (
-    <div className="flex-1 flex flex-col gap-3 px-5 pt-4 pb-4 overflow-y-auto">
+    <div className="flex-1 flex flex-col gap-2 px-5 pt-3 pb-3 overflow-y-auto">
       {/* Header: greeting + repertoire select, then streak / goal chips */}
       <div>
         <div className="flex items-center justify-between gap-3">
@@ -245,31 +245,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </p>
         )}
 
-        {/* Phase filter — segmented control */}
-        <div
-          role="group"
-          aria-label="Session phase"
-          className="flex gap-0.5 p-0.5 mb-3 bg-forge-elevated rounded-full"
-        >
-          {(["all", "opening", "endgame"] as PhaseFilter[]).map((v) => (
-            <button
-              key={v}
-              onClick={() => setPhase(v)}
-              aria-pressed={phase === v}
-              className={cn(
-                "flex-1 px-3 min-h-[44px] rounded-full text-xs font-bold uppercase tracking-wide cursor-pointer",
-                "transition-colors duration-150",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
-                phase === v
-                  ? "bg-forge-primary text-white"
-                  : "text-forge-text-inactive hover:text-forge-text-primary",
-              )}
-            >
-              {v === "opening" ? "Opening/Mid" : v === "endgame" ? "Endgame" : "All"}
-            </button>
-          ))}
-        </div>
-
         <button
           onClick={() => onTrainNow("blunder", phase)}
           className={cn(
@@ -287,12 +262,41 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </button>
       </div>
 
+      {/* Phase filter — secondary row below the card (not inside it) */}
+      <div
+        role="group"
+        aria-label="Session phase"
+        className="flex items-center justify-center gap-1"
+      >
+        {(["all", "opening", "endgame"] as PhaseFilter[]).map((v) => (
+          <button
+            key={v}
+            onClick={() => setPhase(v)}
+            aria-pressed={phase === v}
+            className="group flex items-center min-h-[44px] px-1 cursor-pointer focus-visible:outline-none"
+          >
+            <span
+              className={cn(
+                "px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide",
+                "transition-colors duration-150",
+                "group-focus-visible:ring-2 group-focus-visible:ring-indigo-400 group-focus-visible:ring-offset-1 group-focus-visible:ring-offset-forge-base",
+                phase === v
+                  ? "bg-forge-primary text-white"
+                  : "bg-forge-card text-forge-text-inactive border border-forge-border-subtle group-hover:text-forge-text-primary group-hover:border-forge-border-default",
+              )}
+            >
+              {v === "opening" ? "Opening/Mid" : v === "endgame" ? "Endgame" : "All"}
+            </span>
+          </button>
+        ))}
+      </div>
+
       {/* Weakest position preview */}
       {weakest && (
         <button
           onClick={() => onTrainNow("blunder", "all")}
           className={cn(
-            "w-full flex items-center gap-3 p-2.5 cursor-pointer",
+            "w-full flex items-center gap-3 p-2 cursor-pointer",
             "bg-forge-card border border-forge-border-subtle rounded-forge-xl",
             "text-left active:scale-[0.98] transition-all duration-150",
             "hover:border-forge-border-default",
@@ -372,9 +376,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </span>
         </div>
       ) : (
-        // -my-3 keeps the row visually one line tall while the button's 44px
-        // hit area extends into the surrounding gap-3 spacing.
-        <div className="flex items-center gap-2 px-2 -my-3">
+        // -my-2 keeps the row visually compact while the button's 44px
+        // hit area extends into the surrounding gap-2 spacing.
+        <div className="flex items-center gap-2 px-2 -my-2">
           <button
             onClick={handleRefreshAnalysis}
             disabled={refreshing}
@@ -411,7 +415,7 @@ function LearnCard({ state, onLearn }: LearnCardProps) {
     return (
       <div
         aria-hidden="true"
-        className="min-h-[64px] bg-forge-card border border-forge-border-subtle rounded-forge-xl motion-safe:animate-pulse"
+        className="min-h-[60px] bg-forge-card border border-forge-border-subtle rounded-forge-xl motion-safe:animate-pulse"
       />
     );
   }
@@ -421,7 +425,7 @@ function LearnCard({ state, onLearn }: LearnCardProps) {
     return (
       <div
         className={cn(
-          "w-full flex items-center gap-3 p-3 min-h-[64px]",
+          "w-full flex items-center gap-3 p-2.5 min-h-[60px]",
           "bg-forge-card border border-forge-success rounded-forge-xl",
         )}
       >
@@ -444,7 +448,7 @@ function LearnCard({ state, onLearn }: LearnCardProps) {
     <button
       onClick={onLearn}
       className={cn(
-        "w-full flex items-center gap-3 p-3 min-h-[64px] cursor-pointer",
+        "w-full flex items-center gap-3 p-2.5 min-h-[60px] cursor-pointer",
         "bg-forge-card border border-forge-border-subtle rounded-forge-xl",
         "text-left active:scale-[0.98] transition-all duration-150",
         "hover:border-forge-border-default",
