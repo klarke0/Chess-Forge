@@ -16,7 +16,7 @@ export function getDb(): Database {
   return db;
 }
 
-function runMigrations(db: Database) {
+export function runMigrations(db: Database) {
   const statements = [
     `CREATE TABLE IF NOT EXISTS repertoires (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -132,6 +132,14 @@ function runMigrations(db: Database) {
   addCol("chapters", "learn_runs", "INTEGER NOT NULL DEFAULT 0");
   addCol("games", "termination", "TEXT");
   addCol("games", "game_shape", "TEXT");
+
+  // Server-side analysis job (services/analysis_job.ts). analysis_version NULL =
+  // legacy browser depth-12 scan; analysis_failed holds the reason the job gave
+  // up on a game (skipped until retry-failed clears it).
+  addCol("games", "analysis_version", "INTEGER");
+  addCol("games", "analysis_depth", "INTEGER");
+  addCol("games", "analysis_failed", "TEXT");
+  addCol("games", "analysis_updated_at", "TEXT");
   addCol("positions", "is_main_line", "INTEGER NOT NULL DEFAULT 0");
   addCol("positions", "depth", "INTEGER NOT NULL DEFAULT 0");
 

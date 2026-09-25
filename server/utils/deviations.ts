@@ -1,4 +1,5 @@
-import db from "../db";
+import type { Database } from "bun:sqlite";
+import defaultDb from "../db";
 import { Chess } from "chess.js";
 import { normalizeFen } from "./fen";
 
@@ -8,6 +9,7 @@ import { normalizeFen } from "./fen";
  *
  * @param gameId - The game's DB id
  * @param analysis - The analysis array (same shape as games.analysis_json)
+ * @param db - Database to read/write; defaults to the app database (tests inject one)
  */
 export function computeAndPersistDeviations(
   gameId: number,
@@ -17,6 +19,7 @@ export function computeAndPersistDeviations(
     grade?: string;
     cpLoss?: number;
   }>,
+  db: Database = defaultDb,
 ): void {
   // 1. Load the game to get PGN and user_color
   const game = db

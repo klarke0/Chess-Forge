@@ -44,7 +44,11 @@ import {
   punishHarvestRoute, punishStatusRoute, punishListRoute,
 } from "./routes/v2_punish";
 import { learnNextRoute, learnCompleteRoute } from "./routes/v2_learn";
+import {
+  analysisStatusRoute, analysisStartRoute, analysisStopRoute, analysisRetryFailedRoute,
+} from "./routes/v2_analysis";
 import { warmCoachEngine } from "./services/coach_engine";
+import { kickAnalysis } from "./services/analysis_job";
 
 const PORT = Number(process.env.PORT) || 3001;
 const DIST_PATH = join(import.meta.dir, "../dist");
@@ -167,6 +171,13 @@ Bun.serve({
 });
 
 warmCoachEngine();
+
+// Startup catch-up for the game-analysis job: 30 s after boot, analyse whatever
+// is still pending (a no-op when the queue is empty or Stockfish is missing).
+// ANALYSIS_AUTOSTART=0 disables it (dev servers, smoke tests on a DB copy).
+if (process.env.ANALYSIS_AUTOSTART !== "0") {
+  setTimeout(() => kickAnalysis("startup"), 30_000).unref();
+}
 
 async function route(
   method: string,
@@ -374,7 +385,8 @@ async function route(
 
   // POST /api/games/sync
   if (method === "POST" && segments[1] === "games" && segments[2] === "sync") {
-    return syncGames(req);
+    // New games -> kick the analysis job (fire-and-forget; never affects the response).
+    return syncGames(req, () => kickAnalysis("sync"));
   }
 
   // POST /api/games/upload
@@ -383,7 +395,7 @@ async function route(
     segments[1] === "games" &&
     segments[2] === "upload"
   ) {
-    return uploadGames(req);
+    return uploadGames(req, () => kickAnalysis("upload"));
   }
 
   // GET /api/games/stats
@@ -511,6 +523,50 @@ async function route(
     segments.length === 3
   ) {
     return refreshAnalysis(req);
+  }
+
+  // GET /api/v2/analysis/status
+  if (
+    method === "GET" &&
+    segments[1] === "v2" &&
+    segments[2] === "analysis" &&
+    segments[3] === "status" &&
+    segments.length === 4
+  ) {
+    return analysisStatusRoute();
+  }
+
+  // POST /api/v2/analysis/start
+  if (
+    method === "POST" &&
+    segments[1] === "v2" &&
+    segments[2] === "analysis" &&
+    segments[3] === "start" &&
+    segments.length === 4
+  ) {
+    return analysisStartRoute();
+  }
+
+  // POST /api/v2/analysis/stop
+  if (
+    method === "POST" &&
+    segments[1] === "v2" &&
+    segments[2] === "analysis" &&
+    segments[3] === "stop" &&
+    segments.length === 4
+  ) {
+    return analysisStopRoute();
+  }
+
+  // POST /api/v2/analysis/retry-failed
+  if (
+    method === "POST" &&
+    segments[1] === "v2" &&
+    segments[2] === "analysis" &&
+    segments[3] === "retry-failed" &&
+    segments.length === 4
+  ) {
+    return analysisRetryFailedRoute();
   }
 
   // POST /api/v2/challenge-move

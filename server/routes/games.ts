@@ -1,3 +1,4 @@
+import type { Database } from "bun:sqlite";
 import db from "../db";
 import { Chess } from "chess.js";
 import { classifyGameShape } from "../utils/gameShape";
@@ -114,7 +115,15 @@ function classifyOpening(
   return "Other";
 }
 
-export async function syncGames(req: Request): Promise<Response> {
+/**
+ * `onImported` fires (fire-and-forget; errors are swallowed) with the number of
+ * newly inserted games, so the server can kick the analysis job without the
+ * sync response ever depending on it.
+ */
+export async function syncGames(
+  req: Request,
+  onImported?: (imported: number) => void,
+): Promise<Response> {
   const { username } = (await req.json()) as { username: string };
   if (!username)
     return Response.json({ error: "Username required" }, { status: 400 });
@@ -219,10 +228,26 @@ export async function syncGames(req: Request): Promise<Response> {
     transaction(games);
   }
 
+  notifyImported(onImported, importedCount);
   return Response.json({ imported: importedCount });
 }
 
-export async function uploadGames(req: Request): Promise<Response> {
+function notifyImported(
+  onImported: ((imported: number) => void) | undefined,
+  imported: number,
+): void {
+  if (!onImported || imported <= 0) return;
+  try {
+    onImported(imported);
+  } catch (e) {
+    console.warn("[games] onImported hook failed:", e);
+  }
+}
+
+export async function uploadGames(
+  req: Request,
+  onImported?: (imported: number) => void,
+): Promise<Response> {
   const { pgn, username } = (await req.json()) as {
     pgn: string;
     username: string;
@@ -298,6 +323,7 @@ export async function uploadGames(req: Request): Promise<Response> {
   });
 
   transaction(rawGames);
+  notifyImported(onImported, importedCount);
   return Response.json({ imported: importedCount });
 }
 
@@ -439,55 +465,105 @@ export async function clearAllAnalysis(_req: Request): Promise<Response> {
   }
 }
 
+/** The fields of an analysis row this module reads; clients may send more. */
+type SavedMove = {
+  san?: string;
+  fen?: string;
+  eval?: number;
+  cpLoss?: number;
+  grade?: string;
+};
+
+/**
+ * Persist a game's per-move analysis: analysis_json, game_shape, termination,
+ * the analysis_* bookkeeping columns, and a fresh deviations pass. Shared by the
+ * `POST /api/games/:id/analysis` route and the server-side analysis job.
+ *
+ * `meta` says how the analysis was produced. With it (the job) the game is
+ * stamped version/depth and any `analysis_failed` mark is cleared. Without it
+ * (the browser client) the analysis is legacy, so version/depth go back to NULL
+ * and the job will eventually overwrite it; `analysis_failed` is left alone.
+ */
+export function saveGameAnalysis(
+  gameId: number,
+  analysis: SavedMove[],
+  meta?: { version: number; depth: number },
+  database: Database = db,
+): { found: false } | { found: true; shape: string } {
+  // Compute game shape from analysis
+  const evals: number[] = analysis.map((m) => m.eval ?? 0);
+  const grades: string[] = analysis.map((m) => m.grade ?? "good");
+  const gameShape = classifyGameShape(evals, grades);
+
+  // Fetch the game's PGN to extract Termination header
+  const gameRow = database
+    .query(`SELECT pgn FROM games WHERE id = ?`)
+    .get(gameId) as { pgn: string | null } | null;
+  let termination: string | null = null;
+  if (gameRow?.pgn) {
+    const termMatch = gameRow.pgn.match(/\[Termination\s+"([^"]+)"\]/);
+    if (termMatch) termination = termMatch[1];
+  }
+
+  const res = meta
+    ? database
+        .prepare(
+          `UPDATE games SET analysis_json = ?, game_shape = ?, termination = ?,
+             analysis_version = ?, analysis_depth = ?, analysis_failed = NULL,
+             analysis_updated_at = datetime('now')
+           WHERE id = ?`,
+        )
+        .run(
+          JSON.stringify(analysis),
+          gameShape,
+          termination,
+          meta.version,
+          meta.depth,
+          gameId,
+        )
+    : database
+        .prepare(
+          `UPDATE games SET analysis_json = ?, game_shape = ?, termination = ?,
+             analysis_version = NULL, analysis_depth = NULL,
+             analysis_updated_at = datetime('now')
+           WHERE id = ?`,
+        )
+        .run(JSON.stringify(analysis), gameShape, termination, gameId);
+
+  if (res.changes === 0) return { found: false };
+
+  // v2: Compute and persist deviations against all repertoires
+  try {
+    computeAndPersistDeviations(Number(gameId), analysis, database);
+  } catch (devErr) {
+    console.warn(
+      `[saveAnalysis] Deviation computation failed for game ${gameId}:`,
+      devErr,
+    );
+  }
+
+  return { found: true, shape: gameShape };
+}
+
 export async function saveAnalysis(req: Request): Promise<Response> {
   try {
     const url = new URL(req.url);
     const parts = url.pathname.split("/").filter(Boolean);
     const id = parseInt(parts[parts.length - 2], 10); // /api/games/:id/analysis
 
-    const { analysis } = (await req.json()) as { analysis: any[] };
+    const { analysis } = (await req.json()) as { analysis: SavedMove[] };
 
     if (isNaN(id))
       return Response.json({ error: "Invalid ID" }, { status: 400 });
 
-    // Compute game shape from analysis
-    const evals: number[] = analysis.map((m: any) => m.eval ?? 0);
-    const grades: string[] = analysis.map((m: any) => m.grade ?? "good");
-    const gameShape = classifyGameShape(evals, grades);
-
-    // Fetch the game's PGN to extract Termination header
-    const gameRow = db
-      .query(`SELECT pgn FROM games WHERE id = ?`)
-      .get(id) as any;
-    let termination: string | null = null;
-    if (gameRow?.pgn) {
-      const termMatch = gameRow.pgn.match(/\[Termination\s+"([^"]+)"\]/);
-      if (termMatch) termination = termMatch[1];
-    }
-
-    const res = db
-      .prepare(
-        `UPDATE games SET analysis_json = ?, game_shape = ?, termination = ? WHERE id = ?`,
-      )
-      .run(JSON.stringify(analysis), gameShape, termination, id);
-
-    if (res.changes === 0)
+    const saved = saveGameAnalysis(id, analysis);
+    if (!saved.found)
       return Response.json({ error: "Game not found" }, { status: 404 });
 
-    // v2: Compute and persist deviations against all repertoires
-    try {
-      computeAndPersistDeviations(Number(id), analysis);
-    } catch (devErr) {
-      console.warn(
-        `[saveAnalysis] Deviation computation failed for game ${id}:`,
-        devErr,
-      );
-    }
-
     console.log(
-      `[POST /api/games/:id/analysis] Saved analysis for game ID: ${id}, shape: ${gameShape}`,
+      `[POST /api/games/:id/analysis] Saved analysis for game ID: ${id}, shape: ${saved.shape}`,
     );
-    return Response.json({ ok: true, shape: gameShape });
+    return Response.json({ ok: true, shape: saved.shape });
   } catch (err: any) {
     console.error(`[POST /api/games/:id/analysis] Server Error:`, err);
     return Response.json(

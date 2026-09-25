@@ -6,6 +6,10 @@ import db from "../db";
  * Clears analysis_json for games that are missing bestMove data so the
  * background analysis queue re-processes them. Targets the most recent
  * games first (up to 300). Returns the number of games queued.
+ *
+ * @deprecated Superseded by the server-side analysis job (services/analysis_job.ts):
+ * it re-analyses games missing `bestMove` (and every pre-v2 analysis) in place, with
+ * no window where a game has no analysis. Kept so old clients don't 404.
  */
 export async function refreshAnalysis(_req: Request): Promise<Response> {
   try {
