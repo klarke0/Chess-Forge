@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Settings, RotateCcw, Eye, EyeOff, ChevronRight, AlertTriangle, Loader2, CheckCircle2 } from "lucide-react";
+import { Settings, RotateCcw, Eye, EyeOff, AlertTriangle, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import * as api from "@/services/api";
 import { useRepertoireStore } from "@/stores/repertoireStore";
@@ -126,9 +126,9 @@ export const SettingsScreen: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col px-6 pt-10 pb-24 overflow-y-auto">
+    <div className="flex-1 flex flex-col px-5 pt-4 pb-4 overflow-y-auto">
       {/* Header */}
-      <div className="mb-8 flex items-center gap-3">
+      <div className="mb-3 flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-forge-elevated flex items-center justify-center shrink-0">
           <Settings size={18} className="text-forge-primary-hover" />
         </div>
@@ -139,7 +139,7 @@ export const SettingsScreen: React.FC = () => {
       </div>
 
       {/* Repertoire cards */}
-      <div className="space-y-4 mb-8">
+      <div className="space-y-3 mb-3">
         {loading ? (
           <>
             <SkeletonCard />
@@ -162,9 +162,9 @@ export const SettingsScreen: React.FC = () => {
       </div>
 
       {/* Info section */}
-      <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-5 mb-4">
-        <h2 className="text-xs font-black uppercase tracking-widest text-forge-text-inactive mb-3">How it works</h2>
-        <div className="space-y-3">
+      <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-4">
+        <h2 className="text-xs font-black uppercase tracking-widest text-forge-text-inactive mb-2">How it works</h2>
+        <div className="space-y-2">
           <InfoRow
             icon={<EyeOff size={13} className="text-forge-text-inactive" />}
             text="Disabled repertoires are excluded from drill sessions. Re-enable them at any time."
@@ -222,14 +222,14 @@ function RepertoireCard({ stat, enabled, selected, onToggleEnabled, onResetProgr
   return (
     <div
       className={cn(
-        "bg-forge-card border rounded-forge-xl p-5 transition-all",
+        "bg-forge-card border rounded-forge-xl p-3 transition-all",
         enabled ? "border-forge-border-subtle" : "border-forge-border-subtle opacity-60",
       )}
     >
-      {/* Name + side */}
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div className="flex-1 min-w-0">
-          <h3 className="text-base font-black text-forge-text-primary leading-tight">
+      {/* Name + side, drill toggle, reset */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex-1 min-w-0 pl-1">
+          <h3 className="text-base font-black text-forge-text-primary leading-tight truncate">
             {stat.name}
             {selected && (
               <span className="ml-2 align-middle text-[10px] font-black uppercase tracking-wider text-forge-primary-hover">
@@ -237,7 +237,7 @@ function RepertoireCard({ stat, enabled, selected, onToggleEnabled, onResetProgr
               </span>
             )}
           </h3>
-          <span className={cn("text-xs font-semibold mt-0.5 block", sideColor)}>
+          <span className={cn("text-xs font-semibold block", sideColor)}>
             Playing as {sideLabel}
           </span>
         </div>
@@ -247,7 +247,7 @@ function RepertoireCard({ stat, enabled, selected, onToggleEnabled, onResetProgr
           aria-pressed={enabled}
           aria-label={`${enabled ? "Exclude" : "Include"} ${stat.name} in drill sessions`}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-full text-xs font-black uppercase tracking-wider cursor-pointer shrink-0",
+            "flex items-center gap-1.5 px-3 min-h-[44px] rounded-full text-xs font-black uppercase tracking-wider cursor-pointer shrink-0",
             "transition-colors duration-150",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
             enabled
@@ -261,10 +261,23 @@ function RepertoireCard({ stat, enabled, selected, onToggleEnabled, onResetProgr
             <><EyeOff size={11} /> Off</>
           )}
         </button>
+        {/* Reset — opens the confirm sheet */}
+        <button
+          onClick={onResetProgress}
+          aria-label={`Reset progress for ${stat.name}`}
+          className={cn(
+            "flex items-center justify-center w-11 h-11 rounded-full shrink-0 cursor-pointer",
+            "bg-forge-elevated border border-forge-border-subtle text-forge-danger",
+            "hover:border-forge-danger-border active:scale-[0.96] transition-colors duration-150",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400",
+          )}
+        >
+          <RotateCcw size={15} />
+        </button>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      {/* Stats strip */}
+      <div className="grid grid-cols-3 gap-2 mt-2">
         <StatPill
           label="Positions"
           value={stat.positionCount.toLocaleString()}
@@ -274,7 +287,6 @@ function RepertoireCard({ stat, enabled, selected, onToggleEnabled, onResetProgr
           label="Drilled"
           value={`${stat.drilledCount} / ${stat.positionCount}`}
           color="text-forge-primary-hover"
-          sub={`${drilledPct}%`}
         />
         <StatPill
           label="Accuracy"
@@ -285,31 +297,20 @@ function RepertoireCard({ stat, enabled, selected, onToggleEnabled, onResetProgr
 
       {/* Drilled progress bar */}
       {stat.positionCount > 0 && (
-        <div className="h-1 bg-forge-elevated rounded-full overflow-hidden mb-4">
+        <div
+          role="progressbar"
+          aria-label={`${stat.name} drilled`}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={drilledPct}
+          className="h-1 mt-2 bg-forge-elevated rounded-full overflow-hidden"
+        >
           <div
             className="h-full bg-forge-primary rounded-full transition-all"
             style={{ width: `${drilledPct}%` }}
           />
         </div>
       )}
-
-      {/* Reset button */}
-      <button
-        onClick={onResetProgress}
-        className={cn(
-          "w-full flex items-center justify-between px-4 py-3 min-h-[44px] cursor-pointer",
-          "bg-forge-elevated border border-forge-border-subtle rounded-xl",
-          "text-xs font-black uppercase tracking-wider text-forge-danger",
-          "hover:border-forge-danger-border active:scale-[0.98] transition-colors duration-150",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400",
-        )}
-      >
-        <div className="flex items-center gap-2">
-          <RotateCcw size={12} />
-          Reset SM-2 Progress
-        </div>
-        <ChevronRight size={13} className="text-forge-text-muted" />
-      </button>
     </div>
   );
 }
@@ -318,12 +319,11 @@ function RepertoireCard({ stat, enabled, selected, onToggleEnabled, onResetProgr
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function StatPill({ label, value, color, sub }: { label: string; value: string; color: string; sub?: string }) {
+function StatPill({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="bg-forge-elevated rounded-xl px-3 py-2.5 text-center">
+    <div className="bg-forge-elevated rounded-xl px-2 py-1.5 text-center">
       <p className={cn("text-sm font-black leading-tight", color)}>{value}</p>
-      {sub && <p className="text-[10px] text-forge-text-inactive mt-0.5">{sub}</p>}
-      <p className="text-[10px] text-forge-text-inactive mt-1 uppercase tracking-wider">{label}</p>
+      <p className="text-[10px] text-forge-text-inactive uppercase tracking-wider">{label}</p>
     </div>
   );
 }
@@ -339,13 +339,12 @@ function InfoRow({ icon, text }: { icon: React.ReactNode; text: string }) {
 
 function SkeletonCard() {
   return (
-    <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-5 space-y-3">
-      <div className="h-4 w-36 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
-      <div className="h-3 w-24 bg-forge-elevated rounded-full motion-safe:animate-pulse" />
-      <div className="grid grid-cols-3 gap-3">
-        <div className="h-14 bg-forge-elevated rounded-xl motion-safe:animate-pulse" />
-        <div className="h-14 bg-forge-elevated rounded-xl motion-safe:animate-pulse" />
-        <div className="h-14 bg-forge-elevated rounded-xl motion-safe:animate-pulse" />
+    <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-3 space-y-2">
+      <div className="h-11 bg-forge-elevated rounded-xl motion-safe:animate-pulse" />
+      <div className="grid grid-cols-3 gap-2">
+        <div className="h-11 bg-forge-elevated rounded-xl motion-safe:animate-pulse" />
+        <div className="h-11 bg-forge-elevated rounded-xl motion-safe:animate-pulse" />
+        <div className="h-11 bg-forge-elevated rounded-xl motion-safe:animate-pulse" />
       </div>
     </div>
   );

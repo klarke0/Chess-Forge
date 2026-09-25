@@ -132,29 +132,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const lastSeenLabel = formatLastSeen(lastReviewed);
 
   return (
-    <div className="flex-1 flex flex-col px-6 pt-10 pb-24 overflow-y-auto">
-      {/* Greeting + meta row */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-black text-forge-text-primary tracking-tight">
-          {greeting}
-        </h1>
-        <div className="flex items-center gap-3 mt-2 flex-wrap">
-          {streak > 0 && (
-            <div className="flex items-center gap-1.5 bg-forge-card border border-forge-border-subtle rounded-full px-3 py-1">
-              <Flame size={13} className="text-forge-warm" />
-              <span className="text-xs font-black text-forge-text-primary">{streak}</span>
-              <span className="text-xs text-forge-text-inactive">day streak</span>
-            </div>
-          )}
-          {lastSeenLabel && (
-            <span className="text-xs text-forge-text-muted">{lastSeenLabel}</span>
-          )}
+    <div className="flex-1 flex flex-col gap-3 px-5 pt-4 pb-4 overflow-y-auto">
+      {/* Header: greeting + repertoire select, then streak / goal chips */}
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-xl font-black text-forge-text-primary tracking-tight truncate">
+            {greeting}
+          </h1>
           {availableRepertoires.length > 1 && (
             <select
               value={repertoireId}
               onChange={(e) => setActiveRepertoire(Number(e.target.value))}
-              className="ml-auto max-w-[60%] truncate text-base font-semibold bg-forge-border-subtle border border-forge-border-default text-forge-text-primary rounded-lg px-3 py-2 min-h-[44px] appearance-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
               aria-label="Active repertoire"
+              className="min-w-0 max-w-[55%] truncate text-base font-semibold bg-forge-border-subtle border border-forge-border-default text-forge-text-primary rounded-lg px-3 py-2 min-h-[44px] appearance-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
             >
               {availableRepertoires.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -164,21 +154,47 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </select>
           )}
         </div>
+        <div className="flex items-center gap-2 mt-1 flex-wrap min-h-[28px]">
+          {streak > 0 && (
+            <div className="flex items-center gap-1.5 bg-forge-card border border-forge-border-subtle rounded-full px-3 py-1">
+              <Flame
+                size={13}
+                className={dailyGoalDone ? "text-forge-warm" : "text-forge-text-muted"}
+              />
+              <span className="text-xs font-black text-forge-text-primary">{streak}</span>
+              <span className="text-xs text-forge-text-inactive">day streak</span>
+            </div>
+          )}
+          {!loading &&
+            (dailyGoalDone ? (
+              <StatusChip tone="success" className="gap-1">
+                <CheckCircle2 size={11} /> Goal done
+                <span className="sr-only">. Come back tomorrow to keep the streak going.</span>
+              </StatusChip>
+            ) : (
+              <StatusChip tone="neutral" className="gap-1">
+                <Circle size={11} /> Goal: 1 session today
+              </StatusChip>
+            ))}
+          {lastSeenLabel && (
+            <span className="text-[10px] text-forge-text-muted">{lastSeenLabel}</span>
+          )}
+        </div>
       </div>
 
       {/* Learn Card */}
       <LearnCard state={lessonState} onLearn={onLearn} />
 
       {/* Train Now Card */}
-      <div className="bg-forge-card border border-forge-border-subtle rounded-[2.5rem] p-8 mb-5">
+      <div className="bg-forge-card border border-forge-border-subtle rounded-forge-xl p-4">
         {loading ? (
-          <div className="space-y-3">
+          <div className="space-y-3 mb-3">
             <div className="h-4 w-40 bg-forge-border-subtle rounded-full motion-safe:animate-pulse" />
             <div className="h-4 w-24 bg-forge-border-subtle rounded-full motion-safe:animate-pulse" />
           </div>
         ) : count && count.total > 0 ? (
-          <div className="mb-6">
-            <p className="text-sm font-black text-forge-text-primary mb-1">12-position session</p>
+          <div className="mb-3">
+            <p className="text-sm font-black text-forge-text-primary mb-0.5">12-position session</p>
             <p className="text-xs text-forge-text-inactive leading-relaxed">
               Pool:{" "}
               {[
@@ -214,20 +230,45 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </p>
           </div>
         ) : countFailed ? (
-          <p className="text-sm text-forge-text-secondary mb-6">
+          <p className="text-sm text-forge-text-secondary mb-3">
             Couldn&apos;t load your queue.{" "}
             <button
               onClick={() => setReloadTick((n) => n + 1)}
-              className="font-bold text-forge-primary underline cursor-pointer"
+              className="inline-flex items-center min-h-[44px] px-2 font-bold text-forge-primary underline cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded"
             >
               Retry
             </button>
           </p>
         ) : (
-          <p className="text-sm text-forge-text-secondary mb-6">
+          <p className="text-sm text-forge-text-secondary mb-3">
             No positions due — check back after your next game
           </p>
         )}
+
+        {/* Phase filter — segmented control */}
+        <div
+          role="group"
+          aria-label="Session phase"
+          className="flex gap-0.5 p-0.5 mb-3 bg-forge-elevated rounded-full"
+        >
+          {(["all", "opening", "endgame"] as PhaseFilter[]).map((v) => (
+            <button
+              key={v}
+              onClick={() => setPhase(v)}
+              aria-pressed={phase === v}
+              className={cn(
+                "flex-1 px-3 min-h-[44px] rounded-full text-xs font-bold uppercase tracking-wide cursor-pointer",
+                "transition-colors duration-150",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
+                phase === v
+                  ? "bg-forge-primary text-white"
+                  : "text-forge-text-inactive hover:text-forge-text-primary",
+              )}
+            >
+              {v === "opening" ? "Opening/Mid" : v === "endgame" ? "Endgame" : "All"}
+            </button>
+          ))}
+        </div>
 
         <button
           onClick={() => onTrainNow("blunder", phase)}
@@ -235,7 +276,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             "w-full flex items-center justify-center gap-3 cursor-pointer",
             "bg-forge-primary hover:bg-forge-primary-hover active:scale-[0.98]",
             "text-white font-black text-lg uppercase tracking-widest",
-            "py-5 rounded-forge-md transition-all duration-150",
+            "py-4 rounded-forge-md transition-all duration-150",
             "shadow-xl shadow-[var(--forge-accent-primary-shadow)]",
             "border border-forge-primary-border",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-forge-card",
@@ -246,85 +287,58 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </button>
       </div>
 
-      {/* Daily Challenge */}
-      <DailyChallenge
-        streak={streak}
-        done={dailyGoalDone}
-        onTrain={() => onTrainNow("blunder", phase)}
-      />
-
-      {/* Phase filter */}
-      <div className="flex gap-2 justify-center mb-5">
-        {(["opening", "all", "endgame"] as PhaseFilter[]).map((v) => (
-          <button
-            key={v}
-            onClick={() => setPhase(v)}
-            className={cn(
-              "px-4 py-2 min-h-[44px] rounded-full text-xs font-bold uppercase tracking-wide cursor-pointer",
-              "transition-colors duration-150",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
-              phase === v
-                ? "bg-forge-primary text-white"
-                : "bg-forge-card text-forge-text-inactive border border-forge-border-subtle hover:text-forge-text-primary hover:border-forge-border-default",
-            )}
-          >
-            {v === "opening" ? "Opening/Mid" : v === "endgame" ? "Endgame" : "All"}
-          </button>
-        ))}
-      </div>
-
       {/* Weakest position preview */}
       {weakest && (
         <button
           onClick={() => onTrainNow("blunder", "all")}
           className={cn(
-            "w-full flex items-center gap-4 p-4 mb-5 cursor-pointer",
+            "w-full flex items-center gap-3 p-2.5 cursor-pointer",
             "bg-forge-card border border-forge-border-subtle rounded-forge-xl",
             "text-left active:scale-[0.98] transition-all duration-150",
             "hover:border-forge-border-default",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
           )}
         >
-          <div className="w-16 aspect-square rounded-lg overflow-hidden border border-forge-border-subtle shrink-0">
+          <div className="w-12 aspect-square rounded-lg overflow-hidden border border-forge-border-subtle shrink-0">
             <Chessboard
               position={weakest.fen}
               arePiecesDraggable={false}
-              boardWidth={64}
+              boardWidth={48}
               animationDuration={0}
               {...BOARD_THEME_MUTED}
             />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-1.5 mb-0.5">
               <Target size={12} className="text-forge-danger shrink-0" />
               <span className="text-[10px] font-black uppercase tracking-widest text-forge-text-inactive">
                 Weakest position
               </span>
             </div>
-            <p className="text-sm font-black text-forge-text-primary">
+            <p className="text-sm font-black text-forge-text-primary truncate">
               {weakest.correctSan}
-            </p>
-            <p className="text-xs text-forge-danger font-semibold mt-0.5">
-              {weakest.accuracy}% accuracy
+              <span className="ml-2 text-xs text-forge-danger font-semibold">
+                {weakest.accuracy}% accuracy
+              </span>
             </p>
           </div>
           <div className="text-forge-text-muted shrink-0">›</div>
         </button>
       )}
 
-      {/* Secondary Cards */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      {/* Secondary actions */}
+      <div className="grid grid-cols-2 gap-3">
         <button
           onClick={onGames}
           className={cn(
-            "flex flex-col items-center justify-center gap-3 p-6 min-h-[88px] cursor-pointer",
+            "flex items-center justify-center gap-2 px-3 min-h-[56px] cursor-pointer",
             "bg-forge-card border border-forge-border-subtle rounded-forge-xl",
             "text-forge-text-secondary hover:text-forge-text-primary hover:border-forge-border-default",
             "transition-colors duration-150 active:scale-[0.98]",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
           )}
         >
-          <Film size={24} />
+          <Film size={18} />
           <span className="text-xs font-black uppercase tracking-wider">
             Review Games
           </span>
@@ -333,24 +347,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <button
           onClick={() => onTrainNow("repertoire", "all")}
           className={cn(
-            "flex flex-col items-center justify-center gap-3 p-6 min-h-[88px] cursor-pointer",
+            "flex items-center justify-center gap-2 px-3 min-h-[56px] cursor-pointer",
             "bg-forge-card border border-forge-border-subtle rounded-forge-xl",
             "text-forge-text-secondary hover:text-forge-text-primary hover:border-forge-border-default",
             "transition-colors duration-150 active:scale-[0.98]",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
           )}
         >
-          <BookOpen size={24} />
+          <BookOpen size={18} />
           <span className="text-xs font-black uppercase tracking-wider">
             Drill Lines
           </span>
         </button>
       </div>
 
-      {/* Analysis status + refresh */}
+      {/* Analysis status + refresh — one small line */}
       {isAnalyzing ? (
-        <div className="flex items-center gap-2 px-2 py-2 text-xs text-forge-text-inactive">
-          <Loader2 size={12} className="motion-safe:animate-spin text-forge-primary-hover shrink-0" />
+        <div className="flex items-center gap-2 px-2 text-[10px] text-forge-text-inactive">
+          <Loader2 size={10} className="motion-safe:animate-spin text-forge-primary-hover shrink-0" />
           <span className="truncate">
             {activeGameName
               ? `Analyzing ${analyzedCount}/${totalInQueue} — ${activeGameName}`
@@ -358,19 +372,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </span>
         </div>
       ) : (
-        <div className="flex items-center gap-2 px-2">
+        // -my-3 keeps the row visually one line tall while the button's 44px
+        // hit area extends into the surrounding gap-3 spacing.
+        <div className="flex items-center gap-2 px-2 -my-3">
           <button
             onClick={handleRefreshAnalysis}
             disabled={refreshing}
-            className="flex items-center gap-1.5 text-xs text-forge-text-muted hover:text-forge-text-secondary transition-colors duration-150 disabled:opacity-40 cursor-pointer min-h-[44px] px-2"
+            className="flex items-center gap-1.5 text-[10px] text-forge-text-muted hover:text-forge-text-secondary transition-colors duration-150 disabled:opacity-40 cursor-pointer min-h-[44px] px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded"
           >
             {refreshing
-              ? <Loader2 size={11} className="motion-safe:animate-spin" />
-              : <RefreshCw size={11} />}
+              ? <Loader2 size={10} className="motion-safe:animate-spin" />
+              : <RefreshCw size={10} />}
             Refresh analysis
           </button>
           {refreshMsg && (
-            <span className="text-xs text-forge-text-inactive">{refreshMsg}</span>
+            <span className="text-[10px] text-forge-text-inactive">{refreshMsg}</span>
           )}
         </div>
       )}
@@ -390,27 +406,27 @@ interface LearnCardProps {
 function LearnCard({ state, onLearn }: LearnCardProps) {
   const { loading, lesson, learned } = state;
 
-  // Reserve the card's height while loading so the rest of Home doesn't jump
-  // down when the lesson arrives (icon 44px + p-4 padding = 76px).
-  if (loading)
+  // Reserve the card's height while loading so the layout doesn't jump.
+  if (loading) {
     return (
       <div
         aria-hidden="true"
-        className="w-full h-[76px] mb-5 bg-forge-card border border-forge-border-subtle rounded-forge-xl motion-safe:animate-pulse"
+        className="min-h-[64px] bg-forge-card border border-forge-border-subtle rounded-forge-xl motion-safe:animate-pulse"
       />
     );
+  }
 
   if (!lesson) {
     if (learned === 0) return null;
     return (
       <div
         className={cn(
-          "w-full flex items-center gap-4 p-4 mb-5",
+          "w-full flex items-center gap-3 p-3 min-h-[64px]",
           "bg-forge-card border border-forge-success rounded-forge-xl",
         )}
       >
-        <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-[var(--forge-accent-success-muted)]">
-          <CheckCircle2 size={22} className="text-forge-success" />
+        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-[var(--forge-accent-success-muted)]">
+          <CheckCircle2 size={20} className="text-forge-success" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-black text-forge-success">
@@ -428,18 +444,18 @@ function LearnCard({ state, onLearn }: LearnCardProps) {
     <button
       onClick={onLearn}
       className={cn(
-        "w-full flex items-center gap-4 p-4 mb-5 cursor-pointer",
+        "w-full flex items-center gap-3 p-3 min-h-[64px] cursor-pointer",
         "bg-forge-card border border-forge-border-subtle rounded-forge-xl",
         "text-left active:scale-[0.98] transition-all duration-150",
         "hover:border-forge-border-default",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
       )}
     >
-      <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-forge-elevated">
-        <GraduationCap size={22} className="text-forge-primary-hover" />
+      <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-forge-elevated">
+        <GraduationCap size={20} className="text-forge-primary-hover" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1 flex-wrap">
+        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
           <StatusChip
             tone={(STAGE_CHIP[lesson.stage] ?? STAGE_CHIP[0]).tone}
             className={(STAGE_CHIP[lesson.stage] ?? STAGE_CHIP[0]).className}
@@ -456,84 +472,6 @@ function LearnCard({ state, onLearn }: LearnCardProps) {
         </p>
       </div>
       <div className="text-forge-text-muted shrink-0">›</div>
-    </button>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Daily Challenge sub-component
-// ---------------------------------------------------------------------------
-
-interface DailyChallengeProps {
-  streak: number;
-  done: boolean;
-  onTrain: () => void;
-}
-
-function DailyChallenge({ streak, done, onTrain }: DailyChallengeProps) {
-  return (
-    <button
-      onClick={done ? undefined : onTrain}
-      disabled={done}
-      className={cn(
-        "w-full flex items-center gap-4 p-4 mb-5",
-        "border rounded-forge-xl text-left",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
-        done
-          ? "bg-forge-card border-forge-success cursor-default transition-colors duration-150"
-          : "bg-forge-card border-forge-border-subtle cursor-pointer active:scale-[0.98] hover:border-forge-primary-border transition-all duration-150",
-      )}
-    >
-      {/* Icon */}
-      <div
-        className={cn(
-          "w-11 h-11 rounded-full flex items-center justify-center shrink-0",
-          done
-            ? "bg-[var(--forge-accent-success-muted)]"
-            : "bg-forge-elevated",
-        )}
-      >
-        {done ? (
-          <CheckCircle2 size={22} className="text-forge-success" />
-        ) : (
-          <Circle size={22} className="text-forge-text-inactive" />
-        )}
-      </div>
-
-      {/* Text */}
-      <div className="flex-1 min-w-0">
-        <p
-          className={cn(
-            "text-sm font-black",
-            done ? "text-forge-success" : "text-forge-text-primary",
-          )}
-        >
-          {done ? "Daily goal complete!" : "Daily goal"}
-        </p>
-        <p className="text-xs text-forge-text-inactive mt-0.5">
-          {done
-            ? "Come back tomorrow to keep the streak going"
-            : "Complete 1 training session today"}
-        </p>
-      </div>
-
-      {/* Streak badge */}
-      {streak > 0 && (
-        <div className="flex flex-col items-center shrink-0">
-          <Flame
-            size={18}
-            className={cn(done ? "text-forge-warm" : "text-forge-text-muted")}
-          />
-          <span
-            className={cn(
-              "text-xs font-black mt-0.5 tabular-nums",
-              done ? "text-forge-warm" : "text-forge-text-muted",
-            )}
-          >
-            {streak}
-          </span>
-        </div>
-      )}
     </button>
   );
 }
