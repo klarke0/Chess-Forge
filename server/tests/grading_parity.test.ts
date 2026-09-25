@@ -111,6 +111,27 @@ describe("grading parity (server vs src)", () => {
     }
   });
 
+  test("the playedIsBest guard agrees: top move with loss 3 -> best, 6 -> inaccuracy, 25 -> blunder", () => {
+    const expected: [number, server.Grade][] = [
+      [3, "best"],
+      [6, "inaccuracy"],
+      [25, "blunder"],
+    ];
+    for (const [loss, grade] of expected) {
+      for (const mover of ["w", "b"] as const) {
+        const sign = mover === "w" ? 1 : -1;
+        const row = {
+          prevEvalWhite: 0,
+          newEvalWhite: sign * cpForWin(50 - loss),
+          mover,
+          playedIsBest: true,
+        };
+        expect(server.gradeMove(row).grade).toBe(grade);
+        expect(client.gradeMove(row)).toEqual(server.gradeMove(row));
+      }
+    }
+  });
+
   test("the table really exercises every grade", () => {
     const seen = new Set<string>();
     for (const row of buildTable()) seen.add(server.gradeMove(row).grade);

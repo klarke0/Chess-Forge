@@ -180,11 +180,43 @@ describe("gradeMove", () => {
     expect(crushing.grade).toBe("excellent");
   });
 
-  test("playedIsBest forces best even when the measured loss is bigger", () => {
-    const r = whiteLoses(6, true);
-    expect(r.grade).toBe("best");
-    // winLoss still reports what was measured, so callers can see the disagreement.
-    expect(r.winLoss).toBeCloseTo(6, 6);
+  test("the engine's top move is best while the measured loss stays within the good ceiling (5 pp)", () => {
+    // Not the near-zero band: a 1 pp and a 3 pp drop are still 'best' when it IS the top move...
+    for (const loss of [0.1, 1, 3, 4.9]) {
+      const r = whiteLoses(loss, true);
+      expect(r.grade).toBe("best");
+      // ...and winLoss keeps reporting what was measured.
+      expect(r.winLoss).toBeCloseTo(loss, 6);
+    }
+    // The same drops are NOT best for a move that is not the top move.
+    expect(whiteLoses(1).grade).toBe("excellent");
+    expect(whiteLoses(3).grade).toBe("good");
+  });
+
+  test("the top-move override has a ceiling at GRADE_BANDS.good: past it the two searches disagree, so the loss bands rule", () => {
+    const e = 1e-6;
+    expect(whiteLoses(GRADE_BANDS.good - e, true).grade).toBe("best");
+    expect(whiteLoses(GRADE_BANDS.good + e, true).grade).toBe("inaccuracy");
+    expect(whiteLoses(6, true).grade).toBe("inaccuracy");
+    expect(whiteLoses(GRADE_BANDS.inaccuracy + e, true).grade).toBe("mistake");
+    expect(whiteLoses(15, true).grade).toBe("mistake");
+    expect(whiteLoses(GRADE_BANDS.mistake + e, true).grade).toBe("blunder");
+    expect(whiteLoses(25, true).grade).toBe("blunder");
+  });
+
+  test("playedIsBest never makes a grade WORSE than the loss bands would", () => {
+    for (const loss of [0, 0.1, 0.5, 1.5, 2.5, 4, 5, 7, 12, 19, 21, 40]) {
+      const withTop = whiteLoses(loss, true).grade;
+      const without = whiteLoses(loss, false).grade;
+      const order = ["best", "excellent", "good", "inaccuracy", "mistake", "blunder"];
+      expect(order.indexOf(withTop)).toBeLessThanOrEqual(order.indexOf(without));
+    }
+  });
+
+  test("a top move that throws away a mate-sized advantage is a blunder, not best", () => {
+    expect(
+      gradeMove({ prevEvalWhite: MATE_CP, newEvalWhite: 0, mover: "w", playedIsBest: true }).grade,
+    ).toBe("blunder");
   });
 
   test("a near-equal non-top move is excellent, not best", () => {

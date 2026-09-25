@@ -8,12 +8,19 @@
  * Model: lichess's centipawn -> win% curve. A move's loss is the MOVER's win%
  * before the move minus their win% after it, in percentage points. Grades:
  *
- *   best        the played move IS the engine's top move, or loss <= GRADE_BANDS.best
+ *   best        loss <= GRADE_BANDS.best, or the played move IS the engine's top move
+ *               and loss <= GRADE_BANDS.good (see "top-move guard" below)
  *   excellent   loss <= GRADE_BANDS.excellent
  *   good        loss <= GRADE_BANDS.good
  *   inaccuracy  loss <= GRADE_BANDS.inaccuracy
  *   mistake     loss <= GRADE_BANDS.mistake
  *   blunder     anything worse
+ *
+ * Top-move guard: "the played move is the engine's top move" comes from the
+ * PARENT position's search, while the loss comes from a SEPARATE search of the
+ * position after the move. If the top move is followed by a drop bigger than the
+ * `good` ceiling (5 pp) the two searches disagree, and the measured loss is the
+ * better signal, so the move is graded by the loss bands instead of `best`.
  *
  * The bands are exported constants so they can be tuned; re-grading from stored
  * evals needs no engine.
@@ -81,8 +88,8 @@ export function computeCpLoss(
  * Grade one move. `prevEvalWhite` / `newEvalWhite` are WHITE-POV centipawns for
  * the position before and after the move; `playedIsBest` is whether the played
  * move equals the engine's top move for the position before it.
- * `winLoss` is the measured win% loss (>= 0) even when `playedIsBest` forces
- * `best`, so a caller can see when the two disagree.
+ * `winLoss` is always the measured win% loss (>= 0), including when
+ * `playedIsBest` is what made the grade `best`.
  */
 export function gradeMove(args: {
   prevEvalWhite: number;
@@ -96,8 +103,11 @@ export function gradeMove(args: {
   const after = winPercent(sign * newEvalWhite);
   const winLoss = Math.max(0, before - after);
 
+  // Top move counts as best only while the measured drop is within the `good` ceiling.
+  const topMoveHolds = playedIsBest && winLoss <= GRADE_BANDS.good;
+
   let grade: Grade;
-  if (playedIsBest || winLoss <= GRADE_BANDS.best) grade = "best";
+  if (topMoveHolds || winLoss <= GRADE_BANDS.best) grade = "best";
   else if (winLoss <= GRADE_BANDS.excellent) grade = "excellent";
   else if (winLoss <= GRADE_BANDS.good) grade = "good";
   else if (winLoss <= GRADE_BANDS.inaccuracy) grade = "inaccuracy";

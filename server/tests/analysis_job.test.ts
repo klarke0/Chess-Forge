@@ -83,15 +83,33 @@ describe("analyzeGame — grading integration", () => {
   });
 
   test("grading follows the mover: a Black move that hands White +3 is a blunder", async () => {
+    // Move index 1 is Black's e5, played from +25 (White POV) into +330.
+    const script = scriptFor(PGN_A, flatScript({ 1: { white: 25, best: "c7c5" }, 2: { white: 330, best: "g1f3" } }));
+    const out = (await analyzeGame(PGN_A, makeStubEngine({ script }), newCache()))!;
+    expect(out[1].grade).toBe("blunder");
+    expect(out[1].cpLoss).toBe(305);
+  });
+
+  test("the parent's top move with a small measured drop stays best", async () => {
+    // e5 == e7e5 (the engine's top move) and the child search sees White at +45 (a ~1.8 pp drop for Black).
+    const script = scriptFor(PGN_A, flatScript({ 1: { white: 25, best: "e7e5" }, 2: { white: 45, best: "g1f3" } }));
+    const out = (await analyzeGame(PGN_A, makeStubEngine({ script }), newCache()))!;
+    expect(out[1].cpLoss).toBe(20);
+    expect(out[1].grade).toBe("best");
+  });
+
+  test("the parent's top move that the child search measures as a big drop is graded by the loss bands", async () => {
+    // e5 == e7e5 is the parent's top move, but the child search says White is +330: the two searches
+    // disagree, and the measured 305 cp drop (~26 pp) is the better signal -> blunder, not best.
     const script = scriptFor(PGN_A, flatScript({ 1: { white: 25, best: "e7e5" }, 2: { white: 330, best: "g1f3" } }));
     const out = (await analyzeGame(PGN_A, makeStubEngine({ script }), newCache()))!;
-    // Move index 1 is Black's e5, played from a +25 (White POV) position into +330.
-    expect(out[1].grade).toBe("best"); // e5 == e7e5 -> playedIsBest wins over the measured loss
-    // Change the engine's recommendation so e5 is not its top move.
-    const script2 = scriptFor(PGN_A, flatScript({ 1: { white: 25, best: "c7c5" }, 2: { white: 330, best: "g1f3" } }));
-    const out2 = (await analyzeGame(PGN_A, makeStubEngine({ script: script2 }), newCache()))!;
-    expect(out2[1].grade).toBe("blunder");
-    expect(out2[1].cpLoss).toBe(305);
+    expect(out[1].bestMove).toBe("e7e5");
+    expect(out[1].cpLoss).toBe(305);
+    expect(out[1].grade).toBe("blunder");
+    // Somewhere in between (~6 pp) it is an inaccuracy.
+    const mid = scriptFor(PGN_A, flatScript({ 1: { white: 25, best: "e7e5" }, 2: { white: 90, best: "g1f3" } }));
+    const outMid = (await analyzeGame(PGN_A, makeStubEngine({ script: mid }), newCache()))!;
+    expect(outMid[1].grade).toBe("inaccuracy");
   });
 
   test("the first move is graded against the EVALUATED start position, not a fixed +20", async () => {
