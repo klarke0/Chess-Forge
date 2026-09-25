@@ -107,3 +107,40 @@ describe("templateFromFacts", () => {
     expect(t.analysis).not.toContain("allows");
   });
 });
+
+describe("verifyClaims fails closed", () => {
+  const REJECT = [
+    "Nf3 attacks your queen.",
+    "c3 hangs.",
+    "The e6 pawn is undefended.",
+    "The pawn on e5 hangs.",
+    "The pawn on e5 is now undefended.",
+    "The knight on c6 pins the pawn on e5.",
+    "Black threatens mate on g7 after Nf3.",
+    "Qxf7 is not needed but d4 wins a pawn.",
+  ];
+  for (const phrase of REJECT) {
+    test(`rejects: ${phrase}`, async () => {
+      expect(verifyClaims(phrase, await scholarFacts()).ok).toBe(false);
+    });
+  }
+
+  test("rejects a false guard claim because of the claim itself", async () => {
+    const v = verifyClaims("The knight on c6 guards the pawn on d4.", await scholarFacts());
+    expect(v.ok).toBe(false);
+    expect(v.violations.some((x) => /false claim.*guards/i.test(x))).toBe(true);
+  });
+
+  const ACCEPT = [
+    "Qxf7# is checkmate: the bishop on c4 attacks the pawn on f7. Nf3 lets Black defend with Nf6.",
+    "The bishop on c4 attacks f7.",
+    "The bishop on c4 attacks the black pawn on f7.",
+    "The knight on c6 defends the pawn on e5.",
+    "The queen on h5 is hanging.",
+  ];
+  for (const phrase of ACCEPT) {
+    test(`accepts: ${phrase}`, async () => {
+      expect(verifyClaims(phrase, await scholarFacts())).toEqual({ ok: true, violations: [] });
+    });
+  }
+});

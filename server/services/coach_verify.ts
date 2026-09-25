@@ -22,6 +22,115 @@ const SAN_TOKEN =
 
 const strip = (san: string): string => san.replace(/[+#]/g, "");
 
+const CLAUSE_SPLIT = /[.!?;:,]|\s+(?:but|because)\s+/i;
+const HAZARD =
+  /\b(attack(?:s|ed|ing)?|defend(?:s|ed|ing)?|protect(?:s|ed|ing)?|guard(?:s|ed|ing)?|support(?:s|ed|ing)?|hang(?:s|ing)?|undefended|unprotected|unguarded|loose|en prise|fork(?:s|ed|ing)?|pin(?:s|ned|ning)?|skewer(?:s|ed|ing)?|threaten(?:s|ed|ing)?|eyeing|target(?:s|ing)?|pressur(?:e|es|ing)|traps?)\b/i;
+const UNPROVABLE = /\b(fork(?:s|ed|ing)?|pin(?:s|ned|ning)?|skewer(?:s|ed|ing)?)\b/i;
+const MATE_WORD = /\b(checkmate[sd]?|mate[sd]?|mating)\b/i;
+const ATTACK_VERB = "attacks?|attacking|hits|targets|targeting|threatens|threatening|pressures|pressuring|eyeing";
+const DEFEND_VERB = "defends|defending|protects|protecting|guards|guarding|supports|supporting";
+const RELATION = new RegExp(
+  `${PIECE} on ${SQ} (${ATTACK_VERB}|${DEFEND_VERB}) ((?:(?:the|your|their|a|white|black|enemy|opposing) )*)(?:${PIECE}(?: on ${SQ})?|${SQ})\\b`,
+  "gi",
+);
+const SUBJECT = `(?:${PIECE} (?:on|at) ${SQ}|the ${SQ} ${PIECE}|${SQ})`;
+const HANGING = new RegExp(
+  `${SUBJECT} (?:(?:(?:is|are) )?(?:(?:now|completely|left) )*(?:hang(?:s|ing)|undefended|unprotected|unguarded|loose|en prise)` +
+    `|(?:is|are) not (?:defended|protected|guarded)|has no defenders)`,
+  "gi",
+);
+const MOVE_AFTER_VERB = /\b(?:play|plays|played|playing|after|with|push|pushes|advance|advances|move|moves)\s+([a-h][1-8])\b/gi;
+const MOVE_AT_START = /^\s*([a-h][1-8])\s+(?:wins|loses|captures|takes|gains|threatens|attacks|forks|pins|hangs|defends)\b/i;
+
+function checkClause(
+  clause: string,
+  facts: CoachFacts,
+  boards: Chess[],
+  allowed: Set<string>,
+  violations: string[],
+): void {
+  const typeOf = (name: string): PieceSymbol => TYPE_BY_NAME[name.toLowerCase()];
+  const before = violations.length;
+
+  // Bare-square pawn pushes count as moves and must be supplied.
+  const pushes = [...clause.matchAll(MOVE_AFTER_VERB)].map((m) => m[1]);
+  const start = clause.match(MOVE_AT_START);
+  if (start) pushes.push(start[1]);
+  for (const sq of pushes) {
+    if (!allowed.has(sq.toLowerCase())) violations.push(`unsupplied move ${sq}`);
+  }
+
+  // Mate words: direction must match the facts.
+  if (MATE_WORD.test(clause)) {
+    const moverMates = facts.best.givesMate || (facts.evalBefore.mate ?? 0) > 0 || (facts.evalAfterBest.mate ?? 0) > 0;
+    const opponentMates = !!facts.reply?.givesMate || (facts.evalAfterWrong?.mate ?? 0) < 0;
+    const anyMate = moverMates || opponentMates || facts.wrong?.givesMate === true;
+    const colours = [...clause.matchAll(/\b(white|black)\b/gi)].map((m) => m[1].toLowerCase());
+    const mine = colours.includes(facts.moverName.toLowerCase());
+    const theirs = colours.some((c) => c !== facts.moverName.toLowerCase());
+    const opp = /\bopponent/i.test(clause);
+    const you = /\b(you|your|yours)\b/i.test(clause);
+    const studentSide = mine || (you && !opp);
+    const otherSide = theirs || opp;
+    if (studentSide !== otherSide) {
+      if (studentSide && !moverMates) violations.push(`false claim: student side mates: "${clause.trim()}"`);
+      if (otherSide && !opponentMates) violations.push(`false claim: opponent mates: "${clause.trim()}"`);
+    } else if (!anyMate) {
+      violations.push("mentions mate but the engine facts show none");
+    }
+  }
+
+  if (!HAZARD.test(clause)) return;
+
+  // Relations: attack-like / defend-like between two pieces.
+  let proven = 0;
+  for (const m of clause.matchAll(RELATION)) {
+    const srcType = typeOf(m[1]);
+    const srcSq = m[2].toLowerCase() as Square;
+    const defending = new RegExp(`^(${DEFEND_VERB})$`, "i").test(m[3]);
+    const dstType = m[5] ? typeOf(m[5]) : undefined;
+    const dstSq = (m[6] ?? m[7])?.toLowerCase() as Square | undefined;
+    const holds = boards.some((b) => {
+      const src = b.get(srcSq);
+      if (!src || src.type !== srcType) return false;
+      return b.board().flat().some((t) => {
+        if (!t || (dstType && t.type !== dstType)) return false;
+        if (dstSq && t.square !== dstSq) return false;
+        if (defending ? t.color !== src.color : t.color === src.color) return false;
+        return b.attackers(t.square, src.color).includes(srcSq);
+      });
+    });
+    if (holds) proven++;
+    else violations.push(`false claim: ${m[0]}`);
+  }
+
+  // Hanging / undefended.
+  for (const m of clause.matchAll(HANGING)) {
+    const t = m[1] ? typeOf(m[1]) : m[4] ? typeOf(m[4]) : undefined;
+    const sq = (m[2] ?? m[3] ?? m[5]).toLowerCase() as Square;
+    const needsAttacker = /hang|en prise/i.test(m[0]);
+    const holds = boards.some((b) => {
+      const p = b.get(sq);
+      if (!p || (t && p.type !== t)) return false;
+      const enemy: Color = p.color === "w" ? "b" : "w";
+      const undefended = b.attackers(sq, p.color).length === 0;
+      return undefended && (!needsAttacker || b.attackers(sq, enemy).length > 0);
+    });
+    if (holds) proven++;
+    else violations.push(`false claim: ${m[0]}`);
+  }
+
+  // Referent: a piece word, a bare square or an unsupplied SAN token.
+  const squares = [...clause.matchAll(/\b[a-h][1-8]\b/gi)].map((m) => m[0].toLowerCase());
+  const referent =
+    new RegExp(`\\b${PIECE}\\b`, "i").test(clause) ||
+    squares.some((sq) => !allowed.has(sq)) ||
+    [...clause.matchAll(SAN_TOKEN)].some((m) => !allowed.has(strip(m[0])));
+  if (!referent) return;
+  if (UNPROVABLE.test(clause)) violations.push(`unverifiable claim: "${clause.trim()}"`);
+  else if (proven === 0 && violations.length === before) violations.push(`unverifiable claim: "${clause.trim()}"`);
+}
+
 export function verifyClaims(text: string, facts: CoachFacts): Verdict {
   const violations: string[] = [];
   const boards = facts.positions.map((f) => new Chess(f));
@@ -52,48 +161,9 @@ export function verifyClaims(text: string, facts: CoachFacts): Verdict {
     }
   }
 
-  // 3. "<piece> on <sq> attacks/defends <piece> [on <sq>]" must hold on some board.
-  const relation = new RegExp(
-    `${PIECE} on ${SQ} (attacks|attacking|hits|threatens|threatening|defends|defending) (?:the |your |their |a )?${PIECE}(?: on ${SQ})?`,
-    "gi",
-  );
-  for (const m of text.matchAll(relation)) {
-    const srcType = typeOf(m[1]);
-    const srcSq = m[2] as Square;
-    const defending = /^defend/i.test(m[3]);
-    const dstType = typeOf(m[4]);
-    const dstSq = m[5] as Square | undefined;
-    const holds = boards.some((b) => {
-      const src = b.get(srcSq);
-      if (!src || src.type !== srcType) return false;
-      return b.board().flat().some((t) => {
-        if (!t || t.type !== dstType) return false;
-        if (dstSq && t.square !== dstSq) return false;
-        if (defending ? t.color !== src.color : t.color === src.color) return false;
-        return b.attackers(t.square, src.color).includes(srcSq);
-      });
-    });
-    if (!holds) violations.push(`false claim: ${m[0]}`);
-  }
-
-  // 4. "<piece> on <sq> is hanging/undefended" must hold on some board.
-  const hanging = new RegExp(
-    `${PIECE} on ${SQ} (?:is |are )?(hanging|undefended|unprotected|loose|en prise)`,
-    "gi",
-  );
-  for (const m of text.matchAll(hanging)) {
-    const t = typeOf(m[1]);
-    const sq = m[2] as Square;
-    const needsAttacker = /hanging|en prise/i.test(m[3]);
-    const holds = boards.some((b) => {
-      const p = b.get(sq);
-      if (!p || p.type !== t) return false;
-      const enemy: Color = p.color === "w" ? "b" : "w";
-      const defended = b.attackers(sq, p.color).length > 0;
-      const attacked = b.attackers(sq, enemy).length > 0;
-      return !defended && (!needsAttacker || attacked);
-    });
-    if (!holds) violations.push(`false claim: ${m[0]}`);
+  // 3-4, 6. Clause-level rules: every hazard claim must be proven, else fail closed.
+  for (const clause of text.split(CLAUSE_SPLIT)) {
+    checkClause(clause, facts, boards, allowed, violations);
   }
 
   // 5. Mate / stalemate / check words need a supporting fact.
@@ -103,9 +173,6 @@ export function verifyClaims(text: string, facts: CoachFacts): Verdict {
     facts.evalBefore.mate !== null ||
     facts.evalAfterBest.mate !== null ||
     facts.evalAfterWrong?.mate != null;
-  if (/\b(checkmate|checkmates|mate|mating)\b/i.test(text) && !mateInvolved) {
-    violations.push("mentions mate but the engine facts show none");
-  }
   if (/\bstalemate\b/i.test(text) && !moves.some((mv) => mv.givesStalemate)) {
     violations.push("mentions stalemate but no move stalemates");
   }
