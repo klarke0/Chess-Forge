@@ -69,7 +69,7 @@ const AppV2: React.FC = () => {
       <div className="relative flex flex-col h-[100dvh] w-full max-w-[430px] bg-forge-base overflow-hidden shadow-2xl shadow-black/60">
         {/* Main content */}
         <div
-          className={`flex-1 min-h-0 flex flex-col overflow-hidden ${drilling || repertoireRun || learnMode || analyzingGame ? "" : "mb-16"}`}
+          className={`flex-1 min-h-0 flex flex-col overflow-hidden ${drilling || repertoireRun || learnMode || analyzingGame ? "" : "mb-[calc(4rem+env(safe-area-inset-bottom,0px))]"}`}
         >
           {learnMode ? (
             <LearnScreen onBack={handleBackFromLearn} />

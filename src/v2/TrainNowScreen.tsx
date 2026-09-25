@@ -907,7 +907,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                 shaking && "motion-safe:animate-shake",
               )}
             >
-              <div className="w-full aspect-square rounded-xl overflow-hidden shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] bg-forge-board p-[6px]">
+              <div className="w-full aspect-square rounded-xl overflow-hidden shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] bg-forge-board p-[6px] touch-none select-none [-webkit-touch-callout:none]">
                 <div className="w-full h-full rounded-lg overflow-hidden">
                   <Chessboard
                     position={coachFen ?? fen}

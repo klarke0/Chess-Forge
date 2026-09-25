@@ -195,3 +195,20 @@ html[data-theme="night"] {
     scroll-behavior: auto !important;
   }
 }
+
+/* Mobile touch basics: no 300ms tap delay / double-tap zoom on controls, no
+   grey tap flash, no rubber-band scroll or pull-to-refresh inside the app
+   shell, and stable text size on orientation change. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+button,
+a,
+select,
+summary,
+[role="button"] {
+  touch-action: manipulation;
+}

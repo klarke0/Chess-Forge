@@ -1,0 +1,11 @@
+{
+  "name": "Chess Forge",
+  "short_name": "Chess Forge",
+  "start_url": "/v2",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050507",
+  "theme_color": "#050507",
+  "icons": [{ "src": "/vite.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

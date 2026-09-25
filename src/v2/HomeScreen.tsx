@@ -153,7 +153,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <select
               value={repertoireId}
               onChange={(e) => setActiveRepertoire(Number(e.target.value))}
-              className="ml-auto text-xs font-semibold bg-forge-border-subtle border border-forge-border-default text-forge-text-primary rounded-lg px-3 py-2 min-h-[44px] appearance-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+              className="ml-auto max-w-[60%] truncate text-base font-semibold bg-forge-border-subtle border border-forge-border-default text-forge-text-primary rounded-lg px-3 py-2 min-h-[44px] appearance-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
               aria-label="Active repertoire"
             >
               {availableRepertoires.map((r) => (
@@ -390,7 +390,15 @@ interface LearnCardProps {
 function LearnCard({ state, onLearn }: LearnCardProps) {
   const { loading, lesson, learned } = state;
 
-  if (loading) return null;
+  // Reserve the card's height while loading so the rest of Home doesn't jump
+  // down when the lesson arrives (icon 44px + p-4 padding = 76px).
+  if (loading)
+    return (
+      <div
+        aria-hidden="true"
+        className="w-full h-[76px] mb-5 bg-forge-card border border-forge-border-subtle rounded-forge-xl motion-safe:animate-pulse"
+      />
+    );
 
   if (!lesson) {
     if (learned === 0) return null;

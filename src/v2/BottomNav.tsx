@@ -40,7 +40,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               )}
             >
               <Icon size={22} />
-              <span className="text-[9px] font-black uppercase tracking-widest">
+              <span className="text-[10px] font-black uppercase tracking-widest">
                 {label}
               </span>
             </button>
