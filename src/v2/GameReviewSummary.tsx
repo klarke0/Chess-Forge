@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
-import { X, Settings, Play, Brain, Lightbulb } from "lucide-react";
+import { X, Play, Brain, Lightbulb, ChevronDown } from "lucide-react";
 import { cn } from "@/utils/cn";
 import type { AnalyzedGame } from "@/components/GameAnalysis";
 import type { ReviewedMove } from "@/hooks/useGameReview";
@@ -24,64 +24,106 @@ interface CoachMoment {
 }
 
 // ─── Move quality categories (chess.com style) ───────────────────────────────
+// Deliberately mimics chess.com's own palette, so these literals are exempt
+// from the forge-token lint rule. Reused by the review move strip / caption.
 
-const MOVE_CATEGORIES = [
+/* eslint-disable no-restricted-syntax */
+export const MOVE_CATEGORIES = [
   {
     key: "brilliant",
     label: "Brilliant",
-    symbol: "!!",
     bg: "bg-[#1baaa0]",
     text: "text-[#1baaa0]",
     border: "border-[#1baaa0]",
+    tint: "bg-[#1baaa0]/25",
+    tintSoft: "bg-[#1baaa0]/12",
+    hex: "#1baaa0",
     grades: [] as string[], // not yet computed by engine, show 0
   },
   {
     key: "great",
     label: "Great",
-    symbol: "!",
     bg: "bg-[#5b8dd9]",
     text: "text-[#5b8dd9]",
     border: "border-[#5b8dd9]",
+    tint: "bg-[#5b8dd9]/25",
+    tintSoft: "bg-[#5b8dd9]/12",
+    hex: "#5b8dd9",
     grades: ["excellent"],
   },
   {
     key: "best",
     label: "Best",
-    symbol: "★",
     bg: "bg-[#6eb966]",
     text: "text-[#6eb966]",
     border: "border-[#6eb966]",
+    tint: "bg-[#6eb966]/25",
+    tintSoft: "bg-[#6eb966]/12",
+    hex: "#6eb966",
     grades: ["best"],
   },
   {
     key: "mistake",
     label: "Mistake",
-    symbol: "?",
     bg: "bg-[#e07b38]",
     text: "text-[#e07b38]",
     border: "border-[#e07b38]",
+    tint: "bg-[#e07b38]/25",
+    tintSoft: "bg-[#e07b38]/12",
+    hex: "#e07b38",
     grades: ["mistake", "inaccuracy"],
   },
   {
     key: "miss",
     label: "Miss",
-    symbol: "✗",
     bg: "bg-[#e05c5c]",
     text: "text-[#e05c5c]",
     border: "border-[#e05c5c]",
+    tint: "bg-[#e05c5c]/25",
+    tintSoft: "bg-[#e05c5c]/12",
+    hex: "#e05c5c",
     // No direct equivalent in our grading — always 0
     grades: [] as string[],
   },
   {
     key: "blunder",
     label: "Blunder",
-    symbol: "??",
     bg: "bg-[#cc3333]",
     text: "text-[#cc3333]",
     border: "border-[#cc3333]",
+    tint: "bg-[#cc3333]/25",
+    tintSoft: "bg-[#cc3333]/12",
+    hex: "#cc3333",
     grades: ["blunder"],
   },
 ];
+
+const categoryByKey = (key: string) => MOVE_CATEGORIES.find((c) => c.key === key)!;
+
+export interface GradeStyle {
+  /** Human label for the engine grade (never colour-only). */
+  label: string;
+  text: string;
+  border: string;
+  /** Background tint for chips; softer for lower-severity grades. */
+  tint: string;
+  hex: string;
+}
+
+/** Per-engine-grade style, derived from the chess.com category palette above. */
+export const GRADE_STYLE: Record<string, GradeStyle> = {
+  excellent: { label: "Great", text: categoryByKey("great").text, border: categoryByKey("great").border, tint: categoryByKey("great").tintSoft, hex: categoryByKey("great").hex },
+  best: { label: "Best", text: categoryByKey("best").text, border: categoryByKey("best").border, tint: categoryByKey("best").tintSoft, hex: categoryByKey("best").hex },
+  good: { label: "Good", text: "text-forge-text-secondary", border: "border-transparent", tint: "", hex: "#94a3b8" },
+  inaccuracy: { label: "Inaccuracy", text: categoryByKey("mistake").text, border: categoryByKey("mistake").border, tint: categoryByKey("mistake").tintSoft, hex: categoryByKey("mistake").hex },
+  mistake: { label: "Mistake", text: categoryByKey("mistake").text, border: categoryByKey("mistake").border, tint: categoryByKey("mistake").tint, hex: categoryByKey("mistake").hex },
+  blunder: { label: "Blunder", text: categoryByKey("blunder").text, border: categoryByKey("blunder").border, tint: categoryByKey("blunder").tint, hex: categoryByKey("blunder").hex },
+};
+
+/** Arrow colours for the review board: engine best move vs the move played. */
+export const REVIEW_ARROW_BEST = categoryByKey("best").hex;
+export const REVIEW_ARROW_PLAYED = categoryByKey("miss").hex;
+/* eslint-enable no-restricted-syntax */
 
 // ─── Accuracy calculation ────────────────────────────────────────────────────
 
@@ -149,12 +191,12 @@ const PlayerAvatar: React.FC<{
   username: string;
   isUser?: boolean;
   size?: "sm" | "lg";
-}> = ({ username, isUser, size = "lg" }) => {
+}> = ({ username, isUser, size = "sm" }) => {
   const initials = username.slice(0, 2).toUpperCase();
-  const dim = size === "lg" ? "w-20 h-20" : "w-14 h-14";
-  const textSize = size === "lg" ? "text-2xl" : "text-base";
+  const dim = size === "lg" ? "w-14 h-14" : "w-10 h-10";
+  const textSize = size === "lg" ? "text-xl" : "text-sm";
   const ring = isUser
-    ? "ring-2 ring-[#6eb966] ring-offset-2 ring-offset-[#0d1117]"
+    ? "ring-2 ring-[#6eb966] ring-offset-1 ring-offset-[#0d1117]"
     : "";
 
   return (
@@ -306,12 +348,15 @@ const MOMENT_STYLES: Record<string, { bg: string; text: string; icon: string; bo
 
 // ─── AI Coach Summary Section ─────────────────────────────────────────────────
 
+// Collapsed by default: the (paid) Gemini request only fires once the user
+// expands it, and the summary screen stays one phone-screen tall.
 const AICoachSummary: React.FC<{
   game: AnalyzedGame;
   reviewedMoves: ReviewedMove[];
   userColor: "white" | "black";
-  visible: boolean;
-}> = ({ game, reviewedMoves, userColor, visible }) => {
+}> = ({ game, reviewedMoves, userColor }) => {
+  const [open, setOpen] = useState(false);
+  const visible = open;
   const [moments, setMoments] = useState<CoachMoment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -339,25 +384,44 @@ const AICoachSummary: React.FC<{
   }
 
   return (
-    <div className="px-4 pb-6 shrink-0">
+    <div className="px-3 pb-2 shrink-0">
       <div className="bg-forge-surface rounded-2xl border border-forge-border-subtle overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center gap-2.5 px-4 py-3 border-b border-forge-border-subtle">
+        {/* Header (disclosure) */}
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls="ai-coach-summary-body"
+          onClick={() => setOpen((o) => !o)}
+          className={cn(
+            "w-full min-h-[44px] flex items-center gap-2.5 px-3 py-1.5 text-left cursor-pointer",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400",
+            open && "border-b border-forge-border-subtle",
+          )}
+        >
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600/30 to-indigo-600/30 border border-forge-insight-border flex items-center justify-center shrink-0">
             <Brain size={14} className="text-forge-insight" />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-[11px] font-black uppercase tracking-widest text-forge-text-primary">
               AI Coach Summary
             </p>
-            <p className="text-[10px] text-forge-text-muted font-medium">
+            <p className="text-[10px] text-forge-text-muted font-medium truncate">
               Key moments from your game
             </p>
           </div>
-        </div>
+          <ChevronDown
+            size={16}
+            aria-hidden="true"
+            className={cn(
+              "shrink-0 text-forge-text-muted motion-safe:transition-transform motion-safe:duration-200",
+              open && "rotate-180",
+            )}
+          />
+        </button>
 
         {/* Content */}
-        <div className="p-3 space-y-2">
+        {open && (
+        <div id="ai-coach-summary-body" className="p-3 space-y-2">
           {loading ? (
             <div className="flex flex-col items-center gap-3 py-6 motion-safe:animate-pulse">
               <Brain size={28} className="text-forge-insight" />
@@ -425,9 +489,10 @@ const AICoachSummary: React.FC<{
             })
           )}
         </div>
+        )}
 
         {/* Powered by tag */}
-        {!loading && !error && moments.length > 0 && (
+        {open && !loading && !error && moments.length > 0 && (
           <div className="flex items-center justify-center gap-1.5 py-2 border-t border-forge-border-subtle">
             <Lightbulb size={9} className="text-forge-text-muted" />
             <span className="text-[10px] text-forge-text-muted uppercase tracking-widest font-black">
@@ -491,71 +556,83 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
       .filter(Boolean) as { cx: number; cy: number; key: number }[];
   }, [reviewedMoves, hasAnalysis]);
 
+  const FOCUS =
+    "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base";
+
+  const sides = [
+    { key: "opp", name: opponentUsername, accuracy: opponentAccuracy, isUser: false },
+    { key: "you", name: userUsername, accuracy: userAccuracy, isUser: true },
+  ];
+
   return (
     <div className="absolute inset-0 z-50 bg-forge-base text-forge-text-primary font-outfit flex flex-col motion-safe:animate-in motion-safe:fade-in duration-300 overflow-y-auto">
-      {/* ── Header ── */}
-      <div className="shrink-0 px-4 pt-4 pb-2">
-        <div className="flex items-center justify-between mb-3">
-          <button
-            onClick={onClose}
-            aria-label="Close game review"
-            className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full bg-forge-border-subtle hover:bg-forge-border-default text-forge-text-secondary hover:text-white transition-colors"
-          >
-            <X size={18} />
-          </button>
-          <h1 className="text-lg font-black text-white tracking-tight">
-            Game Review
-          </h1>
-          <div className="flex items-center gap-2">
-            <button aria-label="Settings" className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full bg-forge-border-subtle hover:bg-forge-border-default text-forge-text-secondary hover:text-white transition-colors">
-              <Settings size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* View toggle */}
-        {onSwitchToReview && (
-          <div className="flex items-center justify-center">
+      {/* ── Header: close + Summary/Review toggle (one 44px row) ── */}
+      <div className="shrink-0 flex items-center gap-2 px-3 pt-2 pb-1">
+        <button
+          onClick={onClose}
+          aria-label="Close game review"
+          className={cn(
+            FOCUS,
+            "min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full bg-forge-border-subtle hover:bg-forge-border-default text-forge-text-secondary hover:text-white transition-colors",
+          )}
+        >
+          <X size={18} />
+        </button>
+        <h1 className="sr-only">Game Review</h1>
+        <div className="flex-1 flex items-center justify-center">
+          {onSwitchToReview ? (
             <div className="flex bg-forge-base rounded-xl p-0.5 gap-0.5 border border-forge-border-subtle">
               <button
                 aria-pressed="true"
-                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base min-h-[44px] flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all bg-forge-primary text-white shadow-lg shadow-indigo-600/20"
+                className={cn(
+                  FOCUS,
+                  "min-h-[44px] flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all bg-forge-primary text-white shadow-lg shadow-indigo-600/20",
+                )}
               >
                 Summary
               </button>
               <button
                 onClick={onSwitchToReview}
-                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base min-h-[44px] flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all text-forge-text-inactive hover:text-forge-text-primary"
+                className={cn(
+                  FOCUS,
+                  "min-h-[44px] flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all text-forge-text-inactive hover:text-forge-text-primary",
+                )}
               >
                 Review
               </button>
             </div>
-          </div>
-        )}
+          ) : (
+            <span className="text-sm font-black text-white tracking-tight" aria-hidden="true">
+              Game Review
+            </span>
+          )}
+        </div>
+        {/* Spacer so the toggle stays centred against the close button */}
+        <div className="w-11 shrink-0" aria-hidden="true" />
       </div>
 
-      {/* ── Coach section ── */}
-      <div className="flex items-start gap-3 px-4 pt-2 pb-4 shrink-0">
-        {/* Coach avatar */}
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600/30 to-violet-600/30 border border-forge-primary-border flex items-center justify-center shrink-0 text-2xl">
+      {/* ── Coach one-liner ── */}
+      <div className="flex items-center gap-2.5 px-3 py-1.5 shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600/30 to-violet-600/30 border border-forge-primary-border flex items-center justify-center shrink-0 text-lg" aria-hidden="true">
           🧙
         </div>
-
-        {/* Speech bubble */}
         <div className="relative flex-1 min-w-0">
-          {/* Tail pointing left */}
-          <div className="absolute -left-2 top-4 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px] border-r-white" />
-          <div className="bg-white text-forge-text-muted rounded-2xl rounded-tl-sm px-4 py-3 shadow-lg">
-            <p className="text-[13px] font-semibold leading-snug">{coachMessage}</p>
+          <div className="absolute -left-1.5 top-3 w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-r-[6px] border-r-white" />
+          <div className="bg-white text-forge-text-muted rounded-xl rounded-tl-sm px-3 py-1.5 shadow-lg">
+            <p className="text-[12px] font-semibold leading-snug">{coachMessage}</p>
           </div>
         </div>
       </div>
 
       {/* ── Eval graph ── */}
-      <div className="px-4 pb-4 shrink-0">
-        <div className="w-full h-[64px] rounded-xl overflow-hidden border border-forge-border-subtle bg-forge-surface relative">
+      <div className="px-3 py-1.5 shrink-0">
+        <div
+          className="w-full h-[48px] rounded-xl overflow-hidden border border-forge-border-subtle bg-forge-surface relative"
+          role="img"
+          aria-label={hasAnalysis ? "Evaluation graph across the game" : "Analysis not yet available"}
+        >
           {hasAnalysis ? (
-            <svg viewBox="0 0 1000 100" preserveAspectRatio="none" className="w-full h-full">
+            <svg viewBox="0 0 1000 100" preserveAspectRatio="none" className="w-full h-full" aria-hidden="true">
               <defs>
                 <clipPath id="clip-white"><rect x="0" y="0" width="1000" height="50" /></clipPath>
                 <clipPath id="clip-black"><rect x="0" y="50" width="1000" height="50" /></clipPath>
@@ -596,124 +673,78 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
         </div>
       </div>
 
-      {/* ── Player comparison ── */}
-      <div className="px-4 pb-4 shrink-0">
-        <div className="bg-forge-surface rounded-2xl border border-forge-border-subtle p-4">
-          {/* Labels row */}
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center mb-3">
-            <p className="text-[11px] font-black text-forge-text-inactive uppercase tracking-wider truncate text-center">
-              {opponentUsername}
-            </p>
-            <div className="w-16" />
-            <p className="text-[11px] font-black text-forge-text-inactive uppercase tracking-wider truncate text-center">
-              {userUsername}
-            </p>
-          </div>
-
-          {/* Avatars row */}
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 mb-4">
-            <div className="flex justify-center">
-              <PlayerAvatar username={opponentUsername} isUser={false} />
-            </div>
-            <p className="text-[10px] font-black text-forge-text-muted uppercase tracking-widest text-center w-16">
-              Players
-            </p>
-            <div className="flex justify-center">
-              <PlayerAvatar username={userUsername} isUser={true} />
-            </div>
-          </div>
-
-          {/* Accuracy row */}
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+      {/* ── Players + accuracy (one compact row) ── */}
+      <div className="px-3 py-1.5 shrink-0">
+        <div className="grid grid-cols-2 gap-2">
+          {sides.map((side) => (
             <div
+              key={side.key}
               className={cn(
-                "rounded-xl py-3 text-center",
-                "bg-forge-elevated border border-forge-border-subtle",
+                "flex items-center gap-2.5 rounded-xl border px-2.5 py-2 min-w-0",
+                side.isUser
+                  ? "bg-[#1a2e1a] border-[#6eb966]/20"
+                  : "bg-forge-surface border-forge-border-subtle",
               )}
             >
-              <p
-                className={cn(
-                  "text-2xl font-black tabular-nums",
-                  hasAnalysis ? "text-white" : "text-forge-text-muted",
-                )}
-              >
-                {hasAnalysis ? opponentAccuracy.toFixed(1) : "—"}
-              </p>
+              <PlayerAvatar username={side.name} isUser={side.isUser} />
+              <div className="min-w-0">
+                <p className="text-[10px] font-black text-forge-text-inactive uppercase tracking-wider truncate">
+                  {side.name}
+                </p>
+                <p
+                  className={cn(
+                    "text-xl font-black tabular-nums leading-tight",
+                    hasAnalysis
+                      ? side.isUser
+                        ? "text-[#6eb966]"
+                        : "text-white"
+                      : "text-forge-text-muted",
+                  )}
+                  aria-label={hasAnalysis ? `Accuracy ${side.accuracy.toFixed(1)}` : "Accuracy unavailable"}
+                >
+                  {hasAnalysis ? side.accuracy.toFixed(1) : "—"}
+                  <span className="ml-1 text-[10px] font-black uppercase tracking-wider text-forge-text-muted">
+                    acc
+                  </span>
+                </p>
+              </div>
             </div>
-            <p className="text-[10px] font-black text-forge-text-muted uppercase tracking-widest text-center w-16">
-              Accuracy
-            </p>
-            <div
-              className={cn(
-                "rounded-xl py-3 text-center",
-                "bg-[#1a2e1a] border border-[#6eb966]/20",
-              )}
-            >
-              <p
-                className={cn(
-                  "text-2xl font-black tabular-nums",
-                  hasAnalysis ? "text-[#6eb966]" : "text-forge-text-muted",
-                )}
-              >
-                {hasAnalysis ? userAccuracy.toFixed(1) : "—"}
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* ── Move quality breakdown ── */}
-      <div className="px-4 pb-4 shrink-0">
-        <div className="bg-forge-surface rounded-2xl border border-forge-border-subtle overflow-hidden">
-          {MOVE_CATEGORIES.map((cat, idx) => {
+      {/* ── Move quality: 3x2 tiles (you / opponent) ── */}
+      <div className="px-3 py-1.5 shrink-0">
+        <p className="text-[10px] font-black uppercase tracking-widest text-forge-text-muted mb-1.5">
+          Move quality <span className="text-forge-text-inactive">· you / opponent</span>
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {MOVE_CATEGORIES.map((cat) => {
             const opponentCount = countMoves(reviewedMoves, opponentColor, cat.grades);
             const userCount = countMoves(reviewedMoves, userColor, cat.grades);
-
             return (
               <div
                 key={cat.key}
-                className={cn(
-                  "grid grid-cols-[1fr_56px_1fr] items-center px-4 py-3",
-                  idx < MOVE_CATEGORIES.length - 1 &&
-                    "border-b border-white/[0.04]",
-                )}
+                role="group"
+                aria-label={`${cat.label}: you ${userCount}, opponent ${opponentCount}`}
+                className="min-h-[56px] rounded-xl border border-forge-border-subtle bg-forge-surface px-2.5 py-2 flex flex-col justify-between"
               >
-                {/* Left: opponent count */}
-                <p
-                  className={cn(
-                    "text-lg font-black tabular-nums text-center",
-                    opponentCount > 0 ? cat.text : "text-forge-text-muted",
-                  )}
-                >
-                  {opponentCount}
-                </p>
-
-                {/* Center: badge */}
-                <div className="flex flex-col items-center gap-0.5">
-                  <div
-                    className={cn(
-                      "w-9 h-9 rounded-full flex items-center justify-center border-2 shrink-0",
-                      cat.bg,
-                      cat.border,
-                    )}
-                  >
-                    <span className="text-white text-[11px] font-black leading-none">
-                      {cat.symbol}
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-forge-text-muted">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", cat.bg)} aria-hidden="true" />
+                  <span className="text-[10px] font-black uppercase tracking-wider text-forge-text-muted truncate">
                     {cat.label}
                   </span>
                 </div>
-
-                {/* Right: user count */}
-                <p
-                  className={cn(
-                    "text-lg font-black tabular-nums text-center",
-                    userCount > 0 ? cat.text : "text-forge-text-muted",
-                  )}
-                >
-                  {userCount}
+                <p className="tabular-nums leading-none">
+                  <span
+                    className={cn(
+                      "text-xl font-black",
+                      userCount > 0 ? cat.text : "text-forge-text-muted",
+                    )}
+                  >
+                    {userCount}
+                  </span>
+                  <span className="text-[12px] font-bold text-forge-text-muted"> / {opponentCount}</span>
                 </p>
               </div>
             );
@@ -721,19 +752,23 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
         </div>
       </div>
 
-      {/* ── AI Coach Summary ── */}
-      <AICoachSummary
-        game={game}
-        reviewedMoves={reviewedMoves}
-        userColor={userColor}
-        visible={true}
-      />
+      {/* ── AI Coach Summary (collapsed until asked for) ── */}
+      <div className="pt-1.5 shrink-0">
+        <AICoachSummary
+          game={game}
+          reviewedMoves={reviewedMoves}
+          userColor={userColor}
+        />
+      </div>
 
-      {/* ── Start Review CTA ── */}
-      <div className="px-4 pb-6 shrink-0">
+      {/* ── Start Review CTA (pinned to the thumb zone) ── */}
+      <div className="px-3 pt-1.5 pb-3 mt-auto shrink-0">
         <button
           onClick={onStartReview}
-          className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base w-full py-4 bg-[#5c9e3b] hover:bg-[#6ab544] active:bg-[#4e8832] text-white font-black text-base uppercase tracking-wide rounded-2xl transition-colors shadow-lg shadow-green-900/30 flex items-center justify-center gap-2"
+          className={cn(
+            FOCUS,
+            "w-full min-h-[52px] bg-[#5c9e3b] hover:bg-[#6ab544] active:bg-[#4e8832] text-white font-black text-base uppercase tracking-wide rounded-2xl transition-colors shadow-lg shadow-green-900/30 flex items-center justify-center gap-2",
+          )}
         >
           <Play size={18} fill="white" />
           Start Review
