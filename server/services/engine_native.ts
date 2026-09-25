@@ -20,6 +20,67 @@ export function findStockfishBinary(): string | null {
   return null;
 }
 
+export interface NativeEngineOptions {
+  /** Path to the stockfish binary; defaults to `findStockfishBinary()`. */
+  binaryPath?: string;
+  /** UCI `Threads`. Default 4. */
+  threads?: number;
+  /** UCI `Hash` in MB. Default 128. */
+  hashMb?: number;
+  /** Run as `nice -n <n> <stockfish>` (0–19). Omit to run at normal priority. */
+  nice?: number;
+}
+
+export interface ResolvedEngineOptions {
+  binaryPath: string | undefined;
+  threads: number;
+  hashMb: number;
+  nice: number | null;
+}
+
+const DEFAULT_THREADS = 4;
+const DEFAULT_HASH_MB = 128;
+
+/**
+ * The constructor historically took only an optional binary path, and every
+ * existing call site (`new NativeEngine()`, `new NativeEngine(path)`) must keep
+ * working, so a bare string is still accepted as the path.
+ */
+export function resolveEngineOptions(
+  arg?: string | NativeEngineOptions,
+): ResolvedEngineOptions {
+  const o: NativeEngineOptions = typeof arg === "string" ? { binaryPath: arg } : (arg ?? {});
+  return {
+    binaryPath: o.binaryPath,
+    threads: Math.max(1, Math.floor(o.threads ?? DEFAULT_THREADS)),
+    hashMb: Math.max(1, Math.floor(o.hashMb ?? DEFAULT_HASH_MB)),
+    nice: o.nice === undefined ? null : Math.min(19, Math.max(0, Math.floor(o.nice))),
+  };
+}
+
+/** argv for Bun.spawn: the binary alone, or `nice -n <n> <binary>`. */
+export function buildSpawnArgs(bin: string, nice: number | null): string[] {
+  return nice === null ? [bin] : ["nice", "-n", String(nice), bin];
+}
+
+/** UCI lines sent right after spawn. */
+export function buildSetupCommands(o: { threads: number; hashMb: number }): string[] {
+  return [
+    "uci",
+    `setoption name Threads value ${o.threads}`,
+    `setoption name Hash value ${o.hashMb}`,
+  ];
+}
+
+/**
+ * `go depth <d>`, optionally capped with `movetime <ms>` — whichever limit is
+ * hit first ends the search. A non-positive movetime is ignored.
+ */
+export function buildGoCommand(depth: number, movetimeMs?: number): string {
+  const base = `go depth ${depth}`;
+  return movetimeMs !== undefined && movetimeMs > 0 ? `${base} movetime ${Math.floor(movetimeMs)}` : base;
+}
+
 /**
  * One long-lived native Stockfish process speaking UCI over stdio.
  * Requests are serialized internally — a single instance is safe to share.
@@ -36,15 +97,23 @@ export class NativeEngine {
   /** Woken by the pump whenever new data lands in `buffer`, or on close/error. */
   private waiters: Array<() => void> = [];
 
-  constructor(binaryPath?: string) {
-    const bin = binaryPath ?? findStockfishBinary();
+  constructor(opts?: string | NativeEngineOptions) {
+    const o = resolveEngineOptions(opts);
+    const bin = o.binaryPath ?? findStockfishBinary();
     if (!bin) throw new Error("stockfish binary not found — brew install stockfish");
-    this.proc = Bun.spawn([bin], { stdin: "pipe", stdout: "pipe", stderr: "ignore" });
+    this.proc = Bun.spawn(buildSpawnArgs(bin, o.nice), {
+      stdin: "pipe",
+      stdout: "pipe",
+      stderr: "ignore",
+    });
     this.reader = (this.proc.stdout as ReadableStream<Uint8Array>).getReader();
     void this.pump();
-    this.send("uci");
-    this.send("setoption name Threads value 4");
-    this.send("setoption name Hash value 128");
+    for (const cmd of buildSetupCommands(o)) this.send(cmd);
+  }
+
+  /** OS pid of the engine process (with `nice`, the wrapper execs into stockfish). */
+  get pid(): number {
+    return this.proc.pid;
   }
 
   private send(cmd: string) {
@@ -61,7 +130,7 @@ export class NativeEngine {
    */
   private async pump(): Promise<void> {
     try {
-      while (true) {
+      for (;;) {
         const chunk = await this.reader.read();
         if (chunk.done) {
           this.closed = true;
@@ -106,7 +175,7 @@ export class NativeEngine {
   private async readUntil(until: RegExp, timeoutMs: number): Promise<string[]> {
     const lines: string[] = [];
     const deadline = Date.now() + timeoutMs;
-    while (true) {
+    for (;;) {
       const nl = this.buffer.indexOf("\n");
       if (nl >= 0) {
         const line = this.buffer.slice(0, nl).trim();
@@ -125,12 +194,12 @@ export class NativeEngine {
     }
   }
 
-  evaluate(fen: string, depth = 14): Promise<EngineEval> {
+  evaluate(fen: string, depth = 14, opts?: { movetimeMs?: number }): Promise<EngineEval> {
     const job = async (): Promise<EngineEval> => {
       this.send("isready");
       await this.readUntil(/^readyok/, 10_000);
       this.send(`position fen ${fen}`);
-      this.send(`go depth ${depth}`);
+      this.send(buildGoCommand(depth, opts?.movetimeMs));
       let lines: string[];
       try {
         lines = await this.readUntil(/^bestmove/, 60_000);
