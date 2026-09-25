@@ -585,8 +585,8 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
       source: currentPosition?.source,
       cpLoss: currentPosition?.cpLoss,
     };
-    // Fire-and-forget — UI advances regardless of network result, and the
-    // backend is idempotent for replayed attempts.
+    // Fire-and-forget — UI advances regardless of network result. Each call
+    // carries an attemptId (added in api.ts), so a replayed request is ignored.
     apiRecordAttempt(repertoireId, record).catch(() => {});
   }
 

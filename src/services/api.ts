@@ -131,12 +131,25 @@ export interface AttemptRecord {
   source?: string;
   /** V2 cpLoss in pawns — used to bucket initial ease for blunder sources. */
   cpLoss?: number;
+  /** Idempotency key: the server ignores a repeat of the same id. */
+  attemptId?: string;
+}
+
+// crypto.randomUUID only exists in secure contexts (https / localhost).
+function newAttemptId(): string {
+  return typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export function recordAttempt(repertoireId: number, record: AttemptRecord) {
   return request<{ ok: boolean }>("/progress/record", {
     method: "POST",
-    body: JSON.stringify({ repertoireId, ...record }),
+    body: JSON.stringify({
+      repertoireId,
+      attemptId: newAttemptId(),
+      ...record,
+    }),
   });
 }
 

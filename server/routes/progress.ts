@@ -25,26 +25,99 @@ function initialEaseFactor(source?: string, cpLoss?: number): number {
   return 2.5; // review or unknown
 }
 
-export async function recordAttempt(req: Request): Promise<Response> {
-  const body = (await req.json()) as {
-    repertoireId: number;
-    fen: string;
-    correct: boolean;
-    grade?: number;
-    easeFactor?: number;
-    intervalDays?: number;
-    nextReview?: string;
-    source?: string;
-    cpLoss?: number;
-  };
+type AttemptBody = {
+  repertoireId: number;
+  fen: string;
+  correct: boolean;
+  grade?: number;
+  easeFactor?: number;
+  intervalDays?: number;
+  nextReview?: string;
+  source?: string;
+  cpLoss?: number;
+  /** Client-generated id; a repeat within RECENT_ATTEMPT_TTL_MS is ignored. */
+  attemptId?: string;
+};
 
-  if (!body.repertoireId || !body.fen || body.correct === undefined) {
+// Replay guard: a retried or duplicated POST must not count twice (it would
+// inflate total_attempts and push SM-2 further). In-memory is enough — the
+// window only has to cover client retries, and a restart just forgets it.
+const RECENT_ATTEMPT_TTL_MS = 10 * 60 * 1000;
+const recentAttemptIds = new Map<string, number>();
+
+function seenRecently(attemptId: string): boolean {
+  const nowMs = Date.now();
+  for (const [id, at] of recentAttemptIds) {
+    if (nowMs - at > RECENT_ATTEMPT_TTL_MS) recentAttemptIds.delete(id);
+    else break; // Map iterates in insertion order, so the rest are newer
+  }
+  if (recentAttemptIds.has(attemptId)) return true;
+  recentAttemptIds.set(attemptId, nowMs);
+  return false;
+}
+
+export async function recordAttempt(req: Request): Promise<Response> {
+  let body: AttemptBody;
+  try {
+    body = (await req.json()) as AttemptBody;
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  if (
+    !body ||
+    !Number.isInteger(body.repertoireId) ||
+    body.repertoireId <= 0 ||
+    typeof body.fen !== "string" ||
+    body.fen.length === 0 ||
+    body.fen.length > 200 ||
+    typeof body.correct !== "boolean"
+  ) {
     return Response.json(
-      { error: "repertoireId, fen, and correct are required" },
+      {
+        error:
+          "repertoireId (positive integer), fen (string), and correct (boolean) are required",
+      },
       { status: 400 },
     );
   }
+  if (
+    body.grade !== undefined &&
+    (!Number.isInteger(body.grade) || body.grade < 0 || body.grade > 5)
+  ) {
+    return Response.json(
+      { error: "grade must be an integer 0-5" },
+      { status: 400 },
+    );
+  }
+  if (
+    body.attemptId !== undefined &&
+    (typeof body.attemptId !== "string" || body.attemptId.length > 64)
+  ) {
+    return Response.json({ error: "Invalid attemptId" }, { status: 400 });
+  }
 
+  const repertoire = db
+    .query("SELECT 1 FROM repertoires WHERE id = ?")
+    .get(body.repertoireId);
+  if (!repertoire) {
+    return Response.json({ error: "Repertoire not found" }, { status: 404 });
+  }
+
+  if (body.attemptId && seenRecently(body.attemptId)) {
+    return Response.json({ ok: true, duplicate: true });
+  }
+
+  try {
+    applyAttempt(body);
+  } catch (e) {
+    console.error("[recordAttempt] failed:", e);
+    return Response.json({ error: "Failed to record attempt" }, { status: 500 });
+  }
+  return Response.json({ ok: true });
+}
+
+function applyAttempt(body: AttemptBody): void {
   const fen = normalizeFen(body.fen);
   const now = new Date().toISOString();
 
@@ -156,7 +229,6 @@ export async function recordAttempt(req: Request): Promise<Response> {
     }
   }
 
-  return Response.json({ ok: true });
 }
 
 export function getWeakPositions(repertoireId: number): Response {
