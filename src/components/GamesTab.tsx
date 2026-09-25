@@ -87,7 +87,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
   const [loadingStep, setLoadingStep] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const chessComUsername = useRepertoireStore((s) => s.chessComUsername);
-  const { isAnalyzing } = useBackgroundStore();
+  const { isAnalyzing, analyzedCount, totalInQueue } = useBackgroundStore();
 
   const loadGames = () => {
     setLoading(true);
@@ -365,10 +365,10 @@ export const GamesTab: React.FC<GamesTabProps> = ({
               {isAnalyzing ? (
                 <button
                   onClick={() => BackgroundAnalysisQueue.stop()}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-black uppercase tracking-wider transition-all animate-pulse"
+                  className="flex items-center gap-1.5 px-3 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-black uppercase tracking-wider transition-all motion-safe:animate-pulse"
                 >
-                  <Cpu size={12} className="animate-spin" />
-                  Stop Scan
+                  <Cpu size={12} className="motion-safe:animate-spin" />
+                  Stop Scan{totalInQueue > 0 ? ` (${analyzedCount}/${totalInQueue})` : ""}
                 </button>
               ) : (
                 <button
@@ -519,7 +519,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                   <p className="text-xs font-black uppercase tracking-[0.2em] text-white mb-1">
                     Loading Analysis
                   </p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-pulse">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest motion-safe:animate-pulse">
                     {loadingStep}
                   </p>
                 </div>

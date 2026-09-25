@@ -18,10 +18,12 @@ interface HomeScreenProps {
   onLearn: () => void;
 }
 
+// Label = the phase LearnScreen opens for that stage (see stageForLessonStage):
+// 0 -> watch, 1 -> guided, 2 -> blind, 3 (refresh) -> blind.
 const STAGE_CHIP: Record<number, { label: string; tone: ChipTone; className?: string }> = {
-  0: { label: "NEW", tone: "primary", className: "text-white" },
-  1: { label: "WATCHED", tone: "primary", className: "text-white" },
-  2: { label: "GUIDED", tone: "primary", className: "text-white" },
+  0: { label: "WATCH", tone: "primary", className: "text-white" },
+  1: { label: "GUIDED", tone: "primary", className: "text-white" },
+  2: { label: "BLIND", tone: "primary", className: "text-white" },
   3: { label: "REFRESH", tone: "success" },
 };
 
@@ -151,7 +153,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <select
               value={repertoireId}
               onChange={(e) => setActiveRepertoire(Number(e.target.value))}
-              className="ml-auto text-xs font-semibold bg-forge-border-subtle border border-forge-border-default text-forge-text-primary rounded-lg px-2 py-1 appearance-none cursor-pointer"
+              className="ml-auto text-xs font-semibold bg-forge-border-subtle border border-forge-border-default text-forge-text-primary rounded-lg px-3 py-2 min-h-[44px] appearance-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+              aria-label="Active repertoire"
             >
               {availableRepertoires.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -257,7 +260,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             key={v}
             onClick={() => setPhase(v)}
             className={cn(
-              "px-4 py-2 min-h-[36px] rounded-full text-xs font-bold uppercase tracking-wide cursor-pointer",
+              "px-4 py-2 min-h-[44px] rounded-full text-xs font-bold uppercase tracking-wide cursor-pointer",
               "transition-colors duration-150",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
               phase === v

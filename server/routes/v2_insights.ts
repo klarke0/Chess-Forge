@@ -18,14 +18,10 @@ export function insightsVelocity(req: Request): Response {
   const url = new URL(req.url);
   const repertoireIdParam = url.searchParams.get("repertoireId");
 
-  if (!repertoireIdParam) {
-    return Response.json(
-      { error: "repertoireId query param required" },
-      { status: 400 },
-    );
-  }
-  const repertoireId = parseInt(repertoireIdParam, 10);
-  if (isNaN(repertoireId)) {
+  // Absent/empty param falls back to "all repertoires"; a malformed one is still a 400.
+  const hasRepertoire = !!repertoireIdParam;
+  const repertoireId = hasRepertoire ? parseInt(repertoireIdParam!, 10) : NaN;
+  if (hasRepertoire && isNaN(repertoireId)) {
     return Response.json({ error: "Invalid repertoireId" }, { status: 400 });
   }
 
@@ -77,9 +73,13 @@ export function insightsVelocity(req: Request): Response {
 
   // Load repertoire position FENs for filtering to in-repertoire blunders
   const repFens = new Set<string>();
-  const posRows = db
-    .query("SELECT DISTINCT fen FROM positions WHERE repertoire_id = ?")
-    .all(repertoireId) as { fen: string }[];
+  const posRows = (
+    hasRepertoire
+      ? db
+          .query("SELECT DISTINCT fen FROM positions WHERE repertoire_id = ?")
+          .all(repertoireId)
+      : db.query("SELECT DISTINCT fen FROM positions").all()
+  ) as { fen: string }[];
   for (const row of posRows) {
     repFens.add(row.fen);
   }

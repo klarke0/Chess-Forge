@@ -31,7 +31,12 @@ const AppV2: React.FC = () => {
   useEffect(() => {
     useRepertoireStore.getState().loadFromApi();
     initEngine();
-    BackgroundAnalysisQueue.start();
+    // Once per page load: StrictMode re-runs effects in dev, which would
+    // otherwise fire the auto-sync (POST /api/games/sync) twice.
+    if (!backgroundStarted) {
+      backgroundStarted = true;
+      BackgroundAnalysisQueue.start();
+    }
   }, []);
 
   function handleTrainNow(mode: TrainingMode, phase: PhaseFilter) {
@@ -113,5 +118,7 @@ const AppV2: React.FC = () => {
     </div>
   );
 };
+
+let backgroundStarted = false;
 
 export default AppV2;

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Settings, RotateCcw, Eye, EyeOff, ChevronRight, AlertTriangle, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import * as api from "@/services/api";
+import { useRepertoireStore } from "@/stores/repertoireStore";
 
 // ---------------------------------------------------------------------------
 // localStorage key for disabled repertoire IDs
@@ -50,6 +51,7 @@ export const SettingsScreen: React.FC = () => {
   const [resetTarget, setResetTarget] = useState<RepertoireStats | null>(null);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMsg, setResetMsg] = useState<string | null>(null);
+  const selectedId = useRepertoireStore((s) => s.repertoireId);
 
   useEffect(() => {
     loadStats();
@@ -151,6 +153,7 @@ export const SettingsScreen: React.FC = () => {
               key={r.id}
               stat={r}
               enabled={!disabled.has(r.id)}
+              selected={r.id === selectedId}
               onToggleEnabled={() => toggleEnabled(r.id)}
               onResetProgress={() => setResetTarget(r)}
             />
@@ -194,11 +197,12 @@ export const SettingsScreen: React.FC = () => {
 interface RepertoireCardProps {
   stat: RepertoireStats;
   enabled: boolean;
+  selected: boolean;
   onToggleEnabled: () => void;
   onResetProgress: () => void;
 }
 
-function RepertoireCard({ stat, enabled, onToggleEnabled, onResetProgress }: RepertoireCardProps) {
+function RepertoireCard({ stat, enabled, selected, onToggleEnabled, onResetProgress }: RepertoireCardProps) {
   const drilledPct = stat.positionCount > 0
     ? Math.round((stat.drilledCount / stat.positionCount) * 100)
     : 0;
@@ -225,7 +229,14 @@ function RepertoireCard({ stat, enabled, onToggleEnabled, onResetProgress }: Rep
       {/* Name + side */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-black text-forge-text-primary leading-tight">{stat.name}</h3>
+          <h3 className="text-base font-black text-forge-text-primary leading-tight">
+            {stat.name}
+            {selected && (
+              <span className="ml-2 align-middle text-[10px] font-black uppercase tracking-wider text-forge-primary-hover">
+                Active
+              </span>
+            )}
+          </h3>
           <span className={cn("text-xs font-semibold mt-0.5 block", sideColor)}>
             Playing as {sideLabel}
           </span>
@@ -233,8 +244,10 @@ function RepertoireCard({ stat, enabled, onToggleEnabled, onResetProgress }: Rep
         {/* Enable/Disable toggle */}
         <button
           onClick={onToggleEnabled}
+          aria-pressed={enabled}
+          aria-label={`${enabled ? "Exclude" : "Include"} ${stat.name} in drill sessions`}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-2 min-h-[36px] rounded-full text-xs font-black uppercase tracking-wider cursor-pointer shrink-0",
+            "flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-full text-xs font-black uppercase tracking-wider cursor-pointer shrink-0",
             "transition-colors duration-150",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
             enabled
@@ -243,7 +256,7 @@ function RepertoireCard({ stat, enabled, onToggleEnabled, onResetProgress }: Rep
           )}
         >
           {enabled ? (
-            <><Eye size={11} /> Active</>
+            <><Eye size={11} /> In drills</>
           ) : (
             <><EyeOff size={11} /> Off</>
           )}

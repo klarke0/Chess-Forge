@@ -593,13 +593,15 @@ const BlunderTrendPanel: React.FC = () => {
   const [data, setData] = useState<api.VelocityWeek[] | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const repertoireId = useRepertoireStore((s) => s.repertoireId);
+
   useEffect(() => {
     api
-      .fetchVelocity()
+      .fetchVelocity(repertoireId ?? undefined)
       .then((d) => setData(d.weeks))
       .catch(() => setData([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [repertoireId]);
 
   if (loading) {
     return (
@@ -1493,7 +1495,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = () => {
             bg="bg-emerald-500/10"
           />
           <StatCard
-            label="Due Today"
+            label="Tracked Due"
             value={stats?.dueToday ?? "—"}
             icon={<CalendarClock size={16} />}
             color="text-amber-400"
