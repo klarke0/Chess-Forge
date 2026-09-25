@@ -1,0 +1,770 @@
+[
+ {
+  "gameId": 68603,
+  "ply": 59,
+  "rep": "CK",
+  "grade": "mistake",
+  "cpLoss": 220,
+  "wrong": "a5",
+  "correct": "a6",
+  "fenBefore": "3r2k1/p4pp1/1p1B3p/1N6/8/7P/q1n2PP1/3Q1RK1 b - - 5 30",
+  "moveNum": 30,
+  "phase": "middlegame",
+  "sf": {
+   "bestUci": "a7a6",
+   "bestSan": "a6",
+   "before": -255,
+   "afterWrong": {
+    "cp": -417
+   },
+   "afterBest": {
+    "cp": -204
+   },
+   "refutation": "Qe2"
+  }
+ },
+ {
+  "gameId": 71634,
+  "ply": 4,
+  "rep": "other",
+  "grade": "inaccuracy",
+  "cpLoss": 114,
+  "wrong": "c3",
+  "correct": "Bd2",
+  "fenBefore": "rnb1kbnr/pp1ppppp/8/q1p5/3P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 2 3",
+  "moveNum": 3,
+  "phase": "opening",
+  "sf": {
+   "bestUci": "c1d2",
+   "bestSan": "Bd2",
+   "before": 121,
+   "afterWrong": {
+    "cp": 40
+   },
+   "afterBest": {
+    "cp": 113
+   },
+   "refutation": "d5"
+  }
+ },
+ {
+  "gameId": 67666,
+  "ply": 83,
+  "rep": "CK",
+  "grade": "inaccuracy",
+  "cpLoss": 131,
+  "wrong": "Ke7",
+  "correct": "Kf6",
+  "fenBefore": "8/5k1p/2R1P3/p4p2/3K4/7P/r7/8 b - - 0 42",
+  "moveNum": 42,
+  "phase": "endgame",
+  "sf": {
+   "bestUci": "f7f6",
+   "bestSan": "Kf6",
+   "before": 10,
+   "afterWrong": {
+    "cp": -3
+   },
+   "afterBest": {
+    "cp": 2
+   },
+   "refutation": "Ke5"
+  }
+ },
+ {
+  "gameId": 68602,
+  "ply": 6,
+  "rep": "JL",
+  "grade": "inaccuracy",
+  "cpLoss": 91,
+  "wrong": "Nb5",
+  "correct": "e3",
+  "fenBefore": "rn1qkbnr/ppp1p1pp/4b3/3p1p2/3P1B2/2N5/PPP1PPPP/R2QKBNR w KQkq - 2 4",
+  "moveNum": 4,
+  "phase": "opening",
+  "sf": {
+   "bestUci": "e2e3",
+   "bestSan": "e3",
+   "before": 116,
+   "afterWrong": {
+    "cp": 118
+   },
+   "afterBest": {
+    "cp": 120
+   },
+   "refutation": "Na6"
+  }
+ },
+ {
+  "gameId": 71674,
+  "ply": 1,
+  "rep": "other",
+  "grade": "inaccuracy",
+  "cpLoss": 128,
+  "wrong": "c6",
+  "correct": "Nf6",
+  "fenBefore": "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 0 1",
+  "moveNum": 1,
+  "phase": "opening",
+  "sf": {
+   "bestUci": "d7d5",
+   "bestSan": "d5",
+   "before": -17,
+   "afterWrong": {
+    "cp": -43
+   },
+   "afterBest": {
+    "cp": -19
+   },
+   "refutation": "e4"
+  }
+ },
+ {
+  "gameId": 115261,
+  "ply": 8,
+  "rep": "other",
+  "grade": "blunder",
+  "cpLoss": 365,
+  "wrong": "Bf4",
+  "correct": "e4",
+  "fenBefore": "r1bqkbnr/pppp3p/2n2p2/8/8/5N2/PPP1PPPP/RNBQKB1R w KQkq - 0 5",
+  "moveNum": 5,
+  "phase": "opening",
+  "sf": {
+   "bestUci": "e2e4",
+   "bestSan": "e4",
+   "before": 422,
+   "afterWrong": {
+    "cp": 312
+   },
+   "afterBest": {
+    "cp": 418
+   },
+   "refutation": "Bg7"
+  }
+ },
+ {
+  "gameId": 107246,
+  "ply": 8,
+  "rep": "JL",
+  "grade": "mistake",
+  "cpLoss": 374,
+  "wrong": "Bxc7",
+  "correct": "Nxd5",
+  "fenBefore": "rnb1kbnr/ppp3pp/8/3pBp2/3P3q/2N5/PPP1PPPP/R2QKBNR w KQkq - 1 5",
+  "moveNum": 5,
+  "phase": "opening",
+  "sf": {
+   "bestUci": "c3d5",
+   "bestSan": "Nxd5",
+   "before": 714,
+   "afterWrong": {
+    "cp": 414
+   },
+   "afterBest": {
+    "cp": 703
+   },
+   "refutation": "Bb4"
+  }
+ },
+ {
+  "gameId": 71643,
+  "ply": 21,
+  "rep": "CK",
+  "grade": "blunder",
+  "cpLoss": 1260,
+  "wrong": "Qxc4+",
+  "correct": "exd5",
+  "fenBefore": "r3kb1r/pp1n1ppp/4pn2/3NNb2/2B4q/5P2/PPP1K2P/R1BQ3R b kq - 0 11",
+  "moveNum": 11,
+  "phase": "middlegame",
+  "sf": {
+   "bestUci": "e6d5",
+   "bestSan": "exd5",
+   "before": 796,
+   "afterWrong": {
+    "cp": -224
+   },
+   "afterBest": {
+    "cp": 796
+   },
+   "refutation": "Nxc4"
+  }
+ },
+ {
+  "gameId": 71655,
+  "ply": 21,
+  "rep": "CK",
+  "grade": "blunder",
+  "cpLoss": 1241,
+  "wrong": "O-O",
+  "correct": "d4",
+  "fenBefore": "r1bqk2r/1p2bppp/p1n5/3p4/8/2N1Q3/PP1P1PPP/R1B1K1NR b KQkq - 3 11",
+  "moveNum": 11,
+  "phase": "middlegame",
+  "sf": {
+   "bestUci": "d5d4",
+   "bestSan": "d4",
+   "before": 681,
+   "afterWrong": {
+    "cp": 534
+   },
+   "afterBest": {
+    "cp": 660
+   },
+   "refutation": "d4"
+  }
+ },
+ {
+  "gameId": 94985,
+  "ply": 6,
+  "rep": "other",
+  "grade": "mistake",
+  "cpLoss": 220,
+  "wrong": "Bg5",
+  "correct": "e4",
+  "fenBefore": "rnbqk2r/pppp1ppp/3bpn2/8/3P4/P1N5/1PP1PPPP/R1BQKBNR w KQkq - 1 4",
+  "moveNum": 4,
+  "phase": "opening",
+  "sf": {
+   "bestUci": "e2e4",
+   "bestSan": "e4",
+   "before": 101,
+   "afterWrong": {
+    "cp": 25
+   },
+   "afterBest": {
+    "cp": 99
+   },
+   "refutation": "Be7"
+  }
+ },
+ {
+  "gameId": 115258,
+  "ply": 55,
+  "rep": "other",
+  "grade": "blunder",
+  "cpLoss": 2174,
+  "wrong": "Qa5",
+  "correct": "Qe3+",
+  "fenBefore": "r4rk1/p5p1/2p1pp1p/1p5P/5PQ1/q7/3R2P1/3R2K1 b - - 0 28",
+  "moveNum": 28,
+  "phase": "endgame",
+  "sf": {
+   "bestUci": "a3c5",
+   "bestSan": "Qc5+",
+   "before": 457,
+   "afterWrong": {
+    "cp": -756
+   },
+   "afterBest": {
+    "cp": 435
+   },
+   "refutation": "Rd7"
+  }
+ },
+ {
+  "gameId": 71626,
+  "ply": 23,
+  "rep": "CK",
+  "grade": "inaccuracy",
+  "cpLoss": 116,
+  "wrong": "Bxc5",
+  "correct": "Qxc5",
+  "fenBefore": "r3kb1r/p4ppp/1q2pn2/2Pp4/8/1PN2Q1P/P1P2PP1/R1B2RK1 b kq - 0 12",
+  "moveNum": 12,
+  "phase": "middlegame",
+  "sf": {
+   "bestUci": "b6c5",
+   "bestSan": "Qxc5",
+   "before": 3,
+   "afterWrong": {
+    "cp": -275
+   },
+   "afterBest": {
+    "cp": -5
+   },
+   "refutation": "Na4"
+  }
+ },
+ {
+  "gameId": 72323,
+  "ply": 24,
+  "rep": "JL",
+  "grade": "mistake",
+  "cpLoss": 465,
+  "wrong": "Be5",
+  "correct": "Bxc4",
+  "fenBefore": "2bk1b1r/ppNqpp2/7p/3p2p1/2nPnB2/P1PBP3/1P2NPPP/R2QK2R w KQ - 0 13",
+  "moveNum": 13,
+  "phase": "middlegame",
+  "sf": {
+   "bestUci": "d3c4",
+   "bestSan": "Bxc4",
+   "before": 747,
+   "afterWrong": {
+    "cp": 605
+   },
+   "afterBest": {
+    "cp": 792
+   },
+   "refutation": "Nxe5"
+  }
+ },
+ {
+  "gameId": 115261,
+  "ply": 24,
+  "rep": "other",
+  "grade": "blunder",
+  "cpLoss": 534,
+  "wrong": "Nf5",
+  "correct": "Qh5+",
+  "fenBefore": "r2qk1nr/7p/p2p1p2/2pp4/3N4/4P3/PPP2PPP/R2QK2R w KQkq - 0 13",
+  "moveNum": 13,
+  "phase": "middlegame",
+  "sf": {
+   "bestUci": "d1h5",
+   "bestSan": "Qh5+",
+   "before": 614,
+   "afterWrong": {
+    "cp": 575
+   },
+   "afterBest": {
+    "cp": 634
+   },
+   "refutation": "Ne7"
+  }
+ },
+ {
+  "gameId": 67996,
+  "ply": 23,
+  "rep": "other",
+  "grade": "blunder",
+  "cpLoss": 371,
+  "wrong": "Nf4",
+  "correct": "Nf6",
+  "fenBefore": "rn1qk2r/1p3pp1/p1pbp2p/P2p3n/R7/2NPBP2/1PP2PP1/3QKB1R b Kkq - 0 12",
+  "moveNum": 12,
+  "phase": "middlegame",
+  "sf": {
+   "bestUci": "h5f6",
+   "bestSan": "Nf6",
+   "before": 194,
+   "afterWrong": {
+    "cp": -316
+   },
+   "afterBest": {
+    "cp": 183
+   },
+   "refutation": "Bxf4"
+  }
+ },
+ {
+  "gameId": 71602,
+  "ply": 50,
+  "rep": "JL",
+  "grade": "blunder",
+  "cpLoss": 1065,
+  "wrong": "Rc7",
+  "correct": "Rc8+",
+  "fenBefore": "5k1r/pp4pp/3bB3/8/8/4P3/PP3PPP/2R3K1 w - - 0 26",
+  "moveNum": 26,
+  "phase": "endgame",
+  "sf": {
+   "bestUci": "c1c8",
+   "bestSan": "Rc8+",
+   "before": 668,
+   "afterWrong": {
+    "cp": -613
+   },
+   "afterBest": {
+    "cp": 671
+   },
+   "refutation": "Bxc7"
+  }
+ },
+ {
+  "gameId": 71644,
+  "ply": 25,
+  "rep": "CK",
+  "grade": "mistake",
+  "cpLoss": 264,
+  "wrong": "Nxe5",
+  "correct": "Nb6",
+  "fenBefore": "r2q1rk1/pp1n1ppp/5b2/3pN3/3P4/2NQ4/PPP2PPP/3RR1K1 b - - 0 13",
+  "moveNum": 13,
+  "phase": "middlegame",
+  "sf": {
+   "bestUci": "d7b6",
+   "bestSan": "Nb6",
+   "before": -311,
+   "afterWrong": {
+    "cp": -600
+   },
+   "afterBest": {
+    "cp": -318
+   },
+   "refutation": "dxe5"
+  }
+ },
+ {
+  "gameId": 115246,
+  "ply": 33,
+  "rep": "other",
+  "grade": "blunder",
+  "cpLoss": 460,
+  "wrong": "Ne4+",
+  "correct": "Qh2+",
+  "fenBefore": "rn2kb1r/pp3ppp/2p2n2/3p4/6P1/2N1P1Rq/PPPP1K2/R1BQ1B2 b kq - 8 17",
+  "moveNum": 17,
+  "phase": "middlegame",
+  "sf": {
+   "bestUci": "h3h2",
+   "bestSan": "Qh2+",
+   "before": 379,
+   "afterWrong": {
+    "cp": -80
+   },
+   "afterBest": {
+    "cp": 342
+   },
+   "refutation": "Nxe4"
+  }
+ },
+ {
+  "gameId": 71659,
+  "ply": 4,
+  "rep": "JL",
+  "grade": "mistake",
+  "cpLoss": 164,
+  "wrong": "Bf4",
+  "correct": "e4",
+  "fenBefore": "r1bqkbnr/ppp1pppp/2n5/3p4/3P4/2N5/PPP1PPPP/R1BQKBNR w KQkq - 2 3",
+  "moveNum": 3,
+  "phase": "opening",
+  "sf": {
+   "bestUci": "e2e4",
+   "bestSan": "e4",
+   "before": 16,
+   "afterWrong": {
+    "cp": 18
+   },
+   "afterBest": {
+    "cp": 19
+   },
+   "refutation": "a6"
+  }
+ },
+ {
+  "gameId": 108405,
+  "ply": 19,
+  "rep": "other",
+  "grade": "blunder",
+  "cpLoss": 288,
+  "wrong": "Qe7",
+  "correct": "h6",
+  "fenBefore": "rn1qk2r/pp3ppp/2pbp1b1/3p2Pn/5P2/1P2P2N/PBPP2BP/RN1QK2R b KQkq - 0 10",
+  "moveNum": 10,
+  "phase": "opening",
+  "sf": {
+   "bestUci": "h7h6",
+   "bestSan": "h6",
+   "before": 155,
+   "afterWrong": {
+    "cp": -136
+   },
+   "afterBest": {
+    "cp": 154
+   },
+   "refutation": "Bf3"
+  }
+ },
+ {
+  "gameId": 73359,
+  "ply": 27,
+  "rep": "CK",
+  "grade": "blunder",
+  "cpLoss": 451,
+  "wrong": "O-O",
+  "correct": "Qb5",
+  "fenBefore": "r3k2r/pp3ppp/3b4/q2NnP2/8/2P4P/PP3P2/R1BQK2R b KQkq - 0 14",
+  "moveNum": 14,
+  "phase": "middlegame",
+  "sf": {
+   "bestUci": "e8c8",
+   "bestSan": "O-O-O",
+   "before": 334,
+   "afterWrong": {
+    "cp": 0
+   },
+   "afterBest": {
+    "cp": 273
+   },
+   "refutation": "O-O"
+  }
+ },
+ {
+  "gameId": 71613,
+  "ply": 26,
+  "rep": "other",
+  "grade": "inaccuracy",
+  "cpLoss": 461,
+  "wrong": "Nc3",
+  "correct": "Bh5+",
+  "fenBefore": "r1b1kbnr/1p1p2p1/n1p1p2p/pN2Npq1/3P4/4P1BP/PPP1BPP1/R2Q1RK1 w kq - 2 14",
+  "moveNum": 14,
+  "phase": "middlegame",
+  "sf": {
+   "bestUci": "e2h5",
+   "bestSan": "Bh5+",
+   "before": 851,
+   "afterWrong": {
+    "cp": 646
+   },
+   "afterBest": {
+    "cp": 871
+   },
+   "refutation": "Ne7"
+  }
+ },
+ {
+  "gameId": 126611,
+  "ply": 58,
+  "rep": "JL",
+  "grade": "blunder",
+  "cpLoss": 2000,
+  "wrong": "R1b7+",
+  "correct": "Qxd5+",
+  "fenBefore": "1R2b3/5kp1/5p1p/2Qp4/p2N4/4P3/5PPP/1R4K1 w - - 0 30",
+  "moveNum": 30,
+  "phase": "endgame",
+  "sf": {
+   "bestUci": "c5d5",
+   "bestSan": "Qxd5+",
+   "before": "M5",
+   "afterWrong": {
+    "mate": 4
+   },
+   "afterBest": {
+    "mate": 4
+   },
+   "refutation": "Kg6"
+  }
+ },
+ {
+  "gameId": 67666,
+  "ply": 85,
+  "rep": "CK",
+  "grade": "mistake",
+  "cpLoss": 240,
+  "wrong": "Rf2",
+  "correct": "Re2+",
+  "fenBefore": "8/4k2p/2R1P3/p3Kp2/8/7P/r7/8 b - - 2 43",
+  "moveNum": 43,
+  "phase": "endgame",
+  "sf": {
+   "bestUci": "a2e2",
+   "bestSan": "Re2+",
+   "before": -8,
+   "afterWrong": {
+    "cp": -456
+   },
+   "afterBest": {
+    "cp": -6
+   },
+   "refutation": "Rc7+"
+  }
+ },
+ {
+  "gameId": 73006,
+  "ply": 26,
+  "rep": "JL",
+  "grade": "inaccuracy",
+  "cpLoss": 193,
+  "wrong": "Nxd7",
+  "correct": "Nc6",
+  "fenBefore": "3q1rk1/3nbppp/p3pn2/3pN3/3P1B2/2P1P3/PP3PPP/R2Q1RK1 w - - 3 14",
+  "moveNum": 14,
+  "phase": "middlegame",
+  "sf": {
+   "bestUci": "e5c6",
+   "bestSan": "Nc6",
+   "before": 769,
+   "afterWrong": {
+    "cp": 674
+   },
+   "afterBest": {
+    "cp": 777
+   },
+   "refutation": "Nxd7"
+  }
+ },
+ {
+  "gameId": 115227,
+  "ply": 10,
+  "rep": "other",
+  "grade": "blunder",
+  "cpLoss": 493,
+  "wrong": "Bc4",
+  "correct": "Qh5+",
+  "fenBefore": "rnbqkbnr/2pp2pp/p7/1B1Pp3/4p3/8/PPP2PPP/RNBQK1NR w KQkq - 0 6",
+  "moveNum": 6,
+  "phase": "opening",
+  "sf": {
+   "bestUci": "d1h5",
+   "bestSan": "Qh5+",
+   "before": 577,
+   "afterWrong": {
+    "cp": 109
+   },
+   "afterBest": {
+    "cp": 628
+   },
+   "refutation": "Nf6"
+  }
+ },
+ {
+  "gameId": 115253,
+  "ply": 51,
+  "rep": "CK",
+  "grade": "blunder",
+  "cpLoss": 528,
+  "wrong": "Nxg4",
+  "correct": "Rxd8",
+  "fenBefore": "3R1rk1/1p3ppp/p3p3/8/1P2P1R1/P1N2P2/2K2n2/8 b - - 0 26",
+  "moveNum": 26,
+  "phase": "endgame",
+  "sf": {
+   "bestUci": "f8d8",
+   "bestSan": "Rxd8",
+   "before": 475,
+   "afterWrong": {
+    "cp": -261
+   },
+   "afterBest": {
+    "cp": 472
+   },
+   "refutation": "Rxf8+"
+  }
+ },
+ {
+  "gameId": 71668,
+  "ply": 11,
+  "rep": "CK",
+  "grade": "blunder",
+  "cpLoss": 402,
+  "wrong": "e6",
+  "correct": "Nd6",
+  "fenBefore": "rnbqkb1r/pp2pppp/2p5/8/2B1n3/5N2/PPPP1PPP/R1BQ1RK1 b kq - 1 6",
+  "moveNum": 6,
+  "phase": "opening",
+  "sf": {
+   "bestUci": "e4d6",
+   "bestSan": "Nd6",
+   "before": 643,
+   "afterWrong": {
+    "cp": 584
+   },
+   "afterBest": {
+    "cp": 651
+   },
+   "refutation": "d4"
+  }
+ },
+ {
+  "gameId": 71054,
+  "ply": 57,
+  "rep": "CK",
+  "grade": "mistake",
+  "cpLoss": 360,
+  "wrong": "f6",
+  "correct": "Nd5",
+  "fenBefore": "8/4Rppk/1R5p/1p6/1n6/3b3P/5PP1/6K1 b - - 3 29",
+  "moveNum": 29,
+  "phase": "endgame",
+  "sf": {
+   "bestUci": "b4d5",
+   "bestSan": "Nd5",
+   "before": -450,
+   "afterWrong": {
+    "cp": -683
+   },
+   "afterBest": {
+    "cp": -445
+   },
+   "refutation": "Rbb7"
+  }
+ },
+ {
+  "gameId": 71617,
+  "ply": 62,
+  "rep": "JL",
+  "grade": "inaccuracy",
+  "cpLoss": 139,
+  "wrong": "Kd1",
+  "correct": "Bb4",
+  "fenBefore": "8/3k2bp/p7/Bp3p2/5P2/2P1R2P/PP4r1/2K5 w - - 1 32",
+  "moveNum": 32,
+  "phase": "endgame",
+  "sf": {
+   "bestUci": "a5b4",
+   "bestSan": "Bb4",
+   "before": 47,
+   "afterWrong": {
+    "cp": 0
+   },
+   "afterBest": {
+    "cp": 50
+   },
+   "refutation": "Bf8"
+  }
+ },
+ {
+  "gameId": 104943,
+  "ply": 40,
+  "rep": "JL",
+  "grade": "inaccuracy",
+  "cpLoss": 111,
+  "wrong": "b6",
+  "correct": "Ra1",
+  "fenBefore": "3r1k2/5ppp/N4n2/1P1p4/8/P3P3/r4PPP/3R1RK1 w - - 1 21",
+  "moveNum": 21,
+  "phase": "endgame",
+  "sf": {
+   "bestUci": "d1a1",
+   "bestSan": "Ra1",
+   "before": 524,
+   "afterWrong": {
+    "cp": 388
+   },
+   "afterBest": {
+    "cp": 588
+   },
+   "refutation": "Rxa3"
+  }
+ },
+ {
+  "gameId": 113339,
+  "ply": 41,
+  "rep": "other",
+  "grade": "mistake",
+  "cpLoss": 315,
+  "wrong": "Rhd8",
+  "correct": "Kxd7",
+  "fenBefore": "r6r/pp1Nkppp/4p3/1P6/Q1Pp4/5PP1/P3Pq1P/R6K b - - 0 21",
+  "moveNum": 21,
+  "phase": "endgame",
+  "sf": {
+   "bestUci": "f2e2",
+   "bestSan": "Qxe2",
+   "before": 566,
+   "afterWrong": {
+    "cp": 533
+   },
+   "afterBest": {
+    "cp": 620
+   },
+   "refutation": "Nc5"
+  }
+ }
+]

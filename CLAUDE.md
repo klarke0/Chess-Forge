@@ -70,7 +70,7 @@ When shipping changes that alter the **shape of `analysis_json`** (new fields, c
 | Surface | Storage | Clear it by |
 |---|---|---|
 | Engine analysis (per-game) | `games.analysis_json` column | `POST /api/v2/refresh-analysis` (clears rows missing required fields, background queue re-analyzes). Extend the `NOT LIKE` filter in `server/routes/v2_refresh_analysis.ts` to catch the new field. |
-| Coach explanations | NOT persisted — regenerated per call | No action needed server-side. |
+| Coach explanations | `coach_cache` table, keyed by prompt version | Bump `COACH_PROMPT_VERSION` in `server/services/coach_cache.ts`; old rows stop matching. |
 | Frontend bundle (PWA / browser) | Service worker / browser cache | Run `./dev.sh build` then restart backend; the new asset hashes in `dist/assets/*` force a refetch. If a screenshot shows pre-fix behavior post-deploy, suspect stale PWA before re-debugging the code. |
 | SM-2 progress / drill pool | `progress` table | See "Drill pool freshness" below. |
 
@@ -116,7 +116,8 @@ Key tables:
 
 - **`services/engine.ts`** — `StockfishEngine` class. `evaluateOnce(fen, depth)` returns `{cp, mate, pv, bestMove}`.
 - **`services/background_analysis.ts`** — Silently analyzes unanalyzed games. Now captures `bestMove` per move.
-- **`services/ai_coach.ts`** — Gemini 2.0 Flash integration. API key from `VITE_GEMINI_API_KEY` in `.env.local`.
+- **`services/ai_coach.ts`** — Legacy Gemini 2.0 Flash integration. The live coach path is `server/services/coach*.ts` (Gemini 2.5 Flash with Stockfish-grounded facts, claim verifier, template fallback), served by `server/routes/analyze.ts`. API key from `VITE_GEMINI_API_KEY` in `.env.local`.
+- **Stockfish required on the server** (`brew install stockfish`) — without it the coach returns 503.
 
 ---
 
