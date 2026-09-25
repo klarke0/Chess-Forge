@@ -117,6 +117,90 @@ describe("saveGameAnalysis", () => {
   });
 });
 
+describe("saveGameAnalysis - downgrade guard (browser saves must not clobber a v2 analysis)", () => {
+  const V2_JSON = JSON.stringify(moves);
+  const legacy = [{ san: "e4", fen: "f1", eval: 999, cpLoss: 0, grade: "best" }];
+
+  function v2Game(d: Database, extra: { version?: number } = {}) {
+    const id = insertGame(d, { pgn: PGN_A, analysisJson: V2_JSON, analysisVersion: extra.version ?? 2 });
+    d.query(
+      `UPDATE games SET analysis_depth = 14, game_shape = 'Smooth',
+         analysis_updated_at = '2026-01-01 00:00:00' WHERE id = ?`,
+    ).run(id);
+    return id;
+  }
+
+  test("a browser save over a v2 analysis is ignored and changes nothing", () => {
+    const d = memoryDb();
+    const id = v2Game(d);
+    const before = row(d, id);
+    const res = saveGameAnalysis(id, legacy, undefined, d);
+    expect(res).toEqual({ found: true, ignored: true, shape: "Smooth" });
+    expect(row(d, id)).toEqual(before);
+  });
+
+  test("an ignored save does not touch the deviations either", () => {
+    const d = memoryDb();
+    d.query("INSERT INTO repertoires (id, name, side) VALUES (1, 'R', 'white')").run();
+    const id = v2Game(d);
+    d.query(
+      `INSERT INTO deviations (game_id, repertoire_id, fen, expected_san, played_san, move_number, notes)
+       VALUES (?, 1, 'x', 'd4', 'e4', 1, 'player')`,
+    ).run(id);
+    saveGameAnalysis(id, legacy, undefined, d);
+    expect((d.query("SELECT COUNT(*) AS c FROM deviations WHERE game_id = ?").get(id) as { c: number }).c).toBe(1);
+  });
+
+  test("a newer-than-current version is protected too (>=, not ==)", () => {
+    const d = memoryDb();
+    const id = v2Game(d, { version: 3 });
+    expect(saveGameAnalysis(id, legacy, undefined, d)).toMatchObject({ found: true, ignored: true });
+    expect(row(d, id).analysis_json).toBe(V2_JSON);
+  });
+
+  test("a legacy (version 1) analysis is overwritten by a browser save", () => {
+    const d = memoryDb();
+    const id = insertGame(d, { pgn: PGN_A, analysisJson: V2_JSON, analysisVersion: 1 });
+    const res = saveGameAnalysis(id, legacy, undefined, d);
+    expect(res.found && !("ignored" in res)).toBe(true);
+    expect(JSON.parse(row(d, id).analysis_json as string)).toEqual(legacy);
+    expect(row(d, id).analysis_version).toBeNull();
+  });
+
+  test("a NULL-version (browser depth-12) analysis is overwritten by a browser save", () => {
+    const d = memoryDb();
+    const id = insertGame(d, { pgn: PGN_A, analysisJson: V2_JSON, analysisVersion: null });
+    saveGameAnalysis(id, legacy, undefined, d);
+    expect(JSON.parse(row(d, id).analysis_json as string)).toEqual(legacy);
+  });
+
+  test("a game with no analysis at all can be saved by the browser fallback", () => {
+    const d = memoryDb();
+    const id = insertGame(d, { pgn: PGN_A });
+    expect(saveGameAnalysis(id, legacy, undefined, d)).toMatchObject({ found: true });
+    expect(JSON.parse(row(d, id).analysis_json as string)).toEqual(legacy);
+  });
+
+  test("a stale version stamp with the JSON cleared (clear-analysis) counts as no analysis", () => {
+    const d = memoryDb();
+    const id = insertGame(d, { pgn: PGN_A, analysisVersion: 2 }); // analysis_json NULL
+    saveGameAnalysis(id, legacy, undefined, d);
+    expect(JSON.parse(row(d, id).analysis_json as string)).toEqual(legacy);
+  });
+
+  test("the job itself (with meta) still overwrites a v2 analysis, e.g. a re-run", () => {
+    const d = memoryDb();
+    const id = v2Game(d);
+    const res = saveGameAnalysis(id, legacy, { version: 2, depth: 14 }, d);
+    expect(res.found && !("ignored" in res)).toBe(true);
+    expect(JSON.parse(row(d, id).analysis_json as string)).toEqual(legacy);
+  });
+
+  test("an unknown game is still found:false", () => {
+    expect(saveGameAnalysis(424242, legacy, undefined, memoryDb())).toEqual({ found: false });
+  });
+});
+
 // The route still speaks its original protocol. It uses the global DB, which
 // bun test points at CHESS_DB_PATH (a scratch file), never the live database.
 describe("POST /api/games/:id/analysis (saveAnalysis route)", () => {
@@ -149,6 +233,7 @@ describe("POST /api/games/:id/analysis (saveAnalysis route)", () => {
     const body = (await res.json()) as { ok: boolean; shape: string };
     expect(body.ok).toBe(true);
     expect(typeof body.shape).toBe("string");
+    expect("ignored" in body).toBe(false);
     const r = db.query("SELECT analysis_json, analysis_version FROM games WHERE id = ?").get(gameId) as {
       analysis_json: string;
       analysis_version: number | null;
@@ -161,6 +246,21 @@ describe("POST /api/games/:id/analysis (saveAnalysis route)", () => {
     const res = await post("987654321", { analysis: moves });
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: "Game not found" });
+  });
+
+  test("a v2 analysis is not overwritten: 200 { ok, shape, ignored: true } and the row is untouched", async () => {
+    const v2 = JSON.stringify(moves);
+    db.query(
+      `UPDATE games SET analysis_json = ?, analysis_version = 2, analysis_depth = 14, game_shape = 'Smooth',
+         analysis_updated_at = '2026-01-01 00:00:00' WHERE id = ?`,
+    ).run(v2, gameId);
+    const res = await post(String(gameId), { analysis: [{ san: "e4", fen: "f", eval: 1, cpLoss: 0, grade: "best" }] });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, shape: "Smooth", ignored: true });
+    const r = db.query("SELECT * FROM games WHERE id = ?").get(gameId) as Record<string, unknown>;
+    expect(r.analysis_json).toBe(v2);
+    expect(r.analysis_version).toBe(2);
+    expect(r.analysis_updated_at).toBe("2026-01-01 00:00:00");
   });
 
   test("400 { error } for a non-numeric id", async () => {

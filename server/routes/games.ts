@@ -5,6 +5,7 @@ import { classifyGameShape } from "../utils/gameShape";
 import { computeAndPersistDeviations } from "../utils/deviations";
 import { batchLoadGamePositions } from "../utils/gamePositions";
 import { parseAnalysisJson } from "../utils/analysis";
+import { ANALYSIS_VERSION } from "../services/analysis_config";
 
 function deriveTimeClass(timeControl: string): string {
   const base = parseInt(timeControl?.split("+")[0] || "0", 10);
@@ -483,22 +484,44 @@ type SavedMove = {
  * stamped version/depth and any `analysis_failed` mark is cleared. Without it
  * (the browser client) the analysis is legacy, so version/depth go back to NULL
  * and the job will eventually overwrite it; `analysis_failed` is left alone.
+ *
+ * Downgrade guard: a save WITHOUT `meta` never overwrites an existing analysis
+ * whose `analysis_version` is already >= ANALYSIS_VERSION (a browser depth-12
+ * result must not replace the server's). It returns `{ ignored: true }` and
+ * changes nothing — not the row, not the deviations.
  */
 export function saveGameAnalysis(
   gameId: number,
   analysis: SavedMove[],
   meta?: { version: number; depth: number },
   database: Database = db,
-): { found: false } | { found: true; shape: string } {
+): { found: false } | { found: true; shape: string | null; ignored?: true } {
+  // One read: the PGN (Termination header) and what is already stored.
+  const gameRow = database
+    .query(
+      `SELECT pgn, analysis_json, analysis_version, game_shape FROM games WHERE id = ?`,
+    )
+    .get(gameId) as {
+    pgn: string | null;
+    analysis_json: string | null;
+    analysis_version: number | null;
+    game_shape: string | null;
+  } | null;
+
+  if (
+    !meta &&
+    gameRow?.analysis_json != null &&
+    gameRow.analysis_version != null &&
+    gameRow.analysis_version >= ANALYSIS_VERSION
+  ) {
+    return { found: true, ignored: true, shape: gameRow.game_shape };
+  }
+
   // Compute game shape from analysis
   const evals: number[] = analysis.map((m) => m.eval ?? 0);
   const grades: string[] = analysis.map((m) => m.grade ?? "good");
   const gameShape = classifyGameShape(evals, grades);
 
-  // Fetch the game's PGN to extract Termination header
-  const gameRow = database
-    .query(`SELECT pgn FROM games WHERE id = ?`)
-    .get(gameId) as { pgn: string | null } | null;
   let termination: string | null = null;
   if (gameRow?.pgn) {
     const termMatch = gameRow.pgn.match(/\[Termination\s+"([^"]+)"\]/);
@@ -560,6 +583,12 @@ export async function saveAnalysis(req: Request): Promise<Response> {
     if (!saved.found)
       return Response.json({ error: "Game not found" }, { status: 404 });
 
+    if (saved.ignored) {
+      console.log(
+        `[POST /api/games/:id/analysis] Ignored browser save for game ID: ${id} (server analysis v${ANALYSIS_VERSION}+ already stored)`,
+      );
+      return Response.json({ ok: true, shape: saved.shape, ignored: true });
+    }
     console.log(
       `[POST /api/games/:id/analysis] Saved analysis for game ID: ${id}, shape: ${saved.shape}`,
     );
