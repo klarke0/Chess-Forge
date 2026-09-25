@@ -45,6 +45,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   );
   const setActiveRepertoire = useRepertoireStore((s) => s.setActiveRepertoire);
   const [count, setCount] = useState<api.TrainNowCounts | null>(null);
+  // A failed/timed-out count fetch is not "nothing due" — track it separately.
+  const [countFailed, setCountFailed] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
   const [streak, setStreak] = useState(0);
   const [dailyGoalDone, setDailyGoalDone] = useState(false);
   const [lastReviewed, setLastReviewed] = useState<string | null>(null);
@@ -89,22 +92,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     setLoading(true);
 
     Promise.all([
-      api
-        .getTrainNowCounts(repertoireId, phase)
-        .catch(
-          () =>
-            ({
-              total: 0,
-              blunders: 0,
-              deviations: 0,
-              review: 0,
-            }) as api.TrainNowCounts,
-        ),
+      api.getTrainNowCounts(repertoireId, phase).catch(() => null),
       api.getProgressStats(repertoireId).catch(() => null),
       api.getWeakestPosition(repertoireId).catch(() => null),
     ])
       .then(([counts, stats, weak]) => {
         setCount(counts);
+        setCountFailed(counts === null);
         if (stats) {
           setStreak(stats.streak);
           setDailyGoalDone(stats.dailyGoalDone ?? false);
@@ -113,7 +107,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         setWeakest(weak);
       })
       .finally(() => setLoading(false));
-  }, [repertoireId, phase]);
+  }, [repertoireId, phase, reloadTick]);
 
   useEffect(() => {
     if (!repertoireId) return;
@@ -216,6 +210,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 }, [])}
             </p>
           </div>
+        ) : countFailed ? (
+          <p className="text-sm text-forge-text-secondary mb-6">
+            Couldn&apos;t load your queue.{" "}
+            <button
+              onClick={() => setReloadTick((n) => n + 1)}
+              className="font-bold text-forge-primary underline cursor-pointer"
+            >
+              Retry
+            </button>
+          </p>
         ) : (
           <p className="text-sm text-forge-text-secondary mb-6">
             No positions due — check back after your next game
