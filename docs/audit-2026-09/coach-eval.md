@@ -201,15 +201,11 @@ Harness: `scripts/coach_fixture_eval.ts` over the 32 audit positions plus 3 tric
 
 Success criteria: T1 returned 200 with model text that names the stalemate; T2 returned the same-move template with 0 Gemini calls; T5 returned 400; every row's steps were legal; max latency 7486ms (under the 9s budget).
 
-### Model vs template
+### Headline: template share first
 
-| Source | Count | Notes |
-|---|---|---|
-| model | 4 (S11, S27, S32, T1) | passed the verifier |
-| template | 30 | 29 = verifier rejected both attempts; 1 = T2 same-move short-circuit (expected) |
-| non-200 | 1 | T5 -> 400 (expected) |
+**29 of 32 organic outputs (91%) fell back to the deterministic template; 3 were model-written** (S11, S27, S32). Of the 35 cases, 30 were templates (29 verifier-rejected-twice plus the T2 same-move card), 4 model (the 3 organic plus T1), 1 non-200 (T5 -> 400, expected). No Gemini call returned null or timed out. S27 was model-written in the full run but came back as a template on a re-run (Gemini is nondeterministic at temperature 0.2).
 
-Of the 32 organic samples: 3 model, 29 template. Roughly 91% of organic outputs fell back to the deterministic template, so the verifier is currently very strict (or the prompt invites claims it cannot check). No Gemini call returned null or timed out in the full run.
+The rejections are overwhelmingly "unverifiable claim" (the verifier default-denies anything it cannot check), not proven-false claims. Representative rejected clauses that are actually TRUE: S11 "the best move Qe3+ gives check to the White king on g1"; S29 "Nd5 attacks White's rooks on e7 and b6"; S15 "Keep your pieces safe" (generic principle). So the verifier is safe but over-strict.
 
 ### Top violation shapes (raw counts, squares and pieces normalised)
 
@@ -229,13 +225,14 @@ Most rejections are "unverifiable claim" on attack/check statements and generic 
 
 ### False-claim grading (independent of the verifier, chess.js checks)
 
-| Group | Audit baseline | Rerun |
+| Group | Audit baseline (old pipeline) | Rerun |
 |---|---|---|
-| All 32 outputs | 15/32 (47%) | 0 verifiably false found |
-| `source: model` | n/a | 0 of 3 gradable outputs (S11, S32, T1); S27's model text from the full run was not captured, and its re-run came back as a template |
-| `source: template` | n/a | 0 of 29 (all template texts regenerated deterministically and read against the positions; each "allows X" / "captures your Y" / "gives check" checked against chess.js) |
+| Organic (32 positions) | 15/32 (47%) had a false statement | 0 verifiably false among 31 gradable: 2 model (S11, S32) + 29 template. 1 organic model output (S27) is ungraded because its text was not captured |
+| Tricky cases (separate) | n/a | T1 model output graded: 0 false ("Qc7 stalemates", "Qc8# checkmates" both true). T2 is the same-move card (no model). T5 returned 400 |
 
-Checked model claims: S11 "Qa5 attacks the rook on d2" (true), "Qe3+ gives check" (true), "Rd7 attacks pawns a7 and g7" (true); S32 "Rhd8 attacks the knight on d7" (true), "Kxd7 captures the knight" (true), "both moves are fine" agrees with the engine (eval 566 -> 533); T1 "Qc7 stalemates" and "Qc8# checkmates" (both true). The model sample is tiny (3-4), so the model-output rate is weakly evidenced; the low model share is the bigger finding.
+Model claims checked: S11 "Qa5 attacks the rook on d2", "Qe3+ gives check", "Rd7 attacks pawns a7 and g7" (all true); S32 "Rhd8 attacks the knight on d7", "Kxd7 captures the knight", "both moves are fine" (true; engine eval 566 -> 533). Templates were regenerated deterministically and each "allows X" / "captures your Y" / "gives check" was read against chess.js.
+
+**Caveat: this is not a like-for-like rate.** The 15/32 baseline came from the old pipeline where every output was free model prose. Now 29 of 32 organic outputs are templates that are correct by construction, so 0 false claims for them is nearly guaranteed. The only evidence about model-written text after the fix is 2 graded organic outputs (plus T1), which is too few to estimate a rate. Treat the result as "the verifier let no false text through in this run", not "false claims fell from 47% to 0%".
 
 ### Latency and spend
 

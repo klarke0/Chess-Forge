@@ -96,10 +96,13 @@ for (const c of cases) {
   const vs = verifyLog.filter((x) => x.caseId === c.id);
   const gs = geminiLog.filter((x) => x.caseId === c.id);
   let reason: string | null = null;
-  if (r.status === 200 && r.body.source === "template" && gs.length > 0 || (r.status === 200 && r.body.source === "template" && vs.length === 0 && gs.length === 0)) {
-    if (vs.length >= 2 && vs.every((x) => !x.ok)) reason = "verifier-rejected-twice";
+  const strip = (m: string | null) => (m ?? "").replace(/[+#]/g, "");
+  if (r.status === 200 && r.body.source === "template") {
+    if (gs.length === 0 && c.wrong && strip(c.wrong) === strip(c.correct)) reason = "same-move";
+    else if (vs.length >= 2 && vs.every((x) => !x.ok)) reason = "verifier-rejected-twice";
     else if (gs.some((g) => g.returnedNull)) reason = "gemini-null";
-    else if (gs.length < 2 && vs.length < 2) reason = gs.length === 0 && vs.length === 0 && c.wrong && c.wrong !== c.correct ? "time-skip" : "other";
+    // Fewer than 2 model attempts without a null means the loop broke out for lack of time.
+    else if (gs.length < 2) reason = "time-skip";
     else reason = "other";
   }
   rows.push({
