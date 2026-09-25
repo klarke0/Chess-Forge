@@ -36,6 +36,10 @@ interface GamesTabProps {
   onAnalysisClose?: () => void;
 }
 
+/** Games fetched per server page, and games revealed per "Show more" tap. */
+const PAGE_SIZE = 100;
+const SHOW_STEP = 15;
+
 const TIME_CLASS_STYLES: Record<string, string> = {
   bullet: "text-red-400 bg-red-400/10",
   blitz: "text-amber-400 bg-amber-400/10",
@@ -67,6 +71,9 @@ export const GamesTab: React.FC<GamesTabProps> = ({
   const [view, setView] = useState<GamesView>("database");
   const [games, setGames] = useState<api.GameRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(SHOW_STEP);
+  const [hasMoreOnServer, setHasMoreOnServer] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [showChessComModal, setShowChessComModal] = useState(false);
   const [showPgnModal, setShowPgnModal] = useState(false);
@@ -92,10 +99,31 @@ export const GamesTab: React.FC<GamesTabProps> = ({
   const loadGames = () => {
     setLoading(true);
     api
-      .listGames(100, 0)
-      .then(setGames)
+      .listGames(PAGE_SIZE, 0)
+      .then((page) => {
+        setGames(page);
+        setHasMoreOnServer(page.length >= PAGE_SIZE);
+      })
       .catch(console.warn)
       .finally(() => setLoading(false));
+  };
+
+  // Next server page, once every already-loaded game is on screen.
+  const loadMoreFromServer = () => {
+    if (loadingMore) return;
+    setLoadingMore(true);
+    api
+      .listGames(PAGE_SIZE, games.length)
+      .then((page) => {
+        setGames((prev) => {
+          const seen = new Set(prev.map((g) => g.id));
+          return [...prev, ...page.filter((g) => !seen.has(g.id))];
+        });
+        setHasMoreOnServer(page.length >= PAGE_SIZE);
+        setVisibleCount((n) => n + SHOW_STEP);
+      })
+      .catch(console.warn)
+      .finally(() => setLoadingMore(false));
   };
 
   useEffect(() => {
@@ -142,6 +170,14 @@ export const GamesTab: React.FC<GamesTabProps> = ({
       return matchesSearch && matchesResult && matchesType && matchesOpening;
     });
   }, [games, searchTerm, filterResult, filterType, filterOpening]);
+
+  // A new filter/search starts again from the first page of results.
+  useEffect(() => {
+    setVisibleCount(SHOW_STEP);
+  }, [searchTerm, filterResult, filterType, filterOpening]);
+
+  const visibleGames = filteredGames.slice(0, visibleCount);
+  const remainingGames = filteredGames.length - visibleGames.length;
 
   const { availableRepertoires } = useRepertoireStore();
 
@@ -327,170 +363,169 @@ export const GamesTab: React.FC<GamesTabProps> = ({
       {/* Header — hidden on mobile when viewing analysis (GameAnalysis is fullscreen overlay) */}
       <div
         className={cn(
-          "flex flex-col gap-2 px-4 py-3 border-b border-white/5 shrink-0",
+          "flex flex-col gap-2 px-4 py-2 border-b border-forge-border-subtle shrink-0",
           (view === "analysis" || view === "summary") && "hidden",
         )}
       >
-        {/* Top row: view switcher + action buttons */}
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Segmented Control — hidden on mobile (nav handled by clicking a game / close button) */}
-          <div className="hidden bg-[#0a0d14] rounded-xl p-1 gap-1">
-            <button
-              onClick={() => setView("database")}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
-                view === "database"
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-                  : "text-slate-500 hover:text-slate-300",
-              )}
-            >
-              <Database size={13} /> Database
-            </button>
-            <button
-              onClick={() => setView("analysis")}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
-                view === "analysis"
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-                  : "text-slate-500 hover:text-slate-300",
-              )}
-            >
-              <FlaskConical size={13} /> Analysis
-            </button>
-          </div>
+        {/* Segmented Control — hidden on mobile (nav handled by clicking a game / close button) */}
+        <div className="hidden bg-[#0a0d14] rounded-xl p-1 gap-1">
+          <button
+            onClick={() => setView("database")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
+              view === "database"
+                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+                : "text-slate-500 hover:text-slate-300",
+            )}
+          >
+            <Database size={13} /> Database
+          </button>
+          <button
+            onClick={() => setView("analysis")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
+              view === "analysis"
+                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+                : "text-slate-500 hover:text-slate-300",
+            )}
+          >
+            <FlaskConical size={13} /> Analysis
+          </button>
+        </div>
 
-          {/* Import action buttons (database view only) */}
-          {view === "database" && (
-            <div className="flex items-center gap-2 ml-auto flex-wrap">
+        {view === "database" && (
+          <>
+            {/* Row 1: search + compact actions (scan status / stop lives here) */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 min-w-0">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search games…"
+                  aria-label="Search games by ECO, player, or opening"
+                  className="w-full h-11 bg-forge-card border border-forge-border-subtle rounded-xl pl-3 pr-11 text-sm text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 transition-all"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    aria-label="Clear search"
+                    className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-slate-500 hover:text-slate-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded-xl"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
               {isAnalyzing ? (
                 <button
                   onClick={() => BackgroundAnalysisQueue.stop()}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-black uppercase tracking-wider transition-all motion-safe:animate-pulse"
+                  aria-label={`Stop scan${totalInQueue > 0 ? `, ${analyzedCount} of ${totalInQueue} analysed` : ""}`}
+                  className="flex items-center gap-1.5 h-11 px-3 shrink-0 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/20 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all motion-safe:animate-pulse cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                 >
                   <Cpu size={12} className="motion-safe:animate-spin" />
-                  Stop Scan{totalInQueue > 0 ? ` (${analyzedCount}/${totalInQueue})` : ""}
+                  Stop{totalInQueue > 0 ? ` ${analyzedCount}/${totalInQueue}` : ""}
                 </button>
               ) : (
                 <button
                   onClick={() => setShowScanConfirm(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/20 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                  aria-label="Scan all games"
+                  className="flex items-center gap-1.5 h-11 px-3 shrink-0 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/20 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                 >
                   <Cpu size={12} />
-                  Scan All
+                  Scan
                 </button>
               )}
 
               <button
                 onClick={handleSyncClick}
                 disabled={syncing}
-                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50"
+                aria-label="Sync games from Chess.com"
+                className="flex items-center gap-1.5 h-11 px-3 shrink-0 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/20 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
               >
                 <RefreshCw
                   size={12}
-                  className={syncing ? "animate-spin" : ""}
+                  className={syncing ? "motion-safe:animate-spin" : ""}
                 />
                 Sync
               </button>
               <button
                 onClick={() => setShowPgnModal(true)}
                 disabled={syncing}
-                className="flex items-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-white/10 text-slate-400 border border-white/10 rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50"
+                aria-label="Upload PGN file"
+                className="flex items-center gap-1.5 h-11 px-3 shrink-0 bg-forge-card hover:bg-forge-elevated text-slate-400 border border-forge-border-subtle rounded-xl text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
               >
-                <Upload size={12} /> Upload PGN
+                <Upload size={12} /> PGN
               </button>
             </div>
-          )}
-        </div>
 
-        {/* Filter row (database view only) */}
-        {view === "database" && (
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Search */}
-            <div className="relative flex-1 min-w-[140px]">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="ECO, player, or opening..."
-                className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500/50 transition-all"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-                >
-                  <X size={12} />
-                </button>
-              )}
-            </div>
-
-            {/* Result Filter */}
-            <div className="flex bg-[#0a0d14] rounded-xl p-1 gap-1 border border-white/5">
-              {(["all", "win", "loss", "draw"] as const).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => setFilterResult(r)}
-                  className={cn(
-                    "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all",
-                    filterResult === r
-                      ? "bg-white/10 text-white"
-                      : "text-slate-500 hover:text-slate-300",
-                  )}
-                >
-                  {r}
-                </button>
+            {/* Row 2: filters as three compact selects (one row on phones) */}
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                {
+                  label: "Filter by result",
+                  value: filterResult,
+                  onChange: (v: string) => setFilterResult(v as typeof filterResult),
+                  options: [
+                    ["all", "All results"],
+                    ["win", "Wins"],
+                    ["loss", "Losses"],
+                    ["draw", "Draws"],
+                  ],
+                },
+                {
+                  label: "Filter by time control",
+                  value: filterType,
+                  onChange: (v: string) => setFilterType(v as typeof filterType),
+                  options: [
+                    ["all", "All types"],
+                    ["bullet", "Bullet"],
+                    ["blitz", "Blitz"],
+                    ["rapid", "Rapid"],
+                    ["classical", "Classical"],
+                  ],
+                },
+                {
+                  label: "Filter by opening",
+                  value: filterOpening,
+                  onChange: setFilterOpening,
+                  options: [
+                    ["all", "All openings"],
+                    ...uniqueOpenings.map((op) => [op, op]),
+                  ],
+                },
+              ].map((f) => (
+                <div key={f.label} className="relative min-w-0">
+                  <select
+                    value={f.value}
+                    onChange={(e) => f.onChange(e.target.value)}
+                    aria-label={f.label}
+                    className="w-full h-11 bg-forge-card border border-forge-border-subtle rounded-xl pl-3 pr-7 text-[10px] font-black uppercase tracking-wider text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 appearance-none cursor-pointer hover:bg-forge-elevated transition-all truncate"
+                  >
+                    {f.options.map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={10}
+                    aria-hidden="true"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
+                  />
+                </div>
               ))}
             </div>
-
-            {/* Type Filter */}
-            <div className="flex bg-[#0a0d14] rounded-xl p-1 gap-1 border border-white/5">
-              {(["all", "bullet", "blitz", "rapid", "classical"] as const).map(
-                (t) => (
-                  <button
-                    key={t}
-                    onClick={() => setFilterType(t)}
-                    className={cn(
-                      "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all",
-                      filterType === t
-                        ? "bg-white/10 text-white"
-                        : "text-slate-500 hover:text-slate-300",
-                    )}
-                  >
-                    {t}
-                  </button>
-                ),
-              )}
-            </div>
-
-            {/* Opening Filter */}
-            <div className="relative">
-              <select
-                value={filterOpening}
-                onChange={(e) => setFilterOpening(e.target.value)}
-                className="bg-[#0a0d14] border border-white/5 rounded-xl pl-3 pr-7 py-1.5 text-[9px] font-black uppercase tracking-wider text-slate-400 focus:outline-none focus:border-indigo-500/50 appearance-none cursor-pointer hover:bg-white/5 transition-all"
-              >
-                <option value="all">All Openings</option>
-                {uniqueOpenings.map((op) => (
-                  <option key={op} value={op}>
-                    {op}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                size={10}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
-              />
-            </div>
-          </div>
+          </>
         )}
       </div>
 
       {/* Content */}
       {view === "database" ? (
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 relative">
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pt-3 pb-4 relative">
           {/* Error Banner */}
           {error && (
-            <div className="mb-4 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-between gap-4 animate-in slide-in-from-top-2">
+            <div className="mb-4 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-between gap-4 motion-safe:animate-in motion-safe:slide-in-from-top-2">
               <div className="flex items-center gap-3 text-rose-400">
                 <X size={18} className="shrink-0" />
                 <p className="text-xs font-bold">{error}</p>
@@ -506,13 +541,13 @@ export const GamesTab: React.FC<GamesTabProps> = ({
 
           {/* Loading Overlay for fetching PGN */}
           {loadingGameId && (
-            <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center animate-in fade-in duration-300">
+            <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center motion-safe:animate-in fade-in duration-300">
               <div className="flex flex-col items-center gap-4 text-center">
                 <div className="relative">
                   <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full" />
                   <RefreshCw
                     size={40}
-                    className="text-indigo-500 animate-spin relative z-10"
+                    className="text-indigo-500 motion-safe:animate-spin relative z-10"
                   />
                 </div>
                 <div>
@@ -578,17 +613,17 @@ export const GamesTab: React.FC<GamesTabProps> = ({
             </div>
           ) : (
             <>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-3">
-                {filteredGames.length}{" "}
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                {visibleGames.length} of {filteredGames.length}{" "}
                 {filteredGames.length === 1 ? "game" : "games"}
                 {(searchTerm || filterResult !== "all") && " matching filters"}
               </p>
-              <div className="space-y-2">
-                {filteredGames.map((game) => (
+              <div className="space-y-1.5">
+                {visibleGames.map((game) => (
                   <button
                     key={game.id}
                     onClick={() => handleGameSelect(game.id)}
-                    className="w-full flex items-center gap-3 p-3 bg-[#0a0d14] rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all group text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2 min-h-[56px] bg-forge-card rounded-xl border border-forge-border-subtle hover:border-indigo-500/30 transition-all group text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                   >
                     {/* W/L/D Badge */}
                     <div
@@ -605,10 +640,10 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                       <div className="flex items-center gap-2 mb-0.5 min-w-0">
                         <div
                           className={cn(
-                            "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter shrink-0 border",
+                            "px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter shrink-0 border",
                             game.user_color === "white"
                               ? "bg-slate-100 text-slate-900 border-slate-200"
-                              : "bg-slate-800 text-slate-100 border-white/10",
+                              : "bg-slate-800 text-slate-100 border-forge-border-default",
                           )}
                         >
                           {game.user_color === "white" ? "W" : "B"}
@@ -617,39 +652,43 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                           {game.white_username} vs {game.black_username}
                         </span>
                         {game.eco && (
-                          <span className="text-[9px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20 shrink-0">
+                          <span className="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20 shrink-0">
                             {game.eco}
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 min-w-0 overflow-hidden">
                         {game.time_class && (
                           <span
                             className={cn(
-                              "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1",
+                              "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0",
                               TIME_CLASS_STYLES[game.time_class] ||
                                 "text-slate-500 bg-slate-500/10",
                             )}
                           >
-                            <Clock size={8} />
+                            <Clock size={10} />
                             {game.time_class}
                           </span>
                         )}
                         {(game.opening_name ||
                           (game.opening_class &&
                             game.opening_class !== "Other")) && (
-                          <span className="text-[9px] text-slate-400 font-medium truncate max-w-[120px] sm:max-w-none">
+                          <span className="text-[10px] text-slate-400 font-medium truncate min-w-0 flex-1">
                             {game.opening_name || game.opening_class}
                           </span>
                         )}
                         {game.date && (
-                          <span className="text-[9px] text-slate-600 font-mono">
+                          <span className="text-[10px] text-slate-500 font-mono shrink-0 ml-auto">
                             {new Date(game.date).toLocaleDateString()}
                           </span>
                         )}
                         {game.analysis_json && (
-                          <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-1">
-                            <CheckCircle2 size={10} /> Analysed
+                          <span
+                            className="text-emerald-500 flex items-center shrink-0"
+                            title="Analysed"
+                          >
+                            <CheckCircle2 size={12} aria-hidden="true" />
+                            <span className="sr-only">Analysed</span>
                           </span>
                         )}
                       </div>
@@ -659,7 +698,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                       {loadingGameId === game.id ? (
                         <RefreshCw
                           size={14}
-                          className="text-indigo-400 animate-spin"
+                          className="text-indigo-400 motion-safe:animate-spin"
                         />
                       ) : (
                         <ChevronRight
@@ -671,6 +710,25 @@ export const GamesTab: React.FC<GamesTabProps> = ({
                   </button>
                 ))}
               </div>
+
+              {remainingGames > 0 ? (
+                <button
+                  onClick={() => setVisibleCount((n) => n + SHOW_STEP)}
+                  className="w-full mt-3 min-h-[44px] bg-forge-card hover:bg-forge-elevated border border-forge-border-subtle rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                >
+                  Show more ({remainingGames} left)
+                </button>
+              ) : (
+                hasMoreOnServer && (
+                  <button
+                    onClick={loadMoreFromServer}
+                    disabled={loadingMore}
+                    className="w-full mt-3 min-h-[44px] bg-forge-card hover:bg-forge-elevated border border-forge-border-subtle rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                  >
+                    {loadingMore ? "Loading…" : "Load older games"}
+                  </button>
+                )
+              )}
             </>
           )}
         </div>
@@ -744,7 +802,7 @@ export const GamesTab: React.FC<GamesTabProps> = ({
       {/* Modals */}
       {showScanConfirm && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0a0d14] border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-[#0a0d14] border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl motion-safe:animate-in fade-in zoom-in-95 duration-200">
             <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">
               Rescan All Games?
             </h3>
