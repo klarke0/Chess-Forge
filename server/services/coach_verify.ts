@@ -1,5 +1,5 @@
 import { Chess, type Color, type PieceSymbol, type Square } from "chess.js";
-import { pieceName, type CoachCaptions, type CoachFacts } from "./coach_facts";
+import { pieceName, type CoachCaptions, type CoachFacts, type MoveFacts } from "./coach_facts";
 
 export interface Verdict {
   ok: boolean;
@@ -27,16 +27,25 @@ const HAZARD =
   /\b(attack(?:s|ed|ing)?|defend(?:s|ed|ing)?|protect(?:s|ed|ing)?|guard(?:s|ed|ing)?|support(?:s|ed|ing)?|hang(?:s|ing)?|undefended|unprotected|unguarded|loose|en prise|fork(?:s|ed|ing)?|pin(?:s|ned|ning)?|skewer(?:s|ed|ing)?|threaten(?:s|ed|ing)?|eyeing|target(?:s|ing)?|pressur(?:e|es|ing)|trap(?:s|ped|ping)?|for free|can be captured)\b/i;
 const UNPROVABLE =
   /\b(fork(?:s|ed|ing)?|pin(?:s|ned|ning)?|skewer(?:s|ed|ing)?|trap(?:s|ped|ping)?|for free|can be captured)\b/i;
-const MATERIAL =
-  "win|wins|winning|capture|captures|captured|capturing|take|takes|taking|took|lose|loses|losing|lost|gain|gains|gaining|grab|grabs|grabbing";
-const MATERIAL_PIECE = new RegExp(
-  `\\b(?:${MATERIAL}) (?:(?:the|your|their|a|an) )?(?:(?:white|black|enemy|opposing) )?${PIECE}\\b`,
+const GAIN =
+  "wins?|winning|captur(?:e|es|ed|ing)|takes?|taking|took|gains?|gaining|grabs?|grabbing|picks? off|snatch(?:es|ed|ing)?";
+const LOSS =
+  "loses|lose|losing|lost|drops?|dropped|dropping|blunders?|blundered|blundering|sacrific(?:e|es|ed|ing)|gives? up|gave up|giving up|falls?|falling";
+const PASSIVE = "(?:is|are|was|were|gets?|can be|could be|will be) (?:taken|captured|won|lost)";
+const REFERENT = "pawn|knight|bishop|rook|queen|king|pieces?|material|exchange";
+const MATERIAL_VERB = new RegExp(`\\b(?:${GAIN}|${LOSS}|${PASSIVE})\\b`, "i");
+const MATERIAL_OBJECT = new RegExp(
+  `\\b(${GAIN}|${LOSS})\\s+(?:(?:the|your|their|a|an|white|black|enemy|opposing) )*(?:(${REFERENT})(?: on ${SQ})?|(?:on )?${SQ})\\b`,
   "gi",
 );
-const MATERIAL_SQ = new RegExp(`\\b(?:${MATERIAL}) (?:on )?${SQ}\\b`, "gi");
+const SIDE_WORD = /\b(white|black|you|yours?|opponents?)\b/gi;
 const MATE_WORD = /\b(checkmate[sd]?|mate[sd]?|mating)\b/i;
 const ATTACK_VERB = "attacks?|attacking|hits|targets|targeting|threatens|threatening|pressures|pressuring|eyeing";
 const DEFEND_VERB = "defends|defending|protects|protecting|guards|guarding|supports|supporting";
+const ATTACK_AFTER = new RegExp(
+  `^\\s+(?:${ATTACK_VERB})\\s+(?:(?:the|your|their|a|white|black) )*${PIECE}(?: on ${SQ})?`,
+  "i",
+);
 const RELATION = new RegExp(
   `${PIECE} on ${SQ} (${ATTACK_VERB}|${DEFEND_VERB}) ((?:(?:the|your|their|a|white|black|enemy|opposing) )*)(?:${PIECE}(?: on ${SQ})?|${SQ})\\b`,
   "gi",
@@ -50,24 +59,71 @@ const HANGING = new RegExp(
 const MOVE_AFTER_VERB = /\b(?:play|plays|played|playing|after|with|push|pushes|advance|advances|move|moves)\s+([a-h][1-8])\b/gi;
 const MOVE_AT_START = /^\s*([a-h][1-8])\s+(?:wins|loses|captures|takes|gains|threatens|attacks|forks|pins|hangs|defends)\b/i;
 
-function checkMaterial(clause: string, facts: CoachFacts, violations: string[]): void {
-  const hasPiece = new RegExp(`\\b${PIECE}\\b`, "i").test(clause);
-  const hasMaterial = new RegExp(`\\b(?:${MATERIAL})\\b`, "i").test(clause);
-  if (!hasMaterial || !hasPiece) return;
-  const moves = [facts.best, facts.wrong, facts.reply].filter((x): x is NonNullable<typeof x> => !!x);
-  let proven = 0;
-  let bad = 0;
-  for (const m of clause.matchAll(MATERIAL_PIECE)) {
-    const t = TYPE_BY_NAME[m[1].toLowerCase()];
-    if (moves.some((mv) => mv.captured === t)) proven++;
-    else bad++;
+type SideMove = { mv: MoveFacts; mover: boolean };
+
+const sideMoves = (f: CoachFacts): SideMove[] => {
+  const out: SideMove[] = [{ mv: f.best, mover: true }];
+  if (f.wrong) out.push({ mv: f.wrong, mover: true });
+  if (f.reply) out.push({ mv: f.reply, mover: false });
+  return out;
+};
+
+const suppliedSans = (text: string, allowed: Set<string>): string[] =>
+  [...text.matchAll(SAN_TOKEN)].map((m) => strip(m[0])).filter((san) => allowed.has(san));
+
+/** The moves a material claim in this clause is about. */
+function claimSubject(
+  clause: string,
+  verbAt: number,
+  facts: CoachFacts,
+  allowed: Set<string>,
+  prevSan?: string,
+): SideMove[] {
+  const all = sideMoves(facts);
+  const lets = clause.search(/\b(lets|allows|permits)\b/i);
+  const san =
+    lets >= 0
+      ? undefined
+      : (suppliedSans(clause, allowed)[0] ?? (/^\s*which\b/i.test(clause) ? prevSan : undefined));
+  if (san) return all.filter((x) => strip(x.mv.san) === san);
+  const words = [...clause.slice(Math.max(lets, 0), verbAt).matchAll(SIDE_WORD)].map((m) => m[1].toLowerCase());
+  const last = words[words.length - 1];
+  if (!last) return all;
+  const mover = /^(you|yours?)$/.test(last) || last === facts.moverName.toLowerCase();
+  return all.filter((x) => x.mover === mover);
+}
+
+function checkMaterial(
+  clause: string,
+  facts: CoachFacts,
+  allowed: Set<string>,
+  violations: string[],
+  prevSan?: string,
+): void {
+  if (!MATERIAL_VERB.test(clause)) return;
+  const bad = (): void => void violations.push(`unverifiable claim: "${clause.trim()}"`);
+  const referent = new RegExp(`\\b(?:${REFERENT})\\b`, "i").test(clause);
+  const lossLike = new RegExp(`\\b(?:${LOSS}|${PASSIVE})\\b`, "i").test(clause);
+  // Loss / passive phrasing and "the exchange" cannot be verified from the facts: reject.
+  if (referent && (lossLike || /\bexchange\b/i.test(clause))) {
+    bad();
+    return;
   }
-  for (const m of clause.matchAll(MATERIAL_SQ)) {
-    const sq = m[1].toLowerCase();
-    if (moves.some((mv) => mv.captured && mv.to === sq)) proven++;
-    else bad++;
+  const gain = new RegExp(`^(?:${GAIN})$`, "i");
+  for (const m of clause.matchAll(MATERIAL_OBJECT)) {
+    if (!gain.test(m[1])) continue;
+    const word = m[2]?.toLowerCase();
+    const type = word ? TYPE_BY_NAME[word] : undefined; // undefined for piece(s)/material/bare square
+    const sq = (m[3] ?? m[4])?.toLowerCase();
+    const subject = claimSubject(clause, m.index ?? 0, facts, allowed, prevSan);
+    const proven = subject.some(
+      ({ mv }) => mv.captured && (!type || mv.captured === type) && (!sq || mv.to === sq),
+    );
+    if (!proven) {
+      bad();
+      return;
+    }
   }
-  if (proven === 0 || bad > 0) violations.push(`unverifiable claim: "${clause.trim()}"`);
 }
 
 function checkClause(
@@ -76,6 +132,7 @@ function checkClause(
   boards: Chess[],
   allowed: Set<string>,
   violations: string[],
+  prevSan?: string,
 ): void {
   const typeOf = (name: string): PieceSymbol => TYPE_BY_NAME[name.toLowerCase()];
   const before = violations.length;
@@ -108,7 +165,7 @@ function checkClause(
     }
   }
 
-  checkMaterial(clause, facts, violations);
+  checkMaterial(clause, facts, allowed, violations, prevSan);
 
   if (!HAZARD.test(clause)) return;
 
@@ -132,6 +189,21 @@ function checkClause(
     });
     if (holds) proven++;
     else violations.push(`false claim: ${m[0]}`);
+  }
+
+  // Attack claims whose subject is a supplied move (or "which" after one).
+  const subjects = [...clause.matchAll(SAN_TOKEN)].map((m) => ({
+    san: strip(m[0]),
+    rest: clause.slice((m.index ?? 0) + m[0].length),
+  }));
+  if (prevSan && /^\s*which\b/i.test(clause)) subjects.push({ san: prevSan, rest: clause.replace(/^\s*which/i, "") });
+  for (const { san, rest } of subjects) {
+    const m = rest.match(ATTACK_AFTER);
+    if (!m) continue;
+    const mv = sideMoves(facts).find((x) => strip(x.mv.san) === san)?.mv;
+    const sq = m[2]?.toLowerCase();
+    if (mv?.attacks.some((a) => a.type === typeOf(m[1]) && (!sq || a.square === sq))) proven++;
+    else violations.push(`false claim: ${san}${m[0]}`);
   }
 
   // Hanging / undefended.
@@ -192,8 +264,10 @@ export function verifyClaims(text: string, facts: CoachFacts): Verdict {
   }
 
   // 3-4, 6. Clause-level rules: every hazard claim must be proven, else fail closed.
+  let prevSan: string | undefined;
   for (const clause of text.split(CLAUSE_SPLIT)) {
-    checkClause(clause, facts, boards, allowed, violations);
+    checkClause(clause, facts, boards, allowed, violations, prevSan);
+    prevSan = suppliedSans(clause, allowed).pop() ?? prevSan;
   }
 
   // 5. Mate / stalemate / check words need a supporting fact.

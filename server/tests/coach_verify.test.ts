@@ -123,6 +123,28 @@ describe("verifyClaims fails closed", () => {
     "Your queen on h5 can be captured for free.",
     "Nf6 wins the queen.",
     "Black takes the knight.",
+    "Nf6 wins the pawn.",
+    "Black wins the pawn.",
+    "Nf3 wins the pawn.",
+    "Nf3 lets Black take the pawn.",
+    "Nf6 captures the pawn.",
+    "Black takes the pawn on f7.",
+    "Nf3 lets Black win a pawn.",
+    "Nf6 wins material.",
+    "This loses a piece.",
+    "You give up the queen.",
+    "White loses the exchange.",
+    "Nf3 drops the queen.",
+    "Nf3 blunders the queen.",
+    "Nf3 sacrifices the queen.",
+    "The queen falls.",
+    "The queen can be taken.",
+    "The queen gets taken by Nf6.",
+    "Black picks off the knight.",
+    "Black snatches the pawn.",
+    "Nf6 attacks the rook.",
+    "Nf3 attacks the queen.",
+    "Nf6 attacks the bishop on c4.",
   ];
   for (const phrase of REJECT) {
     test(`rejects: ${phrase}`, async () => {
@@ -143,6 +165,12 @@ describe("verifyClaims fails closed", () => {
     "The knight on c6 defends the pawn on e5.",
     "The queen on h5 is hanging.",
     "Qxf7# wins the pawn.",
+    "Qxf7# captures the pawn on f7.",
+    "Nf3 allows Nf6.",
+    "Nf3 wins tempo for Black.",
+    "Nf6 attacks the queen.",
+    "Nf3 allows Nf6, which attacks the queen on h5.",
+    "Qxf7# attacks the king.",
   ];
   for (const phrase of ACCEPT) {
     test(`accepts: ${phrase}`, async () => {
