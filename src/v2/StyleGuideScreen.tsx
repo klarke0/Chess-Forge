@@ -121,7 +121,7 @@ export const StyleGuideScreen: React.FC = () => {
       <Section title="Typography — label roles">
         <div className="flex flex-col gap-2">
           <span className="text-forge-label-sm font-black uppercase text-forge-text-secondary">
-            label sm (8px) — dense inline tags
+            label sm (10px) — dense inline tags
           </span>
           <span className="text-forge-label font-black uppercase text-forge-text-secondary">
             label default (10px) — the dominant eyebrow size
@@ -154,7 +154,7 @@ export const StyleGuideScreen: React.FC = () => {
               className={cn(
                 "w-40 px-4 py-2 rounded-forge-sm bg-forge-elevated border border-forge-border-subtle",
                 "hover:bg-forge-primary hover:border-forge-primary-border",
-                "transition-colors",
+                "transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
                 speed === "fast" ? "duration-forge-fast" : "duration-forge-base",
               )}
             >

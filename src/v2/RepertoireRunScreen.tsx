@@ -440,7 +440,8 @@ export const RepertoireRunScreen: React.FC<RepertoireRunScreenProps> = ({ onBack
       <div className="flex items-center gap-3 px-4 py-3 bg-forge-surface border-b border-forge-border-subtle shrink-0">
         <button
           onClick={onBack}
-          className="p-2 -ml-2 rounded-xl text-forge-text-secondary hover:text-white transition-all active:scale-95"
+          aria-label="Back"
+          className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 -ml-2 rounded-xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base  text-forge-text-secondary hover:text-white transition-all active:scale-95"
         >
           <ArrowLeft size={20} />
         </button>
@@ -493,7 +494,7 @@ export const RepertoireRunScreen: React.FC<RepertoireRunScreenProps> = ({ onBack
             <button
               onClick={handleRestart}
               className={cn(
-                "w-full max-w-xs flex items-center justify-center gap-2 py-4 rounded-2xl",
+                "w-full max-w-xs flex items-center justify-center gap-2 py-4 rounded-2xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
                 "bg-forge-primary hover:bg-forge-primary active:scale-[0.98]",
                 "text-white font-black text-base uppercase tracking-widest",
                 "shadow-xl shadow-indigo-600/30 border border-forge-primary-border transition-all",
@@ -509,7 +510,7 @@ export const RepertoireRunScreen: React.FC<RepertoireRunScreenProps> = ({ onBack
             <div
               className={cn(
                 "flex-1 flex items-center justify-center p-4 relative",
-                shaking && "animate-shake",
+                shaking && "motion-safe:animate-shake",
               )}
             >
               <div className="w-full aspect-square rounded-xl overflow-hidden shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] bg-forge-board p-[6px]">
@@ -547,7 +548,7 @@ export const RepertoireRunScreen: React.FC<RepertoireRunScreenProps> = ({ onBack
               {wrongMove && !revealMode && isKevinsTurn && (
                 <button
                   onClick={handleReveal}
-                  className="flex items-center gap-1.5 text-xs text-forge-text-inactive hover:text-forge-text-primary transition-all ml-auto"
+                  className="min-h-[44px] min-w-[44px] flex items-center gap-1.5 text-xs text-forge-text-inactive hover:text-forge-text-primary transition-all ml-auto cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base"
                 >
                   Show correct
                 </button>

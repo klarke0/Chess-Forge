@@ -350,7 +350,7 @@ const AICoachSummary: React.FC<{
             <p className="text-[11px] font-black uppercase tracking-widest text-forge-text-primary">
               AI Coach Summary
             </p>
-            <p className="text-[9px] text-forge-text-muted font-medium">
+            <p className="text-[10px] text-forge-text-muted font-medium">
               Key moments from your game
             </p>
           </div>
@@ -359,7 +359,7 @@ const AICoachSummary: React.FC<{
         {/* Content */}
         <div className="p-3 space-y-2">
           {loading ? (
-            <div className="flex flex-col items-center gap-3 py-6 animate-pulse">
+            <div className="flex flex-col items-center gap-3 py-6 motion-safe:animate-pulse">
               <Brain size={28} className="text-forge-insight" />
               <p className="text-[10px] font-black uppercase tracking-widest text-forge-text-muted">
                 Analyzing key moments...
@@ -401,7 +401,7 @@ const AICoachSummary: React.FC<{
                     >
                       {style.icon}
                     </div>
-                    <span className={cn("text-[9px] font-black", style.text)}>
+                    <span className={cn("text-[10px] font-black", style.text)}>
                       M{moment.moveNumber}
                     </span>
                   </div>
@@ -412,7 +412,7 @@ const AICoachSummary: React.FC<{
                       <span className={cn("text-[13px] font-black", style.text)}>
                         {moment.san}
                       </span>
-                      <span className="text-[9px] font-black uppercase tracking-wider text-forge-text-muted">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-forge-text-muted">
                         {moment.type.replace("_", " ")}
                       </span>
                     </div>
@@ -430,7 +430,7 @@ const AICoachSummary: React.FC<{
         {!loading && !error && moments.length > 0 && (
           <div className="flex items-center justify-center gap-1.5 py-2 border-t border-forge-border-subtle">
             <Lightbulb size={9} className="text-forge-text-muted" />
-            <span className="text-[8px] text-forge-text-muted uppercase tracking-widest font-black">
+            <span className="text-[10px] text-forge-text-muted uppercase tracking-widest font-black">
               Powered by Gemini
             </span>
           </div>
@@ -492,13 +492,14 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
   }, [reviewedMoves, hasAnalysis]);
 
   return (
-    <div className="absolute inset-0 z-50 bg-forge-base text-forge-text-primary font-outfit flex flex-col animate-in fade-in duration-300 overflow-y-auto">
+    <div className="absolute inset-0 z-50 bg-forge-base text-forge-text-primary font-outfit flex flex-col motion-safe:animate-in motion-safe:fade-in duration-300 overflow-y-auto">
       {/* ── Header ── */}
       <div className="shrink-0 px-4 pt-4 pb-2">
         <div className="flex items-center justify-between mb-3">
           <button
             onClick={onClose}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-forge-border-subtle hover:bg-forge-border-default text-forge-text-secondary hover:text-white transition-colors"
+            aria-label="Close game review"
+            className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full bg-forge-border-subtle hover:bg-forge-border-default text-forge-text-secondary hover:text-white transition-colors"
           >
             <X size={18} />
           </button>
@@ -506,7 +507,7 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
             Game Review
           </h1>
           <div className="flex items-center gap-2">
-            <button className="w-9 h-9 flex items-center justify-center rounded-full bg-forge-border-subtle hover:bg-forge-border-default text-forge-text-secondary hover:text-white transition-colors">
+            <button aria-label="Settings" className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full bg-forge-border-subtle hover:bg-forge-border-default text-forge-text-secondary hover:text-white transition-colors">
               <Settings size={16} />
             </button>
           </div>
@@ -517,13 +518,14 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
           <div className="flex items-center justify-center">
             <div className="flex bg-forge-base rounded-xl p-0.5 gap-0.5 border border-forge-border-subtle">
               <button
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all bg-forge-primary text-white shadow-lg shadow-indigo-600/20"
+                aria-pressed="true"
+                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base min-h-[44px] flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all bg-forge-primary text-white shadow-lg shadow-indigo-600/20"
               >
                 Summary
               </button>
               <button
                 onClick={onSwitchToReview}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all text-forge-text-inactive hover:text-forge-text-primary"
+                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base min-h-[44px] flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all text-forge-text-inactive hover:text-forge-text-primary"
               >
                 Review
               </button>
@@ -699,7 +701,7 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
                       {cat.symbol}
                     </span>
                   </div>
-                  <span className="text-[8px] font-black uppercase tracking-wider text-forge-text-muted">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-forge-text-muted">
                     {cat.label}
                   </span>
                 </div>
@@ -731,7 +733,7 @@ export const GameReviewSummary: React.FC<GameReviewSummaryProps> = ({
       <div className="px-4 pb-6 shrink-0">
         <button
           onClick={onStartReview}
-          className="w-full py-4 bg-[#5c9e3b] hover:bg-[#6ab544] active:bg-[#4e8832] text-white font-black text-base uppercase tracking-wide rounded-2xl transition-colors shadow-lg shadow-green-900/30 flex items-center justify-center gap-2"
+          className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base w-full py-4 bg-[#5c9e3b] hover:bg-[#6ab544] active:bg-[#4e8832] text-white font-black text-base uppercase tracking-wide rounded-2xl transition-colors shadow-lg shadow-green-900/30 flex items-center justify-center gap-2"
         >
           <Play size={18} fill="white" />
           Start Review

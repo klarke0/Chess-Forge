@@ -11,7 +11,7 @@ export function forgeCardClass(opts?: { interactive?: boolean }): string {
   return cn(
     "bg-forge-card border border-forge-border-subtle rounded-forge-xl",
     opts?.interactive &&
-      "text-left active:scale-[0.98] transition-all duration-forge-fast hover:border-forge-border-default",
+      "text-left cursor-pointer active:scale-[0.98] transition-all duration-forge-fast hover:border-forge-border-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
   );
 }
 

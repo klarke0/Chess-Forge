@@ -102,6 +102,8 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
   const [shaking, setShaking] = useState(false);
   const [missCount, setMissCount] = useState(0);
   const [hintShown, setHintShown] = useState(false);
+  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [moveSquares, setMoveSquares] = useState<Record<string, React.CSSProperties>>({});
   const [lastKevinSquares, setLastKevinSquares] = useState<{ from: Square; to: Square } | null>(null);
 
   // Watch-stage state
@@ -324,6 +326,57 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
     [phase, lesson, currentMove, fen, stepIdx, moves, missCount, clearTimers],
   );
 
+  // Tap-to-move: first tap selects an own piece (showing legal targets),
+  // second tap on a target plays it via the same path as a drag-drop.
+  const onSquareClick = useCallback(
+    (square: string) => {
+      if ((phase !== "guided" && phase !== "blind") || !currentMove?.isKevinMove) return;
+      if (autoRevealTimerRef.current) return;
+
+      if (selectedSquare && selectedSquare !== square) {
+        const moved = handleDrop(selectedSquare, square);
+        setSelectedSquare(null);
+        setMoveSquares({});
+        if (moved) return;
+        // Illegal/wrong target: fall through so tapping another own piece re-selects.
+      }
+
+      const chess = new Chess(fen);
+      const piece = chess.get(square as Square);
+      if (!piece || piece.color !== fen.split(" ")[1]) {
+        setSelectedSquare(null);
+        setMoveSquares({});
+        return;
+      }
+      if (selectedSquare === square) {
+        setSelectedSquare(null);
+        setMoveSquares({});
+        return;
+      }
+
+      const highlights: Record<string, React.CSSProperties> = {
+        [square]: { background: "rgba(99,102,241,0.4)", borderRadius: "4px" },
+      };
+      for (const m of chess.moves({ square: square as Square, verbose: true })) {
+        highlights[m.to] = {
+          background: chess.get(m.to as Square)
+            ? "radial-gradient(circle, rgba(239,68,68,0.5) 60%, transparent 65%)"
+            : "radial-gradient(circle, rgba(99,102,241,0.35) 30%, transparent 35%)",
+          borderRadius: "50%",
+        };
+      }
+      setSelectedSquare(square);
+      setMoveSquares(highlights);
+    },
+    [phase, currentMove, fen, selectedSquare, handleDrop],
+  );
+
+  // Drop any selection when the position or stage moves on.
+  useEffect(() => {
+    setSelectedSquare(null);
+    setMoveSquares({});
+  }, [fen, phase, stepIdx]);
+
   function handleWatchTogglePause() {
     setWatchPaused((p) => !p);
   }
@@ -365,12 +418,15 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
       ? sanMoveSquares(currentMove.fen, currentMove.san)
       : null;
 
-  const squareStyles = lastKevinSquares
-    ? {
-        [lastKevinSquares.from]: { backgroundColor: "rgba(52,211,153,0.35)" },
-        [lastKevinSquares.to]: { backgroundColor: "rgba(52,211,153,0.35)" },
-      }
-    : undefined;
+  const squareStyles: Record<string, React.CSSProperties> = {
+    ...(lastKevinSquares
+      ? {
+          [lastKevinSquares.from]: { backgroundColor: "rgba(52,211,153,0.35)" },
+          [lastKevinSquares.to]: { backgroundColor: "rgba(52,211,153,0.35)" },
+        }
+      : {}),
+    ...moveSquares,
+  };
 
   return (
     <div className="flex-1 flex flex-col bg-forge-base overflow-hidden">
@@ -378,7 +434,8 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
       <div className="flex items-center gap-3 px-4 py-3 bg-forge-surface border-b border-forge-border-subtle shrink-0">
         <button
           onClick={onBack}
-          className="p-2 -ml-2 rounded-xl text-forge-text-secondary hover:text-white transition-all active:scale-95"
+          aria-label="Back"
+          className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 -ml-2 rounded-xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base  text-forge-text-secondary hover:text-white transition-all active:scale-95"
         >
           <ArrowLeft size={20} />
         </button>
@@ -441,7 +498,7 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
             <p className="text-xs text-forge-danger font-semibold text-center">{errorMsg}</p>
             <button
               onClick={loadLesson}
-              className="px-4 py-2 rounded-forge-md bg-forge-primary hover:bg-forge-primary text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95"
+              className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base min-h-[44px] px-4 py-2 rounded-forge-md bg-forge-primary hover:bg-forge-primary text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95"
             >
               Retry
             </button>
@@ -464,7 +521,7 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
             )}
             <button
               onClick={onBack}
-              className="px-6 py-3 rounded-2xl bg-forge-primary hover:bg-forge-primary text-white text-sm font-black uppercase tracking-widest transition-all active:scale-95"
+              className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base min-h-[44px] px-6 py-3 rounded-2xl bg-forge-primary hover:bg-forge-primary text-white text-sm font-black uppercase tracking-widest transition-all active:scale-95"
             >
               Done
             </button>
@@ -481,7 +538,7 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
             </p>
             <button
               onClick={handleBlindRetry}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-forge-primary hover:bg-forge-primary text-white text-sm font-black uppercase tracking-widest transition-all active:scale-95"
+              className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base min-h-[44px] flex items-center gap-2 px-6 py-3 rounded-2xl bg-forge-primary hover:bg-forge-primary text-white text-sm font-black uppercase tracking-widest transition-all active:scale-95"
             >
               <RotateCcw size={16} />
               Retry blind
@@ -505,13 +562,13 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
             <div className="flex flex-col gap-3 w-full max-w-xs">
               <button
                 onClick={handleNextLesson}
-                className="w-full py-4 rounded-2xl bg-forge-primary hover:bg-forge-primary active:scale-[0.98] text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-indigo-600/30 border border-forge-primary-border transition-all"
+                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base min-h-[44px] w-full py-4 rounded-2xl bg-forge-primary hover:bg-forge-primary active:scale-[0.98] text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-indigo-600/30 border border-forge-primary-border transition-all"
               >
                 Next lesson
               </button>
               <button
                 onClick={onBack}
-                className="w-full py-3 rounded-2xl bg-forge-card border border-forge-border-subtle text-forge-text-primary font-black text-sm uppercase tracking-widest transition-all active:scale-95"
+                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base min-h-[44px] w-full py-3 rounded-2xl bg-forge-card border border-forge-border-subtle text-forge-text-primary font-black text-sm uppercase tracking-widest transition-all active:scale-95"
               >
                 Done
               </button>
@@ -525,7 +582,7 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
             <div
               className={cn(
                 "flex-1 flex items-center justify-center p-4 relative",
-                shaking && "animate-shake",
+                shaking && "motion-safe:animate-shake",
               )}
             >
               <div className="w-full aspect-square rounded-xl overflow-hidden shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] bg-forge-board p-[6px]">
@@ -533,6 +590,7 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
                   <Chessboard
                     position={fen}
                     onPieceDrop={draggable ? handleDrop : () => false}
+                    onSquareClick={draggable ? onSquareClick : undefined}
                     boardOrientation={boardOrientation}
                     animationDuration={phase === "watch" ? 400 : 200}
                     arePiecesDraggable={draggable}
@@ -560,19 +618,21 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleWatchTogglePause}
-                      className="p-2 rounded-xl text-forge-text-secondary hover:text-white transition-all active:scale-95"
+                      aria-label={watchPaused ? "Resume" : "Pause"}
+                      className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base  text-forge-text-secondary hover:text-white transition-all active:scale-95"
                     >
                       {watchPaused ? <Play size={16} /> : <Pause size={16} />}
                     </button>
                     <button
                       onClick={handleWatchRestart}
-                      className="p-2 rounded-xl text-forge-text-secondary hover:text-white transition-all active:scale-95"
+                      aria-label="Restart line"
+                      className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base  text-forge-text-secondary hover:text-white transition-all active:scale-95"
                     >
                       <RotateCcw size={16} />
                     </button>
                     <button
                       onClick={handleSkipToGuided}
-                      className="flex items-center gap-1.5 text-xs text-forge-text-inactive hover:text-forge-text-primary transition-all"
+                      className="min-h-[44px] min-w-[44px] flex items-center gap-1.5 text-xs text-forge-text-inactive hover:text-forge-text-primary transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base"
                     >
                       Skip to guided
                       <ChevronsRight size={14} />
@@ -593,8 +653,9 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({ onBack }) => {
                 {phase === "guided" && isKevinTurn && (
                   <button
                     onClick={() => setHintShown((h) => !h)}
+                    aria-pressed={hintShown}
                     className={cn(
-                      "flex items-center gap-1.5 text-xs font-semibold transition-all ml-auto",
+                      "min-h-[44px] min-w-[44px] flex items-center gap-1.5 text-xs font-semibold transition-all ml-auto cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-forge-base",
                       hintShown ? "text-forge-primary-hover" : "text-forge-text-inactive hover:text-forge-text-primary",
                     )}
                   >

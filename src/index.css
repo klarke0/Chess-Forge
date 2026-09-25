@@ -147,7 +147,7 @@ html[data-theme="dark"] {
   --forge-radius-xl: 2rem;
   --forge-radius-pill: 9999px;
 
-  --forge-label-sm-size: 0.5rem;
+  --forge-label-sm-size: 0.625rem;
   --forge-label-sm-tracking: 0.1em;
   --forge-label-size: 0.625rem;
   --forge-label-tracking: 0.1em;
@@ -181,4 +181,17 @@ html[data-theme="night"] {
   --forge-bg-card: #080b10;
   --forge-bg-elevated: #0c0f18;
   --forge-bg-nav: rgba(3, 4, 10, 0.92);
+}
+
+/* Respect the OS "reduce motion" setting globally. Board piece slides are
+   JS-driven (react-chessboard) and unaffected. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

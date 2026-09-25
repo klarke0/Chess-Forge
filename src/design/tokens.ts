@@ -94,7 +94,7 @@ export const tokens = {
    */
   type: {
     label: {
-      sm: { size: "0.5rem", tracking: "0.1em" }, // 8px — dense inline tags
+      sm: { size: "0.625rem", tracking: "0.1em" }, // 10px (raised from 8px) — dense inline tags
       DEFAULT: { size: "0.625rem", tracking: "0.1em" }, // 10px — the dominant eyebrow size
       lg: { size: "0.6875rem", tracking: "0.08em" }, // 11px — section headers
     },
