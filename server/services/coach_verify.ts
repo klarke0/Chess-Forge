@@ -14,7 +14,8 @@ const TYPE_BY_NAME: Record<string, PieceSymbol> = {
   queen: "q",
   king: "k",
 };
-const PIECE = "(pawn|knight|bishop|rook|queen|king)";
+const PIECE = "(pawns?|knights?|bishops?|rooks?|queens?|kings?)";
+const pieceType = (name: string): PieceSymbol | undefined => TYPE_BY_NAME[name.toLowerCase().replace(/s$/, "")];
 const SQ = "([a-h][1-8])";
 
 const SAN_TOKEN =
@@ -30,9 +31,9 @@ const UNPROVABLE =
 const GAIN =
   "wins?|winning|captur(?:e|es|ed|ing)|takes?|taking|took|gains?|gaining|grabs?|grabbing|picks? off|snatch(?:es|ed|ing)?";
 const LOSS =
-  "loses|lose|losing|lost|drops?|dropped|dropping|blunders?|blundered|blundering|sacrific(?:e|es|ed|ing)|gives? up|gave up|giving up|falls?|falling";
+  "loses|lose|losing|lost|drops?|dropped|dropping|blunders?|blundered|blundering|sacrific(?:e|es|ed|ing)|gives? up|gave up|giving up|falls?|falling|trades?|traded|trading|swaps?|swapped|swapping";
 const PASSIVE = "(?:is|are|was|were|gets?|can be|could be|will be) (?:taken|captured|won|lost)";
-const REFERENT = "pawn|knight|bishop|rook|queen|king|pieces?|material|exchange";
+const REFERENT = "pawns?|knights?|bishops?|rooks?|queens?|kings?|pieces?|material|exchange";
 const MATERIAL_VERB = new RegExp(`\\b(?:${GAIN}|${LOSS}|${PASSIVE})\\b`, "i");
 const MATERIAL_OBJECT = new RegExp(
   `\\b(${GAIN}|${LOSS})\\s+(?:(?:the|your|their|a|an|white|black|enemy|opposing) )*(?:(${REFERENT})(?: on ${SQ})?|(?:on )?${SQ})\\b`,
@@ -119,7 +120,7 @@ function checkMaterial(
   for (const m of clause.matchAll(MATERIAL_OBJECT)) {
     if (!gain.test(m[1])) continue;
     const word = m[2]?.toLowerCase();
-    const type = word ? TYPE_BY_NAME[word] : undefined; // undefined for piece(s)/material/bare square
+    const type = word ? pieceType(word) : undefined; // undefined for piece(s)/material/bare square
     const sq = (m[3] ?? m[4])?.toLowerCase();
     const subject = claimSubject(clause, m.index ?? 0, facts, allowed, prevSan);
     const proven = subject.some(
@@ -170,7 +171,7 @@ function checkClause(
   stats: ClauseStats,
   prevSan?: string,
 ): void {
-  const typeOf = (name: string): PieceSymbol => TYPE_BY_NAME[name.toLowerCase()];
+  const typeOf = (name: string): PieceSymbol => pieceType(name) as PieceSymbol;
   const before = violations.length;
 
   // Bare-square pawn pushes count as moves and must be supplied.
@@ -272,7 +273,7 @@ function checkClause(
 export function verifyClaims(text: string, facts: CoachFacts): Verdict {
   const violations: string[] = [];
   const boards = facts.positions.map((f) => new Chess(f));
-  const typeOf = (name: string): PieceSymbol => TYPE_BY_NAME[name.toLowerCase()];
+  const typeOf = (name: string): PieceSymbol => pieceType(name) as PieceSymbol;
 
   // 1. Every move token must be one the server supplied.
   const allowed = new Set<string>(
