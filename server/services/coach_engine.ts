@@ -26,12 +26,12 @@ export function getCoachEngine(): EvalEngine {
       try {
         return await engine.evaluate(fen, depth);
       } catch (err) {
+        if (shared === engine) shared = null;
         try {
-          shared?.dispose();
+          engine.dispose();
         } catch {
           /* already dead */
         }
-        shared = null;
         throw err;
       }
     },
