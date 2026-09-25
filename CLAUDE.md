@@ -58,7 +58,7 @@ Full-stack React/TypeScript app (Vite + Tailwind + Bun backend) that trains ches
 
 ### Key Data Dependencies
 
-- **`bestMove` in `analysis_json`**: Required for blunder-first drilling of non-repertoire positions. All games analyzed before March 2026 are missing this field — only `{san, fen, eval, cpLoss, grade}` present. Fixed in `background_analysis.ts` going forward. Existing games need re-analysis to get bestMove.
+- **`bestMove` in `analysis_json`**: Required for blunder-first drilling of non-repertoire positions. Games analyzed by the old browser scan (`analysis_version` NULL, depth 12) may lack it; the server analysis job (below) overwrites them in place with `bestMove` present.
 - **SM-2 intervals**: Capped at ease_factor 2.5 and interval_days **30** in `server/utils/sm2.ts`. If the drill pool feels stale ("same positions every session"), check the `progress` table for rows with `next_review` far in the future or `interval_days` near the cap.
 
 ### Analysis & coach updates — clear stale outputs
@@ -69,16 +69,22 @@ When shipping changes that alter the **shape of `analysis_json`** (new fields, c
 
 | Surface | Storage | Clear it by |
 |---|---|---|
-| Engine analysis (per-game) | `games.analysis_json` column | `POST /api/v2/refresh-analysis` (clears rows missing required fields, background queue re-analyzes). Extend the `NOT LIKE` filter in `server/routes/v2_refresh_analysis.ts` to catch the new field. |
+| Engine analysis (per-game) | `games.analysis_json` + `analysis_version` / `analysis_depth` columns | Bump `ANALYSIS_VERSION` in `server/services/analysis_config.ts`; the server job re-analyzes every older game in place (no gap with missing analysis). `POST /api/v2/refresh-analysis` is DEPRECATED. Grades can also be re-derived without the engine (`server/utils/grading.ts`). |
 | Coach explanations | `coach_cache` table, keyed by prompt version | Bump `COACH_PROMPT_VERSION` in `server/services/coach_cache.ts`; old rows stop matching. |
 | Frontend bundle (PWA / browser) | Service worker / browser cache | Run `./dev.sh build` then restart backend; the new asset hashes in `dist/assets/*` force a refetch. If a screenshot shows pre-fix behavior post-deploy, suspect stale PWA before re-debugging the code. |
 | SM-2 progress / drill pool | `progress` table | See "Drill pool freshness" below. |
 
-**Checklist when changing analysis_json shape:**
-1. Update `server/routes/v2_refresh_analysis.ts`'s `NOT LIKE` filter to detect rows missing the new field.
-2. Run `./dev.sh build` and restart so the new bundle ships.
-3. Hit `POST /api/v2/refresh-analysis` to queue old rows for re-analysis.
-4. Verify with `sqlite3 server/chess_trainer.db "SELECT COUNT(*) FROM games WHERE analysis_json IS NOT NULL AND analysis_json NOT LIKE '%<new_field>%';"` — should trend to 0 as the queue drains.
+**Checklist when changing analysis_json shape or grading:**
+1. Change `server/utils/grading.ts` AND its client mirror `src/utils/grading.ts` together (a parity test fails if they drift); update `analysis_json` consumers (`v2_train_now`, insights, review UI).
+2. Bump `ANALYSIS_VERSION` in `server/services/analysis_config.ts` so the job re-analyzes older games.
+3. Run `./dev.sh build` and restart the backend (the job resumes ~30 s after boot).
+4. Verify with `curl localhost:3001/api/v2/analysis/status` (`counts.done` climbs to `total`) and `sqlite3 server/chess_trainer.db "SELECT analysis_version, COUNT(*) FROM games GROUP BY 1;"`.
+
+### Game analysis job (server-side)
+
+Game analysis runs on the SERVER (native Stockfish), not in the browser: `server/services/analysis_job.ts`, routes in `server/routes/v2_analysis.ts` (`GET /api/v2/analysis/status`, `POST .../start | stop | retry-failed`). Depth 14 with a 3 s per-position cap, own low-priority engine (`nice 10`, 2 threads) that exists only while there is work, resumable, newest games first, failures marked in `games.analysis_failed`. Evaluations are cached in `position_evals` (repeated openings are free). It starts ~30 s after boot and after a sync/import adds games; `ANALYSIS_AUTOSTART=0` disables the automatic start. A browser save (`POST /api/games/:id/analysis`) never overwrites a v2 analysis.
+
+Grading (`server/utils/grading.ts`, mirrored in `src/utils/grading.ts`): win% loss on the lichess curve; `best` = the engine's top move while the measured drop is <= 5 pp, or a loss <= 0.2 pp; `excellent` <= 2, `good` <= 5, `inaccuracy` <= 10, `mistake` <= 20, `blunder` > 20 (percentage points of win chance). `analysis_json` shape is unchanged.
 
 **Checklist when changing the coach prompt or model:**
 1. Bump `COACH_PROMPT_VERSION` in `server/services/coach_cache.ts` (cached coach cards, including verifier-rejected templates, otherwise keep serving old output).
