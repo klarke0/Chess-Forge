@@ -49,7 +49,7 @@ function PatternBadge({ pattern, className }: { pattern?: TacticalPattern; class
     <span
       className={cn(
         "inline-flex items-center px-2 py-0.5 rounded-full border",
-        "text-[9px] font-black uppercase tracking-wider",
+        "text-[10px] font-black uppercase tracking-wider",
         meta.className,
         className,
       )}
@@ -1315,7 +1315,7 @@ export const TrainNowScreen: React.FC<TrainNowScreenProps> = ({
                             </span>
                             <span
                               className={cn(
-                                "text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border",
+                                "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border",
                                 sourceBadge,
                               )}
                             >
