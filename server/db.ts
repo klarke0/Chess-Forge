@@ -2,7 +2,7 @@ import { Database } from "bun:sqlite";
 import { readFileSync } from "fs";
 import { join } from "path";
 
-const DB_PATH = join(import.meta.dir, "chess_trainer.db");
+const DB_PATH = process.env.CHESS_DB_PATH || join(import.meta.dir, "chess_trainer.db");
 
 let db: Database;
 

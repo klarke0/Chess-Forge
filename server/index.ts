@@ -45,7 +45,7 @@ import {
 } from "./routes/v2_punish";
 import { learnNextRoute, learnCompleteRoute } from "./routes/v2_learn";
 
-const PORT = 3001;
+const PORT = Number(process.env.PORT) || 3001;
 const DIST_PATH = join(import.meta.dir, "../dist");
 const REMOTE_PASSWORD = process.env.REMOTE_PASSWORD || "";
 
