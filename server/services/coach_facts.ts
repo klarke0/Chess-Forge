@@ -265,20 +265,28 @@ export async function buildFacts(
   let lossPawns: number;
   if (evalAfterWrong) {
     lossPawns = Math.max(0, scoreToPawns(evalAfterBest) - scoreToPawns(evalAfterWrong));
+    const bestMates = evalAfterBest.mate !== null && evalAfterBest.mate > 0;
+    const wrongMates = evalAfterWrong.mate !== null && evalAfterWrong.mate > 0;
+    const bothWinning =
+      scoreToPawns(evalAfterBest) >= 1.5 && scoreToPawns(evalAfterWrong) >= 1.5;
+    // Keeping a forced win is not a blunder, even if the mate is slower or the win is non-mate.
+    if (bothWinning && bestMates && wrongMates) lossPawns = 0;
+    else if (bothWinning && bestMates) lossPawns = Math.min(lossPawns, 0.5);
   } else if (wrongEqualsBest) {
     lossPawns = 0;
   } else {
+    // Arbitrary "mistake-level" default when the client gives no cpLoss.
     lossPawns = input.cpLoss !== null && input.cpLoss > 0 ? input.cpLoss : 1.0;
   }
 
-  const beforePawns = scoreToPawns(evalBefore);
+  const bestPawns = scoreToPawns(evalAfterBest);
   const afterWrongPawns = evalAfterWrong ? scoreToPawns(evalAfterWrong) : null;
   const severity: Severity = wrongEqualsBest
     ? "equal"
     : severityFor(lossPawns, {
         allowsMate: evalAfterWrong?.mate != null && evalAfterWrong.mate < 0,
-        flippedToLost: afterWrongPawns !== null && beforePawns >= 1.5 && afterWrongPawns <= -1.5,
-        stalemateThrow: !!wrong?.facts.givesStalemate && beforePawns >= 1.5,
+        flippedToLost: afterWrongPawns !== null && bestPawns >= 1.5 && afterWrongPawns <= -1.5,
+        stalemateThrow: !!wrong?.facts.givesStalemate && bestPawns >= 1.5,
       });
 
   const positions = [input.fen];

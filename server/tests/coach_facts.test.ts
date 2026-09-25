@@ -114,17 +114,44 @@ describe("buildFacts", () => {
   });
 
   test("both moves mate in 4 => equal, not a blunder (S23)", async () => {
-    // Same position; stub: best (Qxf7#) is top => before = mate 1 for mover. Wrong Qh5xe5+ also keeps a mate.
+    // Best (Qxf7#) is the engine top => before = mate 4 for mover. Wrong Qxe5+ also mates in 4.
     const { engine } = queueEngine([
-      { cp: null, mate: 1, bestMoveUci: "h5f7", pvUci: ["h5f7"] },
-      { cp: null, mate: -1, bestMoveUci: "c6e5", pvUci: ["c6e5"] }, // black POV: black gets mated in 1 => mover mate 1
+      { cp: null, mate: 4, bestMoveUci: "h5f7", pvUci: ["h5f7"] },
+      { cp: null, mate: -4, bestMoveUci: "c6e5", pvUci: ["c6e5"] }, // black POV: mated in 4 => mover mate 4
     ]);
     const f = await buildFacts(
       { fen: SCHOLAR, wrongMove: "Qxe5+", correctMove: "Qxf7#", cpLoss: 20 },
       engine,
     );
-    expect(f.evalAfterWrong).toEqual({ cp: null, mate: 1 });
+    expect(f.evalAfterWrong).toEqual({ cp: null, mate: 4 });
+    expect(f.lossPawns).toBe(0);
     expect(f.severity).toBe("equal");
+  });
+
+  test("best mates in 1, wrong keeps a slower mate in 5 => equal", async () => {
+    const { engine } = queueEngine([
+      { cp: null, mate: 1, bestMoveUci: "h5f7", pvUci: ["h5f7"] },
+      { cp: null, mate: -5, bestMoveUci: "g8f6", pvUci: ["g8f6"] },
+    ]);
+    const f = await buildFacts(
+      { fen: SCHOLAR, wrongMove: "Nf3", correctMove: "Qxf7#", cpLoss: null },
+      engine,
+    );
+    expect(f.lossPawns).toBe(0);
+    expect(f.severity).toBe("equal");
+  });
+
+  test("best mates in 1, wrong keeps a big non-mate edge => capped at inaccuracy", async () => {
+    const { engine } = queueEngine([
+      { cp: null, mate: 1, bestMoveUci: "h5f7", pvUci: ["h5f7"] },
+      { cp: -800, mate: null, bestMoveUci: "g8f6", pvUci: ["g8f6"] }, // black POV => mover +800
+    ]);
+    const f = await buildFacts(
+      { fen: SCHOLAR, wrongMove: "Nf3", correctMove: "Qxf7#", cpLoss: null },
+      engine,
+    );
+    expect(f.lossPawns).toBeLessThanOrEqual(0.5);
+    expect(f.severity).toBe("inaccuracy");
   });
 
   test("stalemate trap: wrong move stalemates a won position (T1)", async () => {
