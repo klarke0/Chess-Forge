@@ -198,6 +198,7 @@ Harness: `scripts/coach_fixture_eval.ts` over the 32 audit positions plus 3 tric
   "templateReasons": {"verifier-rejected-twice": 29, "other": 1}, "allStepsLegal": true,
   "medianMs": 3001, "maxMs": 7486, "geminiCalls": 63 }
 ```
+(block predates the bucket fix; the `other: 1` is the T2 same-move card)
 
 Success criteria: T1 returned 200 with model text that names the stalemate; T2 returned the same-move template with 0 Gemini calls; T5 returned 400; every row's steps were legal; max latency 7486ms (under the 9s budget).
 

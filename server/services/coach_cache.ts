@@ -7,7 +7,7 @@ import { normalizeFen } from "../utils/fen";
  * verifier. Rows written under an older version stop matching, which is how
  * stale explanations are "cleared" (see CLAUDE.md: analysis & coach updates).
  */
-export const COACH_PROMPT_VERSION = 1;
+export const COACH_PROMPT_VERSION = 2;
 
 export interface CoachCacheKey {
   fen: string;

@@ -1,4 +1,3 @@
-import { Chess } from "chess.js";
 import { explainBlunderCore } from "../services/coach";
 import { getCoachEngine } from "../services/coach_engine";
 import { getCachedCoach, putCachedCoach } from "../services/coach_cache";
@@ -8,11 +7,6 @@ const GEMINI_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 const GEMINI_STREAM_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse";
-
-function pieceFullName(p: string): string {
-  const map: Record<string, string> = { k: "King", q: "Queen", r: "Rook", b: "Bishop", n: "Knight", p: "Pawn" };
-  return map[p.toLowerCase()] ?? p;
-}
 
 // Parse FEN into an explicit piece-by-square description to prevent hallucinations
 function describeBoardFromFen(fen: string): string {
@@ -516,15 +510,16 @@ async function fetchMastersData(fen: string): Promise<{
 }
 
 /** One schema-constrained Gemini call; null on any HTTP/network/timeout failure. */
-async function callGeminiJson(
+// Exported only so the key-hygiene test can exercise it.
+export async function callGeminiJson(
   apiKey: string,
   prompt: string,
   timeoutMs: number,
 ): Promise<string | null> {
   try {
-    const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+    const res = await fetch(GEMINI_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       signal: AbortSignal.timeout(timeoutMs),
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
@@ -544,7 +539,7 @@ async function callGeminiJson(
     const data = (await res.json()) as any;
     return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
   } catch (e) {
-    console.error("Gemini fetch error (coach):", e);
+    console.error("Gemini fetch error (coach):", `${(e as Error)?.name}: ${String((e as Error)?.message).replace(/key=[^&\s]+/g, "key=REDACTED")}`);
     return null;
   }
 }

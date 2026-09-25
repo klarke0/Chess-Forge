@@ -80,7 +80,7 @@ After generation, check with chess.js: (a) every SAN token in `analysis`/caption
 Three depth-14 evals + Gemini + optional masters. Masters run in parallel with the evals. **Measured (2026-09-24, this machine):** engine warm-up about 1.1s; depth 14 about 0.2-0.8s per position. Total server budget is 9s under the client's 10s timeout. End-to-end on the 35-case fixture run (cold, real Gemini, 2 attempts on most cases because the verifier rejected first tries): median 3001ms, max 7486ms. Warm hits are cache reads.
 
 ### 7. Cache
-New table `coach_cache(fen_norm, wrong, correct, prompt_version, response_json, created_at, PRIMARY KEY(fen_norm, wrong, correct, prompt_version))` created in `runMigrations` like existing tables. `prompt_version` is a constant in `coach_facts.ts` bumped on any prompt/model/threshold change — that is the "clear stale outputs" mechanism required by CLAUDE.md (old versions simply stop matching). Errors and template-fallbacks are cached only for the template case (deterministic); Gemini/engine errors are never cached.
+New table `coach_cache(fen_norm, wrong, correct, prompt_version, response_json, created_at, PRIMARY KEY(fen_norm, wrong, correct, prompt_version))` created in `runMigrations` like existing tables. `prompt_version` is a constant in `coach_facts.ts` bumped on any prompt/model/threshold change — that is the "clear stale outputs" mechanism required by CLAUDE.md (old versions simply stop matching). In practice `coach_cache` is created lazily by `ensureTable` in `coach_cache.ts` on first use (not in `runMigrations`), so tests can use in-memory databases. Errors and template-fallbacks are cached only for the template case (deterministic); Gemini/engine errors are never cached.
 
 ## Testing
 

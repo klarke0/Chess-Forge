@@ -220,3 +220,38 @@ describe("default-deny", () => {
     expect(verifyClaims("Nf3 leaves the f7 pawn attacked twice.", await scholarFacts()).ok).toBe(false);
   });
 });
+
+describe("templateFromFacts honesty", () => {
+  const OPEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  test("no wrong move: why uses the best-move eval, not lossPawns", async () => {
+    const f = await buildFacts(
+      { fen: OPEN, wrongMove: null, correctMove: "e4", cpLoss: 250 },
+      stub([{ cp: 30, mate: null, bestMoveUci: "e2e4", pvUci: ["e2e4"] }]),
+    );
+    const t = templateFromFacts(f);
+    expect(t.captions.why).not.toContain("at stake");
+    expect(t.captions.why).not.toContain("2.5");
+    expect(t.captions.why).toContain("+0.30 for you after e4");
+    const all = [t.analysis, t.concept, ...Object.values(t.captions)].join(". ");
+    expect(verifyClaims(all, f).ok).toBe(true);
+  });
+
+  test("allowed forced mate is stated as such; mover-mated concept is King safety", async () => {
+    const f = await buildFacts(
+      { fen: OPEN, wrongMove: "f3", correctMove: "e4", cpLoss: null },
+      stub([
+        { cp: 30, mate: null, bestMoveUci: "e2e4", pvUci: ["e2e4"] },
+        { cp: null, mate: 2, bestMoveUci: "e7e5", pvUci: ["e7e5"] },
+      ]),
+    );
+    const t = templateFromFacts(f);
+    expect(f.evalAfterWrong?.mate).toBe(-2);
+    {
+      expect(t.analysis).toContain("allows a forced mate in 2");
+      expect(t.analysis).not.toContain("decisive amount");
+      expect(t.concept).toBe("King safety");
+    }
+    const all = [t.analysis, t.concept, ...Object.values(t.captions)].join(". ");
+    expect(verifyClaims(all, f).ok).toBe(true);
+  });
+});

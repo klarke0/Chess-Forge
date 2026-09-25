@@ -53,7 +53,7 @@ Full-stack React/TypeScript app (Vite + Tailwind + Bun backend) that trains ches
   - Session size: 12 positions. SM-2 caps: ease_factor max 2.5, interval_days max 180.
 
 - **`progress.ts`** — SM-2 spaced repetition recording. Initial ease factor varies by source/severity: blunders >2 pawns → 1.3, blunders 1–2 pawns → 1.8, deviations → 2.0, review → 2.5.
-- **`analyze.ts`** — `POST /api/analyze/blunder` — Gemini GM-style explanation.
+- **`analyze.ts`** — route adapter for `POST /api/analyze/blunder` plus the streaming `analyzePosition`. The blunder coach path itself lives in `server/services/coach*.ts`.
 - **`games.ts`** — Game sync, analysis save (`saveAnalysis`), backfill deviations.
 
 ### Key Data Dependencies
@@ -81,8 +81,9 @@ When shipping changes that alter the **shape of `analysis_json`** (new fields, c
 4. Verify with `sqlite3 server/chess_trainer.db "SELECT COUNT(*) FROM games WHERE analysis_json IS NOT NULL AND analysis_json NOT LIKE '%<new_field>%';"` — should trend to 0 as the queue drains.
 
 **Checklist when changing the coach prompt or model:**
-1. `./dev.sh build` and restart backend.
-2. `curl` the `/api/analyze/blunder` endpoint with a known-bad FEN to verify the new prompt is live before debugging from screenshots — screenshots can be stale PWA renders.
+1. Bump `COACH_PROMPT_VERSION` in `server/services/coach_cache.ts` (cached coach cards, including verifier-rejected templates, otherwise keep serving old output).
+2. `./dev.sh build` and restart backend.
+3. `curl` the `/api/analyze/blunder` endpoint with a known-bad FEN to verify the new prompt is live before debugging from screenshots — screenshots can be stale PWA renders.
 
 ### Drill pool freshness — DO NOT REGRESS
 

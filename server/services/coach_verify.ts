@@ -326,6 +326,15 @@ export function verifyClaims(text: string, facts: CoachFacts): Verdict {
   return { ok: violations.length === 0, violations };
 }
 
+/** Plain-wording eval of the best move, from the mover's side; uses only the Score. */
+function bestEvalPhrase(s: { cp: number | null; mate: number | null }): string {
+  if (s.mate != null) {
+    return s.mate > 0 ? `mate in ${s.mate} for you` : `mate in ${-s.mate} for the opponent`;
+  }
+  const pawns = (s.cp ?? 0) / 100;
+  return `${pawns >= 0 ? "+" : "-"}${Math.abs(pawns).toFixed(2)} for you`;
+}
+
 export function templateFromFacts(f: CoachFacts): {
   concept: string;
   analysis: string;
@@ -347,17 +356,26 @@ export function templateFromFacts(f: CoachFacts): {
     } else if (f.severity === "equal") {
       wrongLine = `${f.wrong.san} is close in the engine's eyes (${f.lossPawns.toFixed(1)} pawns), so this is a small point.`;
     } else {
+      const wm = f.evalAfterWrong?.mate;
+      if (wm != null && wm < 0) {
+        wrongLine = `${f.wrong.san} allows a forced mate in ${-wm}.`;
+      } else {
       const replyBit = f.reply
         ? ` ${f.reply.san}${f.reply.captured ? `, which captures your ${pieceName(f.reply.captured)}` : ""}`
         : " a strong reply";
       wrongLine = `${f.wrong.san} allows${replyBit}; the engine puts the cost at ${loss}.`;
+      }
     }
   }
 
-  const mateInvolved = f.best.givesMate || f.evalBefore.mate !== null;
-  const concept = mateInvolved
+  const moverMates =
+    f.best.givesMate || (f.evalBefore.mate ?? 0) > 0 || (f.evalAfterBest.mate ?? 0) > 0;
+  const moverMated = (f.evalAfterWrong?.mate ?? 0) < 0;
+  const concept = moverMates
     ? "Checkmate pattern"
-    : f.reply?.captured
+    : moverMated
+      ? "King safety"
+      : f.reply?.captured
       ? "Loose piece"
       : f.best.captured
         ? "Winning material"
@@ -372,7 +390,9 @@ export function templateFromFacts(f: CoachFacts): {
       wrong: f.wrong ? `${f.wrong.san} was played.` : "",
       reply: f.reply ? `${f.reply.san} is the engine's best answer.` : "",
       best: `${f.best.san} is the move.`,
-      why: `Engine depth ${f.engineDepth}: about ${loss} at stake.`,
+      why: f.evalAfterWrong
+        ? `Engine depth ${f.engineDepth}: about ${loss} at stake.`
+        : `Engine depth ${f.engineDepth}: ${bestEvalPhrase(f.evalAfterBest)} after ${f.best.san}.`,
     },
   };
 }

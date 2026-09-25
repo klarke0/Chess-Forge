@@ -30,3 +30,47 @@ describe("explainBlunder adapter", () => {
     expect(res.status).toBe(400);
   });
 });
+
+import { callGeminiJson } from "../routes/analyze";
+
+describe("callGeminiJson key hygiene", () => {
+  test("key goes in a header, not the URL", async () => {
+    const realFetch = globalThis.fetch;
+    let url = "";
+    let headers: Record<string, string> = {};
+    globalThis.fetch = (async (u: any, init: any) => {
+      url = String(u);
+      headers = init.headers;
+      return Response.json({ candidates: [{ content: { parts: [{ text: "{}" }] } }] });
+    }) as any;
+    try {
+      const out = await callGeminiJson("SECRET123", "p", 1000);
+      expect(out).toBe("{}");
+      expect(url).not.toContain("key=");
+      expect(url).not.toContain("SECRET123");
+      expect(headers["x-goog-api-key"]).toBe("SECRET123");
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
+
+  test("a fetch error carrying the URL never reaches the log with the key", async () => {
+    const realFetch = globalThis.fetch;
+    const realErr = console.error;
+    const logged: unknown[][] = [];
+    console.error = (...a: unknown[]) => void logged.push(a);
+    globalThis.fetch = (async () => {
+      throw new Error("failed https://x/y?key=SECRET123");
+    }) as any;
+    try {
+      // Only name/message strings are logged, with any key= value redacted.
+      expect(await callGeminiJson("SECRET123", "p", 1000)).toBeNull();
+      expect(logged.length).toBe(1);
+      expect(logged[0].every((x) => typeof x === "string")).toBe(true);
+      expect(JSON.stringify(logged)).not.toContain("SECRET123");
+    } finally {
+      globalThis.fetch = realFetch;
+      console.error = realErr;
+    }
+  });
+});
