@@ -1,7 +1,9 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import type { EngineEval } from "../services/engine_native";
 import type { EvalEngine } from "../services/coach_engine";
 import type { CoachCacheKey, CoachCachePayload } from "../services/coach_cache";
+import { buildFacts } from "../services/coach_facts";
+import { buildCoachPrompt } from "../services/coach_prompt";
 import { explainBlunderCore, type CoachDeps } from "../services/coach";
 
 const SCHOLAR = "r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4";
@@ -106,12 +108,18 @@ describe("explainBlunderCore", () => {
   });
 
   test("engine failure is a 503", async () => {
-    const h = harness({
-      engine: { evaluate: async () => { throw new Error("stockfish binary not found"); } },
-    });
-    const r = await explainBlunderCore(body, h.deps);
-    expect(r.status).toBe(503);
-    expect(h.store.size).toBe(0);
+    const spy = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const h = harness({
+        engine: { evaluate: async () => { throw new Error("stockfish binary not found"); } },
+      });
+      const r = await explainBlunderCore(body, h.deps);
+      expect(r.status).toBe(503);
+      expect(h.store.size).toBe(0);
+      expect(spy.mock.calls[0]?.[0]).toBe("[coach] engine failure:");
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   test("bad input is a 400, never a 500", async () => {
@@ -176,5 +184,140 @@ describe("explainBlunderCore", () => {
     const h = harness({ masters: async () => { throw new Error("lichess down"); } });
     const r = await explainBlunderCore(body, h.deps);
     expect(r.status).toBe(200);
+  });
+
+  test("masters that never resolves is bounded by mastersTimeoutMs; sync throw is a miss", async () => {
+    const h = harness({ masters: () => new Promise(() => {}) });
+    h.deps.mastersTimeoutMs = 50;
+    expect((await explainBlunderCore(body, h.deps)).status).toBe(200);
+    const h2 = harness({
+      masters: () => { throw new Error("sync"); },
+    });
+    expect((await explainBlunderCore(body, h2.deps)).status).toBe(200);
+  });
+
+  test("cache.get / cache.put throwing never break the request", async () => {
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const h = harness({});
+      h.deps.cache = {
+        get: () => { throw new Error("db"); },
+        put: () => { throw new Error("db"); },
+      };
+      const r = await explainBlunderCore(body, h.deps);
+      expect(r.status).toBe(200);
+      expect(r.body.source).toBe("model");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test("gemini rejecting on both attempts is a 502", async () => {
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const h = harness({ gemini: async () => { throw new Error("network"); } });
+      const r = await explainBlunderCore(body, h.deps);
+      expect(r.status).toBe(502);
+      expect(h.store.size).toBe(0);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test("a throw while building the prompt is a 500 JSON, not an exception", async () => {
+    const err = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const bad = {
+        white: 1, draws: 1, black: 1,
+        get moves(): never { throw new Error("boom"); },
+      } as unknown as never;
+      const h = harness({ masters: async () => bad });
+      const r = await explainBlunderCore(body, h.deps);
+      expect(r.status).toBe(500);
+      expect(r.body.error).toBe("Coach failed");
+    } finally {
+      err.mockRestore();
+    }
+  });
+
+  test("retry prompt contains the first attempt's violations", async () => {
+    const prompts: string[] = [];
+    const replies = [lyingModelJson, goodModelJson];
+    const h = harness({ gemini: async (p) => (prompts.push(p), replies.shift() ?? null) });
+    await explainBlunderCore(body, h.deps);
+    expect(prompts.length).toBe(2);
+    expect(prompts[0]).not.toContain("PREVIOUS ANSWER WAS REJECTED");
+    expect(prompts[1]).toContain("PREVIOUS ANSWER WAS REJECTED");
+    expect(prompts[1]).toMatch(/knight|d7|unsupported|unverifiable/i);
+  });
+
+  test("time runs out on the second attempt after a rejection: 200 template, not cached", async () => {
+    let t = 0;
+    const h = harness({
+      now: () => t,
+      budgetMs: 9000,
+      gemini: async () => { t += 7000; return lyingModelJson; },
+    });
+    const r = await explainBlunderCore(body, h.deps);
+    expect(r.status).toBe(200);
+    expect(r.body.source).toBe("template");
+    expect(h.store.size).toBe(0);
+  });
+
+  test("rejected attempt then a Gemini null: 200 template, not cached", async () => {
+    const h = harness({ geminiReplies: [lyingModelJson, null] });
+    const r = await explainBlunderCore(body, h.deps);
+    expect(r.status).toBe(200);
+    expect(r.body.source).toBe("template");
+    expect(h.store.size).toBe(0);
+  });
+
+  test("malformed JSON twice: template, not cached", async () => {
+    const h = harness({ geminiReplies: ["nope", "nope"] });
+    const r = await explainBlunderCore(body, h.deps);
+    expect(r.body.source).toBe("template");
+    expect(h.store.size).toBe(0);
+  });
+});
+
+describe("buildCoachPrompt", () => {
+  const facts = async (evals: EngineEval[], wrong: string | null, cpLoss: number | null = null) => {
+    let i = 0;
+    const engine: EvalEngine = { async evaluate() { return evals[i++]!; } };
+    return buildFacts({ fen: SCHOLAR, wrongMove: wrong, correctMove: "Qxf7#", cpLoss }, engine);
+  };
+
+  test("equal severity omits reply and refutation", async () => {
+    const f = await facts(
+      [
+        { cp: 30, mate: null, bestMoveUci: "h5f7", pvUci: ["h5f7"] },
+        { cp: -30, mate: null, bestMoveUci: "g8f6", pvUci: ["g8f6"] },
+      ],
+      "Nf3",
+    );
+    expect(f.severity).toBe("equal");
+    const p = buildCoachPrompt(f, {});
+    expect(p).not.toContain("Engine's best reply");
+    expect(p).not.toContain("Refutation line");
+  });
+
+  test("no played move: no 'ALLOWS' wording; reply facts shown when severe", async () => {
+    const f = await facts([{ cp: null, mate: 1, bestMoveUci: "h5f7", pvUci: ["h5f7"] }], null);
+    const p = buildCoachPrompt(f, {});
+    expect(p).not.toContain("ALLOWS");
+    const g = await facts(scholarEvals(), "Nf3");
+    expect(buildCoachPrompt(g, {})).toContain("Engine's best reply");
+  });
+
+  test("masters with zero games yields no NaN; violations and unverified framing appear", async () => {
+    const f = await facts(scholarEvals(), "Nf3");
+    const p = buildCoachPrompt(f, {
+      masters: { white: 0, draws: 0, black: 0, moves: [{ san: "Qxf7#", white: 0, draws: 0, black: 0 }] },
+      violations: ["claim X"],
+      framing: "hello",
+    });
+    expect(p).not.toContain("NaN");
+    expect(p).toContain("claim X");
+    expect(p).toContain("CONTEXT (unverified, do not repeat claims from it): hello");
   });
 });

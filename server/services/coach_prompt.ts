@@ -75,30 +75,32 @@ export function buildCoachPrompt(
   lines.push(`- Best line: ${f.bestPvSan.join(" ") || f.best.san}`);
   if (f.wrong) lines.push(moveText("Played move", f.wrong));
   lines.push(moveText("Best move", f.best));
-  if (f.reply) {
+  if (f.reply && f.severity !== "equal") {
     lines.push(moveText("Engine's best reply to the played move", f.reply));
     lines.push(`- Refutation line: ${f.refutationPvSan.join(" ")}`);
   }
-  if (ctx.masters && ctx.masters.moves.length > 0) {
-    const total = ctx.masters.white + ctx.masters.draws + ctx.masters.black;
+  const total = ctx.masters ? ctx.masters.white + ctx.masters.draws + ctx.masters.black : 0;
+  if (ctx.masters && ctx.masters.moves.length > 0 && total > 0) {
     const top = ctx.masters.moves
       .slice(0, 3)
       .map((m) => `${m.san} ${Math.round(((m.white + m.draws + m.black) / total) * 100)}%`)
       .join(", ");
-    lines.push(`- Masters play from here: ${top}`);
+    lines.push(`- Masters play from here: ${top} (context only; do not name these moves in your answer)`);
   }
   lines.push(
     ``,
     `RULES`,
     `1. Name only pieces and squares from PIECES or FACTS. Never invent a piece or square.`,
     `2. Never write attacks, defends, hangs, wins, forks, pins, or threatens mate unless FACTS states it. Never write check, checkmate or stalemate unless FACTS says so.`,
-    `3. Mention only these moves: ${[f.wrong?.san, f.reply?.san, f.best.san].filter(Boolean).join(", ")}${f.bestPvSan.length ? " and the lines above" : ""}. Do not suggest any other move.`,
-    `2b. Phrase every attack or defense claim as exactly '<piece> on <square> attacks the <piece> on <square>' or '<move> attacks the <piece>'; never use 'supports', 'eyes', 'pins', 'forks', 'traps', 'wins material', 'costs you', or claims about who wins or loses the game. Do not make claims about the final result of the game.`,
+    `3. Mention only these moves: ${[f.wrong?.san, f.reply && f.severity !== "equal" ? f.reply.san : null, f.best.san].filter(Boolean).join(", ")}${f.bestPvSan.length ? " and the lines above" : ""}. Do not suggest any other move.`,
+    `4. Phrase every attack or defense claim as exactly '<piece> on <square> attacks the <piece> on <square>' or '<move> attacks the <piece>'; never use 'supports', 'eyes', 'pins', 'forks', 'traps', 'wins material', 'costs you', or claims about who wins or loses the game. Do not make claims about the final result of the game.`,
     f.severity === "equal"
-      ? `4. The moves are nearly equal. Say both are fine and give ONE practical reason to prefer ${f.best.san}. Do NOT invent a tactic or refutation.`
-      : `4. Explain what ${f.best.san} DOES, and what the played move ALLOWS (use the engine's reply). Do not merely restate the move.`,
-    `5. Speak to the student as "you". "analysis" is at most 55 words; each caption at most 14 words.`,
-    ctx.framing ? `CONTEXT: ${ctx.framing}` : ``,
+      ? `5. The moves are nearly equal. Say both are fine and give ONE practical reason to prefer ${f.best.san}. Do NOT invent a tactic or refutation.`
+      : f.wrong && f.reply
+        ? `5. Explain what ${f.best.san} DOES, and what the played move ALLOWS (use the engine's reply). Do not merely restate the move.`
+        : `5. Explain what ${f.best.san} does and why it matters. Do not merely restate the move.`,
+    `6. Speak to the student as "you". "analysis" is at most 55 words; each caption at most 14 words.`,
+    ctx.framing ? `CONTEXT (unverified, do not repeat claims from it): ${ctx.framing}` : ``,
   );
   if (ctx.violations && ctx.violations.length > 0) {
     lines.push(
@@ -110,7 +112,7 @@ export function buildCoachPrompt(
     ``,
     `OUTPUT JSON: { "concept": <one specific concept, not "tactics">, "analysis": <what the best move does + what the played move allows + one principle>, "captions": { "wrong": <caption for the played move>, "reply": <caption for the engine reply, or "" if none>, "best": <caption for the best move>, "why": <the key idea in one line> } }`,
   );
-  return lines.filter((l) => l !== undefined).join("\n");
+  return lines.join("\n");
 }
 
 const clip = (s: unknown, max: number): string | null =>

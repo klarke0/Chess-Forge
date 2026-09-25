@@ -27,6 +27,8 @@ export interface CoachDeps {
   now?: () => number;
   /** Total server budget; must stay under the client's 10s request timeout. */
   budgetMs?: number;
+  /** Cap on the optional masters lookup (default 1500ms). */
+  mastersTimeoutMs?: number;
 }
 
 export interface CoachResult {
@@ -103,8 +105,43 @@ export async function explainBlunderCore(raw: unknown, deps: CoachDeps): Promise
     wrongMove: input.wrongMove,
     correctMove: input.correctMove,
   };
-  const cached = deps.cache.get(key);
+  try {
+    return await run(input, key, deps);
+  } catch (e) {
+    console.error("[coach] unexpected failure:", e);
+    return { status: 500, body: { error: "Coach failed" } };
+  }
+}
+
+async function withTimeout<T>(p: Promise<T | null>, ms: number): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<null>((r) => {
+    timer = setTimeout(() => r(null), ms);
+    (timer as { unref?: () => void }).unref?.();
+  });
+  try {
+    return await Promise.race([p, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function run(input: CoachInput, key: CoachCacheKey, deps: CoachDeps): Promise<CoachResult> {
+  let cached: CoachCachePayload | null = null;
+  try {
+    cached = deps.cache.get(key);
+  } catch (e) {
+    console.warn("[coach] cache read failed:", e);
+  }
   if (cached) return ok(cached);
+
+  const put = (p: CoachCachePayload) => {
+    try {
+      deps.cache.put(key, p);
+    } catch (e) {
+      console.warn("[coach] cache write failed:", e);
+    }
+  };
 
   const now = deps.now ?? Date.now;
   const started = now();
@@ -115,7 +152,12 @@ export async function explainBlunderCore(raw: unknown, deps: CoachDeps): Promise
   try {
     [facts, masters] = await Promise.all([
       buildFacts(input, deps.engine),
-      deps.masters(input.fen).catch(() => null),
+      withTimeout(
+        Promise.resolve()
+          .then(() => deps.masters(input.fen))
+          .catch(() => null),
+        deps.mastersTimeoutMs ?? 1500,
+      ),
     ]);
   } catch (e) {
     if (e instanceof CoachInputError) return { status: 400, body: { error: e.message } };
@@ -127,6 +169,8 @@ export async function explainBlunderCore(raw: unknown, deps: CoachDeps): Promise
   let geminiErrors = 0;
   let sawModelText = false;
   let skippedForTime = false;
+  // Only a verifier rejection is deterministic enough to cache as a template.
+  let lastFailure: "verifier" | "other" = "other";
 
   for (let attempt = 0; attempt < 2; attempt++) {
     const left = budget - (now() - started);
@@ -134,18 +178,29 @@ export async function explainBlunderCore(raw: unknown, deps: CoachDeps): Promise
       skippedForTime = true;
       break;
     }
-    const text = await deps.gemini(
-      buildCoachPrompt(facts, { phase: input.phase, framing: input.framing, masters, violations }),
-      Math.min(GEMINI_MAX_MS, left),
-    );
+    const prompt = buildCoachPrompt(facts, {
+      phase: input.phase,
+      framing: input.framing,
+      masters,
+      violations,
+    });
+    let text: string | null;
+    try {
+      text = await deps.gemini(prompt, Math.min(GEMINI_MAX_MS, left));
+    } catch (e) {
+      console.warn("[coach] gemini failed:", e);
+      text = null;
+    }
     if (text === null) {
       geminiErrors++;
+      lastFailure = "other";
       continue;
     }
     sawModelText = true;
     const parsed = parseCoachJson(text);
     if (!parsed) {
       violations = ["the answer was not valid JSON in the requested shape"];
+      lastFailure = "other";
       continue;
     }
     // Joined with ". " so the verifier sees each string as its own clause.
@@ -161,10 +216,11 @@ export async function explainBlunderCore(raw: unknown, deps: CoachDeps): Promise
     }
     if (verdict.ok) {
       const p = payload(facts, parsed, "model");
-      deps.cache.put(key, p);
+      put(p);
       return ok(p);
     }
     violations = verdict.violations;
+    lastFailure = "verifier";
   }
 
   if (geminiErrors > 0 && !sawModelText) {
@@ -172,8 +228,6 @@ export async function explainBlunderCore(raw: unknown, deps: CoachDeps): Promise
   }
 
   const p = payload(facts, templateFromFacts(facts), "template");
-  // A template caused by rejected claims is deterministic and safe to cache;
-  // one caused by running out of time is not — the next call should try Gemini.
-  if (!skippedForTime) deps.cache.put(key, p);
+  if (!skippedForTime && lastFailure === "verifier") put(p);
   return ok(p);
 }
